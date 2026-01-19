@@ -7,610 +7,714 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         :root {
-            --primary: #667eea;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --danger: #7209b7;
         }
+        
         body {
-            background: #f8fafc;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .sidebar {
-            background: white;
+        
+        .dashboard-wrapper {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             min-height: 100vh;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            position: fixed;
-            width: 250px;
+            border-radius: 0;
         }
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
+        
+        /* Header */
+        .navbar-main {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 15px 0;
         }
-        .nav-link {
-            color: #4a5568;
-            padding: 12px 20px;
-            margin: 5px 0;
-            border-radius: 10px;
+        
+        .logo-mini {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #4361ee, #3a0ca3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .user-info {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        /* Sensor Cards */
+        .sensor-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 3px solid transparent;
+            height: 100%;
+        }
+        
+        .sensor-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .sensor-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
             transition: all 0.3s;
         }
-        .nav-link:hover, .nav-link.active {
-            background: var(--primary);
-            color: white;
+        
+        .sensor-value {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 15px 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
         }
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: transform 0.3s;
-            margin-bottom: 20px;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .sensor-card {
-            text-align: center;
-            padding: 20px;
-        }
-        .sensor-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-        }
-        .value {
-            font-size: 2rem;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        .unit {
-            color: #718096;
-            font-size: 0.9rem;
-        }
-        .status-good { color: var(--success); }
-        .status-warning { color: var(--warning); }
-        .status-danger { color: var(--danger); }
-        .control-btn {
-            width: 100%;
-            padding: 15px;
+        
+        .sensor-unit {
+            color: #6c757d;
             font-size: 1.1rem;
-            margin: 5px 0;
+            font-weight: 500;
         }
+        
+        /* Control Panel */
+        .control-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .device-control {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+            transition: all 0.3s;
+        }
+        
+        .device-control:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        
+        .device-icon {
+            font-size: 2.5rem;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            margin-right: 20px;
+        }
+        
+        .control-buttons .btn {
+            min-width: 100px;
+            padding: 12px;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.3s;
+            margin: 0 5px;
+        }
+        
+        .control-buttons .btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Charts */
+        .chart-container {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            height: 100%;
+        }
+        
+        .chart-toggle .form-check-input {
+            width: 60px;
+            height: 30px;
+            margin-top: 8px;
+        }
+        
+        /* Evaluation */
+        .evaluation-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .score-display {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.6s ease-out;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+        
+        /* Auto Mode */
+        .auto-mode {
+            background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        /* Responsive */
         @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: relative;
-                min-height: auto;
+            .sensor-value {
+                font-size: 2.5rem;
             }
-            .main-content {
-                margin-left: 0;
+            
+            .sensor-icon {
+                font-size: 2.5rem;
+            }
+            
+            .control-buttons .btn {
+                min-width: 80px;
+                padding: 10px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="p-4">
-            <div class="text-center mb-4">
-                <i class="fas fa-school fa-3x text-primary"></i>
-                <h3 class="mt-2">CLASSGUARD</h3>
-                <small class="text-muted">Lớp học thông minh</small>
-            </div>
-            
-            <div class="user-info text-center mb-4 p-3 bg-light rounded">
-                <i class="fas fa-user-circle fa-2x"></i>
-                <h5 class="mt-2">{{ username }}</h5>
-                <span class="badge bg-{{ 'primary' if role == 'admin' else 'secondary' }}">
-                    {{ 'Quản trị viên' if role == 'admin' else 'Người xem' }}
-                </span>
-            </div>
-            
-            <nav class="nav flex-column">
-                <a class="nav-link active" href="/dashboard">
-                    <i class="fas fa-tachometer-alt"></i> Bảng điều khiển
-                </a>
-                <a class="nav-link" href="/data">
-                    <i class="fas fa-database"></i> Dữ liệu
-                </a>
-                {% if role == 'admin' %}
-                <a class="nav-link" href="/settings">
-                    <i class="fas fa-cog"></i> Cài đặt
-                </a>
-                {% endif %}
-                <a class="nav-link text-danger" href="/logout">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                </a>
-            </nav>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
+    <div class="dashboard-wrapper">
         <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="fas fa-tachometer-alt"></i> Bảng điều khiển</h2>
-            <div class="text-end">
-                <span id="current-time" class="badge bg-primary p-2"></span>
-                <span class="text-muted ms-2">Cập nhật: <span id="last-update">--:--:--</span></span>
-            </div>
-        </div>
-
-        <!-- Thông báo -->
-        <div id="alert-container"></div>
-
-        <!-- Cards cảm biến -->
-        <div class="row">
-            <!-- Nhiệt độ -->
-            <div class="col-md-3">
-                <div class="card sensor-card">
-                    <div class="sensor-icon status-{{ 'danger' if data.nhiet_do > 30 else 'warning' if data.nhiet_do > 28 else 'good' }}">
-                        <i class="fas fa-thermometer-half"></i>
+        <nav class="navbar navbar-expand-lg navbar-main">
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-school fa-2x me-3 text-primary"></i>
+                    <div>
+                        <span class="logo-mini">CLASSGUARD</span>
+                        <div class="text-muted small">Hệ thống giám sát lớp học thông minh</div>
                     </div>
-                    <h5>Nhiệt độ</h5>
-                    <div class="value" id="temp-value">{{ data.nhiet_do }}</div>
-                    <div class="unit">°C</div>
-                    <div class="mt-2">
-                        <span class="badge bg-{{ 'danger' if data.nhiet_do > 30 else 'warning' if data.nhiet_do > 28 else 'success' }}">
-                            {{ 'Nóng' if data.nhiet_do > 30 else 'Ấm' if data.nhiet_do > 28 else 'Tốt' }}
-                        </span>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    <div class="me-4 text-end">
+                        <div class="text-muted small">Thời gian hiện tại</div>
+                        <div id="current-time" class="fw-bold fs-5 text-primary">--:--:--</div>
+                    </div>
+                    
+                    <div class="user-info">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-user-circle fa-2x"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ name }}</div>
+                                <div class="small">
+                                    <span class="badge bg-{{ 'danger' if role == 'admin' else 'warning' if role == 'teacher' else 'info' if role == 'student' else 'secondary' }}">
+                                        {{ 'Quản trị viên' if role == 'admin' else 'Giáo viên' if role == 'teacher' else 'Học sinh' if role == 'student' else 'Khách xem' }}
+                                    </span>
+                                </div>
+                                <div class="small mt-1">
+                                    <i class="fas fa-clock"></i> Đăng nhập: {{ login_time }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ms-3">
+                        <a href="/logout" class="btn btn-outline-danger">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container-fluid py-4">
+            <!-- Alert Container -->
+            <div id="alert-container"></div>
+            
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="fw-bold text-dark">
+                                <i class="fas fa-tachometer-alt me-2"></i>Bảng điều khiển
+                            </h1>
+                            <p class="text-muted mb-0">
+                                Giám sát và điều khiển môi trường lớp học thời gian thực
+                                <span class="badge bg-success ms-2" id="last-update">--:--:--</span>
+                            </p>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            {% if role in ['admin', 'teacher'] %}
+                            <a href="/data" class="btn btn-outline-primary">
+                                <i class="fas fa-database"></i> Dữ liệu
+                            </a>
+                            {% endif %}
+                            
+                            {% if role == 'admin' %}
+                            <a href="/settings" class="btn btn-outline-warning">
+                                <i class="fas fa-cog"></i> Cài đặt
+                            </a>
+                            {% endif %}
+                            
+                            <a href="/export_csv" class="btn btn-outline-success">
+                                <i class="fas fa-file-export"></i> Xuất CSV
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Độ ẩm -->
-            <div class="col-md-3">
-                <div class="card sensor-card">
-                    <div class="sensor-icon status-{{ 'warning' if data.do_am < 40 or data.do_am > 70 else 'good' }}">
-                        <i class="fas fa-tint"></i>
+            <!-- Sensor Cards -->
+            <div class="row g-4 mb-4">
+                <!-- Nhiệt độ -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="sensor-card border-warning" id="temp-card">
+                        <div class="sensor-icon text-warning">
+                            <i class="fas fa-thermometer-half"></i>
+                        </div>
+                        <h5 class="fw-bold">🌡️ Nhiệt độ</h5>
+                        <div class="sensor-value text-warning" id="temp-value">{{ data.nhiet_do|round(1) }}</div>
+                        <div class="sensor-unit">Độ Celsius (°C)</div>
+                        <div class="mt-3">
+                            <span class="badge bg-{{ 'danger' if data.nhiet_do > 32 else 'warning' if data.nhiet_do > 28 else 'success' }}">
+                                {{ 'Nóng' if data.nhiet_do > 32 else 'Ấm' if data.nhiet_do > 28 else 'Tốt' }}
+                            </span>
+                        </div>
                     </div>
-                    <h5>Độ ẩm</h5>
-                    <div class="value" id="hum-value">{{ data.do_am }}</div>
-                    <div class="unit">%</div>
-                    <div class="mt-2">
-                        <span class="badge bg-{{ 'warning' if data.do_am < 40 or data.do_am > 70 else 'success' }}">
-                            {{ 'Khô' if data.do_am < 40 else 'Ẩm' if data.do_am > 70 else 'Tốt' }}
-                        </span>
+                </div>
+
+                <!-- Độ ẩm -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="sensor-card border-info" id="hum-card">
+                        <div class="sensor-icon text-info">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <h5 class="fw-bold">💧 Độ ẩm</h5>
+                        <div class="sensor-value text-info" id="hum-value">{{ data.do_am|round(1) }}</div>
+                        <div class="sensor-unit">Phần trăm (%)</div>
+                        <div class="mt-3">
+                            <span class="badge bg-{{ 'warning' if data.do_am < 40 or data.do_am > 70 else 'success' }}">
+                                {{ 'Khô' if data.do_am < 40 else 'Ẩm' if data.do_am > 70 else 'Tốt' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ánh sáng -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="sensor-card border-warning" id="light-card">
+                        <div class="sensor-icon text-warning">
+                            <i class="fas fa-sun"></i>
+                        </div>
+                        <h5 class="fw-bold">☀️ Ánh sáng</h5>
+                        <div class="sensor-value text-warning" id="light-value">{{ data.anh_sang|round }}</div>
+                        <div class="sensor-unit">Lux (lx)</div>
+                        <div class="mt-3">
+                            <span class="badge bg-{{ 'danger' if data.anh_sang < 200 else 'warning' if data.anh_sang < 300 else 'success' }}">
+                                {{ 'Tối' if data.anh_sang < 200 else 'Vừa' if data.anh_sang < 300 else 'Sáng' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chất lượng không khí -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="sensor-card border-success" id="air-card">
+                        <div class="sensor-icon text-success">
+                            <i class="fas fa-wind"></i>
+                        </div>
+                        <h5 class="fw-bold">💨 Chất lượng KK</h5>
+                        <div class="sensor-value text-success" id="air-value">{{ data.chat_luong_kk|round }}</div>
+                        <div class="sensor-unit">PPM (Parts Per Million)</div>
+                        <div class="mt-3">
+                            <span class="badge bg-{{ 'danger' if data.chat_luong_kk > 800 else 'warning' if data.chat_luong_kk > 400 else 'success' }}">
+                                {{ 'Ô nhiễm' if data.chat_luong_kk > 800 else 'Trung bình' if data.chat_luong_kk > 400 else 'Tốt' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Độ ồn -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="sensor-card border-danger" id="noise-card">
+                        <div class="sensor-icon text-danger">
+                            <i class="fas fa-volume-up"></i>
+                        </div>
+                        <h5 class="fw-bold">🔊 Độ ồn</h5>
+                        <div class="sensor-value text-danger" id="noise-value">{{ data.do_on|round }}</div>
+                        <div class="sensor-unit">Decibel (dB)</div>
+                        <div class="mt-3">
+                            <span class="badge bg-{{ 'danger' if data.do_on > 70 else 'warning' if data.do_on > 50 else 'success' }}">
+                                {{ 'Ồn ào' if data.do_on > 70 else 'Bình thường' if data.do_on > 50 else 'Yên tĩnh' }}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Ánh sáng -->
-            <div class="col-md-3">
-                <div class="card sensor-card">
-                    <div class="sensor-icon status-{{ 'danger' if data.anh_sang < 200 else 'warning' if data.anh_sang < 300 else 'good' }}">
-                        <i class="fas fa-sun"></i>
-                    </div>
-                    <h5>Ánh sáng</h5>
-                    <div class="value" id="light-value">{{ data.anh_sang }}</div>
-                    <div class="unit">Lux</div>
-                    <div class="mt-2">
-                        <span class="badge bg-{{ 'danger' if data.anh_sang < 200 else 'warning' if data.anh_sang < 300 else 'success' }}">
-                            {{ 'Tối' if data.anh_sang < 200 else 'Vừa' if data.anh_sang < 300 else 'Sáng' }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chất lượng không khí -->
-            <div class="col-md-3">
-                <div class="card sensor-card">
-                    <div class="sensor-icon status-{{ 'danger' if data.chat_luong_kk > 800 else 'warning' if data.chat_luong_kk > 400 else 'good' }}">
-                        <i class="fas fa-wind"></i>
-                    </div>
-                    <h5>Chất lượng KK</h5>
-                    <div class="value" id="air-value">{{ data.chat_luong_kk }}</div>
-                    <div class="unit">PPM</div>
-                    <div class="mt-2">
-                        <span class="badge bg-{{ 'danger' if data.chat_luong_kk > 800 else 'warning' if data.chat_luong_kk > 400 else 'success' }}">
-                            {{ 'Ô nhiễm' if data.chat_luong_kk > 800 else 'Trung bình' if data.chat_luong_kk > 400 else 'Tốt' }}
-                        </span>
+            <!-- Charts and Controls -->
+            <div class="row g-4 mb-4">
+                <!-- Charts -->
+                <div class="col-lg-8">
+                    <div class="chart-container">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="fw-bold mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Biểu đồ dữ liệu
+                            </h4>
+                            <div class="chart-toggle">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="chartToggle" value="bar">
+                                    <label class="form-check-label" for="chartToggle">
+                                        <span id="chartLabel">Biểu đồ đường</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Line Chart -->
+                        <div id="lineChartContainer">
+                            <canvas id="lineChart" height="250"></canvas>
+                        </div>
+                        
+                        <!-- Bar Chart -->
+                        <div id="barChartContainer" style="display: none;">
+                            <canvas id="barChart" height="250"></canvas>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Biểu đồ và điều khiển -->
-        <div class="row mt-4">
-            <!-- Biểu đồ -->
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-chart-line"></i> Biểu đồ theo thời gian</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="sensorChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Điều khiển -->
-            {% if role == 'admin' %}
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-gamepad"></i> Điều khiển thiết bị</h5>
-                    </div>
-                    <div class="card-body">
+                <!-- Control Panel -->
+                <div class="col-lg-4">
+                    <div class="control-panel">
+                        <h4 class="fw-bold mb-4">
+                            <i class="fas fa-gamepad me-2"></i>Điều khiển thiết bị
+                        </h4>
+                        
+                        {% if role in ['admin', 'teacher'] %}
                         <!-- Quạt -->
-                        <div class="mb-4">
-                            <h6><i class="fas fa-fan"></i> Quạt</h6>
-                            <div class="btn-group w-100" role="group">
-                                <button class="btn btn-success control-btn" onclick="controlDevice('quat', 'on')">
+                        <div class="device-control">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="device-icon bg-success bg-opacity-10 text-success">
+                                    <i class="fas fa-fan" id="quat-icon"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0">🌀 Quạt</h5>
+                                    <div class="text-muted small">Điều chỉnh nhiệt độ</div>
+                                </div>
+                            </div>
+                            <div class="control-buttons d-flex justify-content-center">
+                                <button class="btn btn-outline-success control-btn" 
+                                        data-device="quat" 
+                                        data-action="BẬT">
                                     <i class="fas fa-play"></i> BẬT
                                 </button>
-                                <button class="btn btn-danger control-btn" onclick="controlDevice('quat', 'off')">
+                                <button class="btn btn-danger control-btn active" 
+                                        data-device="quat" 
+                                        data-action="TẮT">
                                     <i class="fas fa-stop"></i> TẮT
                                 </button>
                             </div>
-                            <div class="mt-2 text-center">
-                                <span class="badge bg-{{ 'success' if data.quat == 'ON' else 'secondary' }}">
-                                    Trạng thái: {{ data.quat }}
-                                </span>
+                            <div class="text-center mt-3">
+                                <span class="badge bg-secondary p-2 fs-6" id="quat-status">{{ data.quat }}</span>
                             </div>
                         </div>
 
                         <!-- Đèn -->
-                        <div class="mb-4">
-                            <h6><i class="fas fa-lightbulb"></i> Đèn</h6>
-                            <div class="btn-group w-100" role="group">
-                                <button class="btn btn-success control-btn" onclick="controlDevice('den', 'on')">
+                        <div class="device-control">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="device-icon bg-warning bg-opacity-10 text-warning">
+                                    <i class="fas fa-lightbulb" id="den-icon"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0">💡 Đèn</h5>
+                                    <div class="text-muted small">Điều chỉnh ánh sáng</div>
+                                </div>
+                            </div>
+                            <div class="control-buttons d-flex justify-content-center">
+                                <button class="btn btn-success control-btn active" 
+                                        data-device="den" 
+                                        data-action="BẬT">
                                     <i class="fas fa-lightbulb"></i> BẬT
                                 </button>
-                                <button class="btn btn-danger control-btn" onclick="controlDevice('den', 'off')">
+                                <button class="btn btn-outline-danger control-btn" 
+                                        data-device="den" 
+                                        data-action="TẮT">
                                     <i class="fas fa-lightbulb"></i> TẮT
                                 </button>
                             </div>
-                            <div class="mt-2 text-center">
-                                <span class="badge bg-{{ 'success' if data.den == 'ON' else 'secondary' }}">
-                                    Trạng thái: {{ data.den }}
-                                </span>
+                            <div class="text-center mt-3">
+                                <span class="badge bg-success p-2 fs-6" id="den-status">{{ data.den }}</span>
                             </div>
                         </div>
 
-                        <!-- Chế độ tự động -->
-                        <div class="mb-4">
-                            <h6><i class="fas fa-robot"></i> Chế độ tự động</h6>
+                        <!-- Cửa sổ -->
+                        <div class="device-control">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="device-icon bg-info bg-opacity-10 text-info">
+                                    <i class="fas fa-window-restore" id="cua_so-icon"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0">🚪 Cửa sổ</h5>
+                                    <div class="text-muted small">Thông thoáng không khí</div>
+                                </div>
+                            </div>
+                            <div class="control-buttons d-flex justify-content-center">
+                                <button class="btn btn-outline-info control-btn" 
+                                        data-device="cua_so" 
+                                        data-action="MỞ">
+                                    <i class="fas fa-expand-alt"></i> MỞ
+                                </button>
+                                <button class="btn btn-info control-btn active" 
+                                        data-device="cua_so" 
+                                        data-action="ĐÓNG">
+                                    <i class="fas fa-compress-alt"></i> ĐÓNG
+                                </button>
+                            </div>
+                            <div class="text-center mt-3">
+                                <span class="badge bg-secondary p-2 fs-6" id="cua_so-status">{{ data.cua_so }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Cảnh báo -->
+                        <div class="device-control">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="device-icon bg-danger bg-opacity-10 text-danger">
+                                    <i class="fas fa-bell" id="canh_bao-icon"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0">⚠️ Cảnh báo</h5>
+                                    <div class="text-muted small">Báo động khi cần</div>
+                                </div>
+                            </div>
+                            <div class="control-buttons d-flex justify-content-center">
+                                <button class="btn btn-outline-danger control-btn" 
+                                        data-device="canh_bao" 
+                                        data-action="BẬT">
+                                    <i class="fas fa-bell"></i> BẬT
+                                </button>
+                                <button class="btn btn-danger control-btn active" 
+                                        data-device="canh_bao" 
+                                        data-action="TẮT">
+                                    <i class="fas fa-bell-slash"></i> TẮT
+                                </button>
+                            </div>
+                            <div class="text-center mt-3">
+                                <span class="badge bg-secondary p-2 fs-6" id="canh_bao-status">{{ data.canh_bao }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Auto Mode -->
+                        <div class="auto-mode">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="auto-mode" checked>
-                                <label class="form-check-label" for="auto-mode">Tự động điều chỉnh</label>
+                                <input class="form-check-input" type="checkbox" id="autoModeToggle" 
+                                       {% if settings.auto_mode %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="autoModeToggle">
+                                    <i class="fas fa-robot"></i> Chế độ tự động
+                                </label>
                             </div>
-                            <small class="text-muted">Hệ thống sẽ tự động bật/tắt thiết bị dựa trên ngưỡng</small>
+                            <div class="small mt-2">
+                                Hệ thống tự động điều chỉnh thiết bị dựa trên ngưỡng cài đặt
+                            </div>
                         </div>
+                        
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Chỉ dành cho giáo viên và quản trị viên</strong>
+                            <div class="small mt-2">
+                                Bạn không có quyền điều khiển thiết bị. Vui lòng liên hệ quản trị viên.
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Xuất báo cáo -->
-                        <div>
-                            <button class="btn btn-secondary w-100" disabled>
-                                <i class="fas fa-file-pdf"></i> PDF (Đang cập nhật)
-                            </button>
+            <!-- Evaluation -->
+            <div class="row g-4">
+                <!-- Overall Evaluation -->
+                <div class="col-lg-4">
+                    <div class="evaluation-card border-{{ evaluation.overall_class }}">
+                        <h4 class="fw-bold mb-4">
+                            <i class="fas fa-star me-2"></i>Đánh giá tổng thể
+                        </h4>
+                        
+                        <div class="text-center mb-4">
+                            <div class="score-display bg-{{ evaluation.overall_class }}" id="score-value">
+                                {{ evaluation.total_score }}/10
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Điểm đánh giá</span>
+                                <span>{{ evaluation.percentage }}%</span>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-{{ evaluation.overall_class }}" 
+                                     id="score-progress" style="width: {{ evaluation.percentage }}%">
+                                    {{ evaluation.percentage }}%
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="overall-evaluation" class="card evaluation-card border-{{ evaluation.overall_class }} bg-{{ evaluation.overall_class }} bg-opacity-10">
+                            <div class="text-center p-3">
+                                <div class="fs-2 fw-bold text-{{ evaluation.overall_class }} mb-2">
+                                    {{ evaluation.overall }}
+                                </div>
+                                <div class="fs-5 fw-bold">
+                                    {{ evaluation.class_eval }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Evaluation -->
+                <div class="col-lg-8">
+                    <div class="chart-container">
+                        <h4 class="fw-bold mb-4">
+                            <i class="fas fa-clipboard-check me-2"></i>Đánh giá chi tiết
+                        </h4>
+                        
+                        <div class="alert alert-{{ evaluation.overall_class }}" id="advice-text">
+                            <i class="fas fa-comment-medical me-2"></i>
+                            <strong>Khuyến nghị:</strong> {{ evaluation.advice }}
+                        </div>
+                        
+                        <div id="evaluation-details" class="mt-4">
+                            <div class="row g-3">
+                                {% for item in evaluation.evaluations %}
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3 border border-{{ item[2] }} border-opacity-25">
+                                        <div>
+                                            <span class="fs-5">{{ item[0] }}</span>
+                                            <div class="text-muted small">
+                                                {% if item[1] == 'Lý tưởng' %}Hoàn hảo cho học tập
+                                                {% elif item[1] == 'Chấp nhận' %}Có thể chấp nhận được
+                                                {% elif item[1] == 'Không tốt' %}Cần cải thiện
+                                                {% elif item[1] == 'Tốt' %}Đạt yêu cầu
+                                                {% elif item[1] == 'Trung bình' %}Cần theo dõi
+                                                {% elif item[1] == 'Đủ sáng' %}Đạt tiêu chuẩn
+                                                {% elif item[1] == 'Hơi tối' %}Cần bổ sung ánh sáng
+                                                {% elif item[1] == 'Thiếu sáng' %}Ảnh hưởng thị lực
+                                                {% elif item[1] == 'Trong lành' %}Không khí tốt
+                                                {% elif item[1] == 'Ô nhiễm' %}Cần thông thoáng
+                                                {% elif item[1] == 'Yên tĩnh' %}Môi trường tốt
+                                                {% elif item[1] == 'Bình thường' %}Ổn định
+                                                {% elif item[1] == 'Ồn ào' %}Gây mất tập trung
+                                                {% else %}Đang đánh giá{% endif %}
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-{{ item[2] }} fs-6 px-3 py-2">{{ item[1] }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            {% endif %}
-        </div>
 
-        <!-- Nhận xét tiết học -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-chalkboard-teacher"></i> Đánh giá môi trường học tập</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row" id="class-evaluation">
-                            <!-- Sẽ được cập nhật bằng JavaScript -->
-                            <div class="col-md-3 text-center">
-                                <i class="fas fa-thermometer-three-quarters fa-2x text-warning"></i>
-                                <h6 class="mt-2">Nhiệt độ</h6>
-                                <span id="eval-temp" class="badge bg-warning">Đang kiểm tra...</span>
-                            </div>
-                            <div class="col-md-3 text-center">
-                                <i class="fas fa-volume-up fa-2x text-info"></i>
-                                <h6 class="mt-2">Độ ồn</h6>
-                                <span id="eval-noise" class="badge bg-info">Đang kiểm tra...</span>
-                            </div>
-                            <div class="col-md-3 text-center">
-                                <i class="fas fa-air-freshener fa-2x text-success"></i>
-                                <h6 class="mt-2">Không khí</h6>
-                                <span id="eval-air" class="badge bg-success">Đang kiểm tra...</span>
-                            </div>
-                            <div class="col-md-3 text-center">
-                                <i class="fas fa-star fa-2x text-primary"></i>
-                                <h6 class="mt-2">Tổng thể</h6>
-                                <span id="eval-overall" class="badge bg-primary">Đang đánh giá...</span>
-                            </div>
-                        </div>
-                        <div class="mt-3" id="recommendations">
-                            <!-- Khuyến nghị sẽ hiện ở đây -->
-                        </div>
+            <!-- Footer -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="text-center text-muted">
+                        <p class="mb-2">
+                            <strong>CLASSGUARD</strong> - Hệ thống giám sát môi trường lớp học thông minh
+                        </p>
+                        <p class="small">
+                            <i class="fas fa-sync-alt"></i> Dữ liệu cập nhật mỗi 5 giây | 
+                            <i class="fas fa-shield-alt"></i> Phiên bản 2.0 | 
+                            <i class="fas fa-heart text-danger"></i> Dự án Khoa học Kỹ thuật - THCS
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Footer -->
-        <footer class="mt-4 text-center text-muted">
-            <p>Hệ thống CLASSGUARD - Giám sát môi trường lớp học thông minh</p>
-            <p>Dữ liệu cập nhật 5 giây/lần | Phiên bản 1.0</p>
-        </footer>
     </div>
 
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-        // Biểu đồ
-        const ctx = document.getElementById('sensorChart').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [
-                    {
-                        label: 'Nhiệt độ (°C)',
-                        data: [],
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Độ ẩm (%)',
-                        data: [],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: false
-                    }
-                }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update chart toggle label
+            const chartToggle = document.getElementById('chartToggle');
+            const chartLabel = document.getElementById('chartLabel');
+            
+            if (chartToggle) {
+                chartToggle.addEventListener('change', function() {
+                    chartLabel.textContent = this.checked ? 'Biểu đồ cột' : 'Biểu đồ đường';
+                });
+            }
+            
+            // Auto mode toggle
+            const autoModeToggle = document.getElementById('autoModeToggle');
+            if (autoModeToggle) {
+                autoModeToggle.addEventListener('change', function() {
+                    fetch('/settings', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `auto_mode=${this.checked ? 'on' : 'off'}`
+                    });
+                });
             }
         });
-
-        // Cập nhật thời gian
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('current-time').textContent = 
-                now.toLocaleTimeString('vi-VN');
-        }
-        setInterval(updateTime, 1000);
-        updateTime();
-
-        // Lấy dữ liệu cảm biến
-        function fetchSensorData() {
-            fetch('/get_sensor_data')
-                .then(response => response.json())
-                .then(data => {
-                    // Cập nhật giá trị
-                    document.getElementById('temp-value').textContent = data.nhiet_do.toFixed(1);
-                    document.getElementById('hum-value').textContent = data.do_am.toFixed(1);
-                    document.getElementById('light-value').textContent = Math.round(data.anh_sang);
-                    document.getElementById('air-value').textContent = Math.round(data.chat_luong_kk);
-                    document.getElementById('last-update').textContent = data.timestamp || '--:--:--';
-
-                    // Cập nhật biểu đồ
-                    const now = new Date().toLocaleTimeString('vi-VN', {hour12: false});
-                    chart.data.labels.push(now);
-                    chart.data.datasets[0].data.push(data.nhiet_do);
-                    chart.data.datasets[1].data.push(data.do_am);
-                    
-                    if (chart.data.labels.length > 20) {
-                        chart.data.labels.shift();
-                        chart.data.datasets[0].data.shift();
-                        chart.data.datasets[1].data.shift();
-                    }
-                    chart.update();
-
-                    // Đánh giá tiết học
-                    evaluateClass(data);
-
-                    // Kiểm tra cảnh báo
-                    checkAlerts(data);
-                })
-                .catch(error => console.error('Lỗi:', error));
-        }
-
-        // Đánh giá môi trường học tập
-        function evaluateClass(data) {
-            // Đánh giá nhiệt độ
-            let tempEval, tempColor;
-            if (data.nhiet_do < 20) {
-                tempEval = 'Lạnh';
-                tempColor = 'info';
-            } else if (data.nhiet_do <= 28) {
-                tempEval = 'Lý tưởng';
-                tempColor = 'success';
-            } else if (data.nhiet_do <= 32) {
-                tempEval = 'Hơi nóng';
-                tempColor = 'warning';
-            } else {
-                tempEval = 'Quá nóng';
-                tempColor = 'danger';
-            }
-            document.getElementById('eval-temp').textContent = tempEval;
-            document.getElementById('eval-temp').className = `badge bg-${tempColor}`;
-
-            // Đánh giá độ ồn
-            let noiseEval, noiseColor;
-            if (data.do_on < 50) {
-                noiseEval = 'Yên tĩnh';
-                noiseColor = 'success';
-            } else if (data.do_on <= 70) {
-                noiseEval = 'Bình thường';
-                noiseColor = 'warning';
-            } else {
-                noiseEval = 'Ồn ào';
-                noiseColor = 'danger';
-            }
-            document.getElementById('eval-noise').textContent = noiseEval;
-            document.getElementById('eval-noise').className = `badge bg-${noiseColor}`;
-
-            // Đánh giá không khí
-            let airEval, airColor;
-            if (data.chat_luong_kk < 400) {
-                airEval = 'Trong lành';
-                airColor = 'success';
-            } else if (data.chat_luong_kk <= 800) {
-                airEval = 'Trung bình';
-                airColor = 'warning';
-            } else {
-                airEval = 'Ô nhiễm';
-                airColor = 'danger';
-            }
-            document.getElementById('eval-air').textContent = airEval;
-            document.getElementById('eval-air').className = `badge bg-${airColor}`;
-
-            // Đánh giá tổng thể
-            let overallScore = 0;
-            if (data.nhiet_do >= 20 && data.nhiet_do <= 28) overallScore += 2;
-            else if (data.nhiet_do > 28 && data.nhiet_do <= 32) overallScore += 1;
-            
-            if (data.do_on < 70) overallScore += 2;
-            else overallScore += 1;
-            
-            if (data.chat_luong_kk < 800) overallScore += 2;
-            else overallScore += 1;
-            
-            let overallEval, overallColor;
-            if (overallScore >= 5) {
-                overallEval = 'Tốt';
-                overallColor = 'success';
-            } else if (overallScore >= 3) {
-                overallEval = 'Khá';
-                overallColor = 'warning';
-            } else {
-                overallEval = 'Cần cải thiện';
-                overallColor = 'danger';
-            }
-            document.getElementById('eval-overall').textContent = overallEval;
-            document.getElementById('eval-overall').className = `badge bg-${overallColor}`;
-
-            // Khuyến nghị
-            let recommendations = [];
-            if (data.nhiet_do > 28) {
-                recommendations.push('Nhiệt độ cao: Nên bật quạt hoặc điều hòa');
-            }
-            if (data.do_on > 70) {
-                recommendations.push('Lớp học ồn: Cần giảm tiếng ồn');
-            }
-            if (data.chat_luong_kk > 800) {
-                recommendations.push('Chất lượng không khí kém: Nên mở cửa thông thoáng');
-            }
-            if (data.anh_sang < 300) {
-                recommendations.push('Ánh sáng yếu: Nên bật đèn');
-            }
-            
-            const recHtml = recommendations.length > 0 ? 
-                '<strong>Khuyến nghị:</strong><br>' + recommendations.join('<br>') :
-                '<div class="text-success"><i class="fas fa-check-circle"></i> Môi trường học tập tốt!</div>';
-            
-            document.getElementById('recommendations').innerHTML = recHtml;
-        }
-
-        // Kiểm tra cảnh báo
-        function checkAlerts(data) {
-            const alerts = [];
-            if (data.nhiet_do > 32) {
-                alerts.push({
-                    type: 'danger',
-                    message: '⚠️ Nhiệt độ quá cao! Cần làm mát ngay.'
-                });
-            }
-            if (data.do_on > 80) {
-                alerts.push({
-                    type: 'warning',
-                    message: '🔊 Lớp học quá ồn! Cần giữ trật tự.'
-                });
-            }
-            if (data.chat_luong_kk > 1000) {
-                alerts.push({
-                    type: 'danger',
-                    message: '💨 Chất lượng không khí nguy hiểm! Mở cửa ngay.'
-                });
-            }
-            
-            showAlerts(alerts);
-        }
-
-        // Hiển thị cảnh báo
-        function showAlerts(alerts) {
-            const container = document.getElementById('alert-container');
-            container.innerHTML = '';
-            
-            alerts.forEach(alert => {
-                const alertDiv = document.createElement('div');
-                alertDiv.className = `alert alert-${alert.type} alert-dismissible fade show`;
-                alertDiv.innerHTML = `
-                    ${alert.message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                container.appendChild(alertDiv);
-            });
-        }
-
-        // Điều khiển thiết bị
-        function controlDevice(device, action) {
-            if ("{{ role }}" !== 'admin') {
-                alert('Bạn không có quyền điều khiển!');
-                return;
-            }
-            
-            fetch('/control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    device: device,
-                    action: action
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('Thành công', `Đã ${action === 'on' ? 'bật' : 'tắt'} ${device}`, 'success');
-                } else {
-                    showToast('Lỗi', data.error || 'Có lỗi xảy ra', 'danger');
-                }
-            });
-        }
-
-        // Hiển thị thông báo nhỏ
-        function showToast(title, message, type) {
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type} border-0`;
-            toast.setAttribute('role', 'alert');
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <strong>${title}:</strong> ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            `;
-            
-            const container = document.createElement('div');
-            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            container.appendChild(toast);
-            document.body.appendChild(container);
-            
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
-            
-            toast.addEventListener('hidden.bs.toast', function () {
-                container.remove();
-            });
-        }
-
-        // Tự động cập nhật dữ liệu mỗi 5 giây
-        setInterval(fetchSensorData, 5000);
-        fetchSensorData(); // Lấy dữ liệu ngay khi tải trang
     </script>
 </body>
 </html>
-
