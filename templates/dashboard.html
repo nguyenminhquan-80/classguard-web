@@ -24,7 +24,78 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
         }
-        
+
+        /* Fix chart containers */
+.chart-container {
+    height: 300px !important;
+    min-height: 300px;
+    max-height: 300px;
+    position: relative;
+}
+
+/* Window animation */
+@keyframes windowOpen {
+    0% { transform: rotateY(0deg) scale(1); }
+    50% { transform: rotateY(45deg) scale(1.1); }
+    100% { transform: rotateY(0deg) scale(1.1); }
+}
+
+@keyframes windowClose {
+    0% { transform: rotateY(0deg) scale(1.1); }
+    50% { transform: rotateY(-45deg) scale(1); }
+    100% { transform: rotateY(0deg) scale(1); }
+}
+
+.window-open {
+    animation: windowOpen 0.5s ease-out forwards;
+}
+
+.window-close {
+    animation: windowClose 0.5s ease-out forwards;
+}
+
+/* Responsive chart fix */
+@media (max-width: 992px) {
+    .chart-container {
+        height: 280px !important;
+        min-height: 280px;
+        max-height: 280px;
+    }
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px !important;
+        min-height: 250px;
+        max-height: 250px;
+    }
+}
+
+/* Device icon effects */
+.fa-fan.fa-spin {
+    animation: fa-spin 2s infinite linear;
+}
+
+.fa-bell.fa-shake {
+    animation: fa-shake 0.5s infinite;
+}
+
+@keyframes fa-shake {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* Chart toggle button */
+.form-switch .form-check-input:checked {
+    background-color: #4361ee;
+    border-color: #4361ee;
+}
+
+.form-switch .form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+}        
         /* Main Container */
         .main-container {
             max-width: 1400px;
@@ -408,77 +479,6 @@
             color: #6c757d;
         }
 
-        /* Fix chart containers */
-.chart-container {
-    height: 300px !important;
-    min-height: 300px;
-    max-height: 300px;
-    position: relative;
-}
-
-/* Window animation */
-@keyframes windowOpen {
-    0% { transform: rotateY(0deg) scale(1); }
-    50% { transform: rotateY(45deg) scale(1.1); }
-    100% { transform: rotateY(0deg) scale(1.1); }
-}
-
-@keyframes windowClose {
-    0% { transform: rotateY(0deg) scale(1.1); }
-    50% { transform: rotateY(-45deg) scale(1); }
-    100% { transform: rotateY(0deg) scale(1); }
-}
-
-.window-open {
-    animation: windowOpen 0.5s ease-out forwards;
-}
-
-.window-close {
-    animation: windowClose 0.5s ease-out forwards;
-}
-
-/* Responsive chart fix */
-@media (max-width: 992px) {
-    .chart-container {
-        height: 280px !important;
-        min-height: 280px;
-        max-height: 280px;
-    }
-}
-
-@media (max-width: 768px) {
-    .chart-container {
-        height: 250px !important;
-        min-height: 250px;
-        max-height: 250px;
-    }
-}
-
-/* Device icon effects */
-.fa-fan.fa-spin {
-    animation: fa-spin 2s infinite linear;
-}
-
-.fa-bell.fa-shake {
-    animation: fa-shake 0.5s infinite;
-}
-
-@keyframes fa-shake {
-    0% { transform: rotate(0deg); }
-    25% { transform: rotate(-10deg); }
-    75% { transform: rotate(10deg); }
-    100% { transform: rotate(0deg); }
-}
-
-/* Chart toggle button */
-.form-switch .form-check-input:checked {
-    background-color: #4361ee;
-    border-color: #4361ee;
-}
-
-.form-switch .form-check-input:focus {
-    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
-}        
         /* Auto Mode Card */
         .auto-mode-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1226,4 +1226,5 @@
     </script>
 </body>
 </html>
+
 
