@@ -926,28 +926,56 @@
         </div>
 
         <!-- Charts Section -->
-        <div class="charts-section fade-in">
-            <div class="section-header">
-                <h2 class="section-title">
-                    <i class="fas fa-chart-line me-2"></i>Biểu đồ dữ liệu
-                </h2>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="chartToggle" style="width: 60px; height: 30px;">
-                    <label class="form-check-label fw-bold" for="chartToggle">
-                        <span id="chartLabel">Biểu đồ đường</span>
-                    </label>
+<div class="charts-section fade-in">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="fas fa-chart-line me-2"></i>Biểu đồ dữ liệu
+        </h2>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="chartToggle" style="width: 60px; height: 30px;">
+            <label class="form-check-label fw-bold" for="chartToggle">
+                <span id="chartLabel">Biểu đồ đường</span>
+            </label>
+        </div>
+    </div>
+    
+    <div class="chart-container" style="height: 320px;">
+        <div id="lineChartContainer">
+            <canvas id="lineChart" style="width: 100%; height: 320px;"></canvas>
+        </div>
+        <div id="barChartContainer" style="display: none;">
+            <canvas id="barChart" style="width: 100%; height: 320px;"></canvas>
+        </div>
+    </div>
+    
+    <!-- Legend cho 5 đường biểu đồ -->
+    <div class="row mt-3" id="lineChartLegend">
+        <div class="col-12">
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                <div class="d-flex align-items-center">
+                    <div class="legend-color" style="background-color: #dc3545; width: 20px; height: 10px; margin-right: 8px;"></div>
+                    <small class="text-muted">🌡️ Nhiệt độ (°C)</small>
                 </div>
-            </div>
-            
-            <div class="chart-container">
-                <div id="lineChartContainer">
-                    <canvas id="lineChart"></canvas>
+                <div class="d-flex align-items-center">
+                    <div class="legend-color" style="background-color: #0d6efd; width: 20px; height: 10px; margin-right: 8px;"></div>
+                    <small class="text-muted">💧 Độ ẩm (%)</small>
                 </div>
-                <div id="barChartContainer" style="display: none;">
-                    <canvas id="barChart"></canvas>
+                <div class="d-flex align-items-center">
+                    <div class="legend-color" style="background-color: #ffc107; width: 20px; height: 10px; margin-right: 8px;"></div>
+                    <small class="text-muted">☀️ Ánh sáng (lux)</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="legend-color" style="background-color: #198754; width: 20px; height: 10px; margin-right: 8px;"></div>
+                    <small class="text-muted">💨 Chất lượng KK (PPM)</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="legend-color" style="background-color: #6f42c1; width: 20px; height: 10px; margin-right: 8px;"></div>
+                    <small class="text-muted">🔊 Độ ồn (dB)</small>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
         <!-- Control Panel -->
         <div class="control-panel fade-in">
@@ -1265,6 +1293,7 @@
     </script>
 </body>
 </html>
+
 
 
 
