@@ -447,6 +447,8 @@
     <script>
         // Update slider values
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('⚙️ Settings page loaded');
+            
             // Temperature sliders
             const tempMinSlider = document.getElementById('tempMinSlider');
             const tempMaxSlider = document.getElementById('tempMaxSlider');
@@ -494,6 +496,8 @@
         });
         
         function saveSettings() {
+            console.log('💾 Saving settings...');
+            
             const autoMode = document.getElementById('autoModeToggle').checked;
             const tempMin = document.getElementById('tempMinSlider').value;
             const tempMax = document.getElementById('tempMaxSlider').value;
@@ -501,15 +505,47 @@
             const airMax = document.getElementById('airMaxSlider').value;
             const noiseMax = document.getElementById('noiseMaxSlider').value;
             
-            fetch('/settings', {
+            // Hiển thị loading
+            showAlert('info', '⏳ Đang lưu cài đặt...');
+            
+            // Tạo data object
+            const data = {
+                auto_mode: autoMode,
+                temp_min: tempMin,
+                temp_max: tempMax,
+                light_min: lightMin,
+                air_max: airMax,
+                noise_max: noiseMax
+            };
+            
+            console.log('📤 Sending data:', data);
+            
+            // THỬ 2 CÁCH GỬI REQUEST:
+            
+            // Cách 1: Dùng JSON
+            fetch('/update_settings', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: `auto_mode=${autoMode ? 'on' : 'off'}&temp_min=${tempMin}&temp_max=${tempMax}&light_min=${lightMin}&air_max=${airMax}&noise_max=${noiseMax}`
+                body: JSON.stringify(data)
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response headers:', response.headers.get('content-type'));
+                
+                // Kiểm tra nếu response không phải JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        console.error('❌ Server returned non-JSON response:', text.substring(0, 200));
+                        throw new Error('Server returned HTML instead of JSON');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('✅ Response data:', data);
                 if (data.success) {
                     showAlert('success', '✅ Đã lưu cài đặt thành công!');
                 } else {
@@ -517,7 +553,50 @@
                 }
             })
             .catch(error => {
-                showAlert('danger', '❌ Lỗi kết nối: ' + error);
+                console.error('❌ Fetch error:', error);
+                
+                // Thử cách 2: Form data nếu cách 1 thất bại
+                console.log('🔄 Trying form data method...');
+                
+                const formData = new FormData();
+                formData.append('auto_mode', autoMode ? 'on' : 'off');
+                formData.append('temp_min', tempMin);
+                formData.append('temp_max', tempMax);
+                formData.append('light_min', lightMin);
+                formData.append('air_max', airMax);
+                formData.append('noise_max', noiseMax);
+                
+                fetch('/update_settings', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(text => {
+                    console.log('📥 Form response:', text.substring(0, 200));
+                    
+                    // Cố gắng parse JSON từ response
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.success) {
+                            showAlert('success', '✅ Đã lưu cài đặt thành công! (Form data)');
+                        } else {
+                            showAlert('danger', '❌ Lỗi: ' + (data.error || 'Không thể lưu cài đặt'));
+                        }
+                    } catch (e) {
+                        // Nếu không phải JSON, có thể server trả về HTML
+                        if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
+                            showAlert('danger', '❌ Lỗi: Server trả về trang HTML thay vì JSON. Kiểm tra endpoint /update_settings');
+                        } else if (text.includes('success') || text.includes('true')) {
+                            showAlert('success', '✅ Cài đặt đã được lưu!');
+                        } else {
+                            showAlert('warning', '⚠️ Không thể parse response từ server. Kiểm tra console để biết chi tiết.');
+                        }
+                    }
+                })
+                .catch(error2 => {
+                    console.error('❌ Form data error:', error2);
+                    showAlert('danger', '❌ Lỗi kết nối đến server. Kiểm tra console (F12)');
+                });
             });
         }
         
@@ -565,6 +644,7 @@
             
             const alertHtml = `
                 <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
                     ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
