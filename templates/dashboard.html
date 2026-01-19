@@ -3,361 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bảng điều khiển - CLASSGUARD</title>
+    <title>CLASSGUARD - Bảng điều khiển</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #4CAF50;
-            --secondary: #2196F3;
-            --danger: #f44336;
-            --warning: #FF9800;
-            --dark: #333;
-            --light: #f5f5f5;
+            --primary: #667eea;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
         }
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         body {
+            background: #f8fafc;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
-            color: var(--dark);
         }
-        
-        /* Sidebar */
         .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 250px;
-            height: 100vh;
             background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            padding: 20px 0;
-            z-index: 1000;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 250px;
         }
-        
-        .logo {
-            text-align: center;
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .logo h2 {
-            color: var(--primary);
-            font-size: 24px;
-        }
-        
-        .logo p {
-            color: #666;
-            font-size: 12px;
-        }
-        
-        .nav-menu {
-            margin-top: 30px;
-        }
-        
-        .nav-item {
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            color: #555;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        
-        .nav-item:hover, .nav-item.active {
-            background: rgba(76, 175, 80, 0.1);
-            color: var(--primary);
-            border-left: 4px solid var(--primary);
-        }
-        
-        .nav-item i {
-            margin-right: 10px;
-            width: 20px;
-        }
-        
-        .user-info {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            padding: 20px;
-            border-top: 1px solid #eee;
-            display: flex;
-            align-items: center;
-        }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: var(--primary);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 10px;
-            font-weight: bold;
-        }
-        
-        /* Main content */
         .main-content {
             margin-left: 250px;
             padding: 20px;
         }
-        
-        .header {
-            background: white;
-            padding: 20px;
+        .nav-link {
+            color: #4a5568;
+            padding: 12px 20px;
+            margin: 5px 0;
             border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .header h1 {
-            color: var(--dark);
-            font-size: 24px;
-        }
-        
-        .status-bar {
-            display: flex;
-            gap: 15px;
-        }
-        
-        .status-item {
-            display: flex;
-            align-items: center;
-        }
-        
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        
-        .online { background: var(--primary); }
-        .offline { background: var(--danger); }
-        
-        /* Sensor Cards Grid */
-        .sensor-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .sensor-card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-        }
-        
-        .sensor-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .card-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: white;
-        }
-        
-        .temp { background: linear-gradient(135deg, #FF6B6B, #FF8E53); }
-        .humi { background: linear-gradient(135deg, #4ECDC4, #44A08D); }
-        .light { background: linear-gradient(135deg, #FFD93D, #FF9C3D); }
-        .air { background: linear-gradient(135deg, #6A89CC, #4A69BD); }
-        .sound { background: linear-gradient(135deg, #B8E994, #78E08F); }
-        .eval { background: linear-gradient(135deg, #FDA7DF, #D980FA); }
-        
-        .card-value {
-            font-size: 32px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        
-        .card-unit {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .card-trend {
-            font-size: 12px;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #e8f5e9;
-            color: var(--primary);
-            display: inline-block;
-        }
-        
-        /* Control Panel */
-        .control-panel {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .panel-title {
-            font-size: 20px;
-            margin-bottom: 20px;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-        }
-        
-        .panel-title i {
-            margin-right: 10px;
-            color: var(--primary);
-        }
-        
-        .control-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        
-        .control-item {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        
-        .device-icon {
-            font-size: 30px;
-            margin-bottom: 10px;
-            color: var(--primary);
-        }
-        
-        .device-name {
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-        
-        .btn-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .btn {
-            padding: 8px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
             transition: all 0.3s;
         }
-        
-        .btn-on {
+        .nav-link:hover, .nav-link.active {
             background: var(--primary);
             color: white;
         }
-        
-        .btn-off {
-            background: var(--danger);
-            color: white;
-        }
-        
-        .btn-auto {
-            background: var(--secondary);
-            color: white;
-        }
-        
-        .btn:hover {
-            opacity: 0.9;
-            transform: scale(1.05);
-        }
-        
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .mode-indicator {
-            margin-top: 10px;
-            font-size: 12px;
-            padding: 3px 10px;
-            border-radius: 20px;
-            display: inline-block;
-        }
-        
-        .auto { background: #e3f2fd; color: var(--secondary); }
-        .manual { background: #fff3e0; color: var(--warning); }
-        
-        /* Charts */
-        .charts-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
             margin-bottom: 20px;
         }
-        
-        .chart-box {
-            background: white;
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .sensor-card {
+            text-align: center;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
-        .chart-title {
-            font-size: 18px;
+        .sensor-icon {
+            font-size: 2.5rem;
             margin-bottom: 15px;
-            color: var(--dark);
         }
-        
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .sidebar {
-                width: 70px;
-            }
-            
-            .sidebar .logo h2, .sidebar .logo p, .sidebar .nav-item span, .sidebar .user-info .user-name {
-                display: none;
-            }
-            
-            .sidebar .nav-item {
-                justify-content: center;
-                padding: 20px;
-            }
-            
-            .sidebar .nav-item i {
-                margin-right: 0;
-                font-size: 20px;
-            }
-            
-            .main-content {
-                margin-left: 70px;
-            }
+        .value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
         }
-        
+        .unit {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        .status-good { color: var(--success); }
+        .status-warning { color: var(--warning); }
+        .status-danger { color: var(--danger); }
+        .control-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            margin: 5px 0;
+        }
         @media (max-width: 768px) {
-            .charts-container {
-                grid-template-columns: 1fr;
+            .sidebar {
+                width: 100%;
+                position: relative;
+                min-height: auto;
             }
-            
-            .sensor-grid {
-                grid-template-columns: 1fr;
+            .main-content {
+                margin-left: 0;
             }
         }
     </style>
@@ -365,516 +91,525 @@
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="logo">
-            <h2>🏫 CLASSGUARD</h2>
-            <p>Giám sát lớp học thông minh</p>
-        </div>
-        
-        <div class="nav-menu">
-            <a href="/" class="nav-item active">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Bảng điều khiển</span>
-            </a>
-            <a href="/history" class="nav-item">
-                <i class="fas fa-history"></i>
-                <span>Lịch sử dữ liệu</span>
-            </a>
-            {% if user.role == 'admin' %}
-            <a href="/admin/users" class="nav-item">
-                <i class="fas fa-users-cog"></i>
-                <span>Quản lý người dùng</span>
-            </a>
-            {% endif %}
-            <a href="/export/pdf" class="nav-item">
-                <i class="fas fa-file-pdf"></i>
-                <span>Xuất báo cáo PDF</span>
-            </a>
-            <a href="/logout" class="nav-item">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Đăng xuất</span>
-            </a>
-        </div>
-        
-        <div class="user-info">
-            <div class="user-avatar">
-                {{ user.username[0]|upper }}
+        <div class="p-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-school fa-3x text-primary"></i>
+                <h3 class="mt-2">CLASSGUARD</h3>
+                <small class="text-muted">Lớp học thông minh</small>
             </div>
-            <div class="user-details">
-                <div class="user-name">{{ user.username }}</div>
-                <div class="user-role">{{ user.role|upper }}</div>
+            
+            <div class="user-info text-center mb-4 p-3 bg-light rounded">
+                <i class="fas fa-user-circle fa-2x"></i>
+                <h5 class="mt-2">{{ username }}</h5>
+                <span class="badge bg-{{ 'primary' if role == 'admin' else 'secondary' }}">
+                    {{ 'Quản trị viên' if role == 'admin' else 'Người xem' }}
+                </span>
             </div>
+            
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="/dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Bảng điều khiển
+                </a>
+                <a class="nav-link" href="/data">
+                    <i class="fas fa-database"></i> Dữ liệu
+                </a>
+                {% if role == 'admin' %}
+                <a class="nav-link" href="/settings">
+                    <i class="fas fa-cog"></i> Cài đặt
+                </a>
+                {% endif %}
+                <a class="nav-link text-danger" href="/logout">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </nav>
         </div>
     </div>
-    
+
     <!-- Main Content -->
     <div class="main-content">
         <!-- Header -->
-        <div class="header">
-            <h1><i class="fas fa-school"></i> Bảng điều khiển CLASSGUARD</h1>
-            <div class="status-bar">
-                <div class="status-item">
-                    <div class="status-dot online"></div>
-                    <span>ESP32: <span id="esp-status">Đang kết nối...</span></span>
-                </div>
-                <div class="status-item">
-                    <div class="status-dot online"></div>
-                    <span>Cập nhật: <span id="update-time">--:--:--</span></span>
-                </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-tachometer-alt"></i> Bảng điều khiển</h2>
+            <div class="text-end">
+                <span id="current-time" class="badge bg-primary p-2"></span>
+                <span class="text-muted ms-2">Cập nhật: <span id="last-update">--:--:--</span></span>
             </div>
         </div>
-        
-        <!-- Sensor Cards -->
-        <div class="sensor-grid">
-            <!-- Temperature Card -->
-            <div class="sensor-card">
-                <div class="card-header">
-                    <h3>🌡️ Nhiệt độ</h3>
-                    <div class="card-icon temp">
+
+        <!-- Thông báo -->
+        <div id="alert-container"></div>
+
+        <!-- Cards cảm biến -->
+        <div class="row">
+            <!-- Nhiệt độ -->
+            <div class="col-md-3">
+                <div class="card sensor-card">
+                    <div class="sensor-icon status-{{ 'danger' if data.nhiet_do > 30 else 'warning' if data.nhiet_do > 28 else 'good' }}">
                         <i class="fas fa-thermometer-half"></i>
                     </div>
+                    <h5>Nhiệt độ</h5>
+                    <div class="value" id="temp-value">{{ data.nhiet_do }}</div>
+                    <div class="unit">°C</div>
+                    <div class="mt-2">
+                        <span class="badge bg-{{ 'danger' if data.nhiet_do > 30 else 'warning' if data.nhiet_do > 28 else 'success' }}">
+                            {{ 'Nóng' if data.nhiet_do > 30 else 'Ấm' if data.nhiet_do > 28 else 'Tốt' }}
+                        </span>
+                    </div>
                 </div>
-                <div class="card-value" id="temperature">--.-</div>
-                <div class="card-unit">Độ Celsius</div>
-                <div class="card-trend" id="temp-trend">Đang cập nhật...</div>
             </div>
-            
-            <!-- Humidity Card -->
-            <div class="sensor-card">
-                <div class="card-header">
-                    <h3>💧 Độ ẩm</h3>
-                    <div class="card-icon humi">
+
+            <!-- Độ ẩm -->
+            <div class="col-md-3">
+                <div class="card sensor-card">
+                    <div class="sensor-icon status-{{ 'warning' if data.do_am < 40 or data.do_am > 70 else 'good' }}">
                         <i class="fas fa-tint"></i>
                     </div>
+                    <h5>Độ ẩm</h5>
+                    <div class="value" id="hum-value">{{ data.do_am }}</div>
+                    <div class="unit">%</div>
+                    <div class="mt-2">
+                        <span class="badge bg-{{ 'warning' if data.do_am < 40 or data.do_am > 70 else 'success' }}">
+                            {{ 'Khô' if data.do_am < 40 else 'Ẩm' if data.do_am > 70 else 'Tốt' }}
+                        </span>
+                    </div>
                 </div>
-                <div class="card-value" id="humidity">--.-</div>
-                <div class="card-unit">Phần trăm</div>
-                <div class="card-trend" id="humi-trend">Đang cập nhật...</div>
             </div>
-            
-            <!-- Light Card -->
-            <div class="sensor-card">
-                <div class="card-header">
-                    <h3>☀️ Ánh sáng</h3>
-                    <div class="card-icon light">
+
+            <!-- Ánh sáng -->
+            <div class="col-md-3">
+                <div class="card sensor-card">
+                    <div class="sensor-icon status-{{ 'danger' if data.anh_sang < 200 else 'warning' if data.anh_sang < 300 else 'good' }}">
                         <i class="fas fa-sun"></i>
                     </div>
+                    <h5>Ánh sáng</h5>
+                    <div class="value" id="light-value">{{ data.anh_sang }}</div>
+                    <div class="unit">Lux</div>
+                    <div class="mt-2">
+                        <span class="badge bg-{{ 'danger' if data.anh_sang < 200 else 'warning' if data.anh_sang < 300 else 'success' }}">
+                            {{ 'Tối' if data.anh_sang < 200 else 'Vừa' if data.anh_sang < 300 else 'Sáng' }}
+                        </span>
+                    </div>
                 </div>
-                <div class="card-value" id="light">---</div>
-                <div class="card-unit">Lux</div>
-                <div class="card-trend" id="light-trend">Đang cập nhật...</div>
             </div>
-            
-            <!-- Air Quality Card -->
-            <div class="sensor-card">
-                <div class="card-header">
-                    <h3>🌫️ Chất lượng không khí</h3>
-                    <div class="card-icon air">
+
+            <!-- Chất lượng không khí -->
+            <div class="col-md-3">
+                <div class="card sensor-card">
+                    <div class="sensor-icon status-{{ 'danger' if data.chat_luong_kk > 800 else 'warning' if data.chat_luong_kk > 400 else 'good' }}">
                         <i class="fas fa-wind"></i>
                     </div>
-                </div>
-                <div class="card-value" id="air-quality">---</div>
-                <div class="card-unit">ppm (CO₂)</div>
-                <div class="card-trend" id="air-trend">Đang cập nhật...</div>
-            </div>
-            
-            <!-- Sound Card -->
-            <div class="sensor-card">
-                <div class="card-header">
-                    <h3>📢 Mức âm thanh</h3>
-                    <div class="card-icon sound">
-                        <i class="fas fa-volume-up"></i>
+                    <h5>Chất lượng KK</h5>
+                    <div class="value" id="air-value">{{ data.chat_luong_kk }}</div>
+                    <div class="unit">PPM</div>
+                    <div class="mt-2">
+                        <span class="badge bg-{{ 'danger' if data.chat_luong_kk > 800 else 'warning' if data.chat_luong_kk > 400 else 'success' }}">
+                            {{ 'Ô nhiễm' if data.chat_luong_kk > 800 else 'Trung bình' if data.chat_luong_kk > 400 else 'Tốt' }}
+                        </span>
                     </div>
-                </div>
-                <div class="card-value" id="sound-level">--</div>
-                <div class="card-unit">Decibel (dB)</div>
-                <div class="card-trend" id="sound-trend">Đang cập nhật...</div>
-            </div>
-            
-            <!-- Evaluation Card -->
-            <div class="sensor-card">
-                <div class="card-header">
-                    <h3>📊 Đánh giá tiết học</h3>
-                    <div class="card-icon eval">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                </div>
-                <div class="card-value" id="evaluation">--</div>
-                <div class="card-unit">Trạng thái lớp học</div>
-                <div class="card-trend" id="eval-trend">Cập nhật 5 giây/lần</div>
-            </div>
-        </div>
-        
-        <!-- Control Panel -->
-        <div class="control-panel">
-            <div class="panel-title">
-                <i class="fas fa-gamepad"></i> ĐIỀU KHIỂN THIẾT BỊ
-            </div>
-            
-            <div class="control-grid">
-                <!-- LED Control -->
-                <div class="control-item">
-                    <div class="device-icon">
-                        <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="device-name">ĐÈN CHIẾU SÁNG</div>
-                    <div class="btn-group">
-                        <button class="btn btn-on" onclick="controlDevice('led', 'on')" id="btn-led-on">
-                            <i class="fas fa-power-off"></i> BẬT
-                        </button>
-                        <button class="btn btn-off" onclick="controlDevice('led', 'off')" id="btn-led-off">
-                            <i class="fas fa-power-off"></i> TẮT
-                        </button>
-                    </div>
-                    <div class="mode-indicator manual" id="led-mode">THỦ CÔNG</div>
-                </div>
-                
-                <!-- Fan Control -->
-                <div class="control-item">
-                    <div class="device-icon">
-                        <i class="fas fa-fan"></i>
-                    </div>
-                    <div class="device-name">QUẠT THÔNG GIÓ</div>
-                    <div class="btn-group">
-                        <button class="btn btn-on" onclick="controlDevice('fan', 'on')" id="btn-fan-on">
-                            <i class="fas fa-power-off"></i> BẬT
-                        </button>
-                        <button class="btn btn-off" onclick="controlDevice('fan', 'off')" id="btn-fan-off">
-                            <i class="fas fa-power-off"></i> TẮT
-                        </button>
-                    </div>
-                    <div class="mode-indicator manual" id="fan-mode">THỦ CÔNG</div>
-                </div>
-                
-                <!-- Auto Mode -->
-                <div class="control-item">
-                    <div class="device-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div class="device-name">CHẾ ĐỘ TỰ ĐỘNG</div>
-                    <div class="btn-group">
-                        <button class="btn btn-auto" onclick="controlDevice('mode', 'auto')" id="btn-auto">
-                            <i class="fas fa-cogs"></i> KÍCH HOẠT
-                        </button>
-                    </div>
-                    <div class="mode-indicator auto" id="auto-mode">ĐANG BẬT</div>
-                </div>
-                
-                <!-- ESP32 IP -->
-                <div class="control-item">
-                    <div class="device-icon">
-                        <i class="fas fa-microchip"></i>
-                    </div>
-                    <div class="device-name">CẤU HÌNH ESP32</div>
-                    <input type="text" id="esp-ip" value="192.168.1.100" placeholder="Nhập IP ESP32" 
-                           style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
-                    <button class="btn btn-auto" onclick="saveESPIP()">
-                        <i class="fas fa-save"></i> LƯU IP
-                    </button>
                 </div>
             </div>
         </div>
-        
-        <!-- Charts -->
-        <div class="charts-container">
-            <div class="chart-box">
-                <div class="chart-title">📈 Biểu đồ nhiệt độ & độ ẩm</div>
-                <canvas id="tempHumChart"></canvas>
+
+        <!-- Biểu đồ và điều khiển -->
+        <div class="row mt-4">
+            <!-- Biểu đồ -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-line"></i> Biểu đồ theo thời gian</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="sensorChart" height="200"></canvas>
+                    </div>
+                </div>
             </div>
-            
-            <div class="chart-box">
-                <div class="chart-title">📊 Biểu đồ môi trường</div>
-                <canvas id="envChart"></canvas>
+
+            <!-- Điều khiển -->
+            {% if role == 'admin' %}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-gamepad"></i> Điều khiển thiết bị</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Quạt -->
+                        <div class="mb-4">
+                            <h6><i class="fas fa-fan"></i> Quạt</h6>
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-success control-btn" onclick="controlDevice('quat', 'on')">
+                                    <i class="fas fa-play"></i> BẬT
+                                </button>
+                                <button class="btn btn-danger control-btn" onclick="controlDevice('quat', 'off')">
+                                    <i class="fas fa-stop"></i> TẮT
+                                </button>
+                            </div>
+                            <div class="mt-2 text-center">
+                                <span class="badge bg-{{ 'success' if data.quat == 'ON' else 'secondary' }}">
+                                    Trạng thái: {{ data.quat }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Đèn -->
+                        <div class="mb-4">
+                            <h6><i class="fas fa-lightbulb"></i> Đèn</h6>
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-success control-btn" onclick="controlDevice('den', 'on')">
+                                    <i class="fas fa-lightbulb"></i> BẬT
+                                </button>
+                                <button class="btn btn-danger control-btn" onclick="controlDevice('den', 'off')">
+                                    <i class="fas fa-lightbulb"></i> TẮT
+                                </button>
+                            </div>
+                            <div class="mt-2 text-center">
+                                <span class="badge bg-{{ 'success' if data.den == 'ON' else 'secondary' }}">
+                                    Trạng thái: {{ data.den }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Chế độ tự động -->
+                        <div class="mb-4">
+                            <h6><i class="fas fa-robot"></i> Chế độ tự động</h6>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto-mode" checked>
+                                <label class="form-check-label" for="auto-mode">Tự động điều chỉnh</label>
+                            </div>
+                            <small class="text-muted">Hệ thống sẽ tự động bật/tắt thiết bị dựa trên ngưỡng</small>
+                        </div>
+
+                        <!-- Xuất báo cáo -->
+                        <div>
+                            <a href="/export_pdf" class="btn btn-primary w-100">
+                                <i class="fas fa-file-pdf"></i> Xuất báo cáo PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Nhận xét tiết học -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chalkboard-teacher"></i> Đánh giá môi trường học tập</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="class-evaluation">
+                            <!-- Sẽ được cập nhật bằng JavaScript -->
+                            <div class="col-md-3 text-center">
+                                <i class="fas fa-thermometer-three-quarters fa-2x text-warning"></i>
+                                <h6 class="mt-2">Nhiệt độ</h6>
+                                <span id="eval-temp" class="badge bg-warning">Đang kiểm tra...</span>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <i class="fas fa-volume-up fa-2x text-info"></i>
+                                <h6 class="mt-2">Độ ồn</h6>
+                                <span id="eval-noise" class="badge bg-info">Đang kiểm tra...</span>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <i class="fas fa-air-freshener fa-2x text-success"></i>
+                                <h6 class="mt-2">Không khí</h6>
+                                <span id="eval-air" class="badge bg-success">Đang kiểm tra...</span>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <i class="fas fa-star fa-2x text-primary"></i>
+                                <h6 class="mt-2">Tổng thể</h6>
+                                <span id="eval-overall" class="badge bg-primary">Đang đánh giá...</span>
+                            </div>
+                        </div>
+                        <div class="mt-3" id="recommendations">
+                            <!-- Khuyến nghị sẽ hiện ở đây -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Footer -->
+        <footer class="mt-4 text-center text-muted">
+            <p>Hệ thống CLASSGUARD - Giám sát môi trường lớp học thông minh</p>
+            <p>Dữ liệu cập nhật 5 giây/lần | Phiên bản 1.0</p>
+        </footer>
     </div>
-    
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Biến toàn cục
-        let sensorData = {
-            temperature: 0,
-            humidity: 0,
-            light: 0,
-            air_quality: 0,
-            sound_level: 0,
-            evaluation: '',
-            led_state: false,
-            fan_state: false,
-            auto_mode: true
-        };
-        
-        let chart1, chart2;
-        let dataHistory = {
-            temp: [], humi: [], light: [], air: [], sound: [], time: []
-        };
-        
-        // Lấy IP ESP32 từ localStorage
-        function getESPIP() {
-            return localStorage.getItem('esp_ip') || '192.168.1.100';
-        }
-        
-        function saveESPIP() {
-            const ip = document.getElementById('esp-ip').value;
-            localStorage.setItem('esp_ip', ip);
-            alert('Đã lưu IP ESP32: ' + ip);
-        }
-        
-        // Cập nhật dữ liệu
-        async function updateData() {
-            try {
-                const espIP = getESPIP();
-                const response = await fetch(`/api/data?esp_ip=${espIP}`);
-                const data = await response.json();
-                
-                sensorData = data;
-                
-                // Cập nhật thời gian
-                const now = new Date();
-                document.getElementById('update-time').textContent = 
-                    now.toLocaleTimeString('vi-VN');
-                
-                // Cập nhật giá trị cảm biến
-                document.getElementById('temperature').textContent = data.temperature.toFixed(1);
-                document.getElementById('humidity').textContent = data.humidity.toFixed(1);
-                document.getElementById('light').textContent = Math.round(data.light);
-                document.getElementById('air-quality').textContent = Math.round(data.air_quality);
-                document.getElementById('sound-level').textContent = Math.round(data.sound_level);
-                document.getElementById('evaluation').textContent = data.evaluation;
-                
-                // Cập nhật trạng thái thiết bị
-                updateDeviceStatus();
-                
-                // Thêm vào lịch sử
-                const timeStr = now.getHours() + ':' + now.getMinutes();
-                dataHistory.temp.push(data.temperature);
-                dataHistory.humi.push(data.humidity);
-                dataHistory.light.push(data.light);
-                dataHistory.air.push(data.air_quality);
-                dataHistory.sound.push(data.sound_level);
-                dataHistory.time.push(timeStr);
-                
-                // Giữ tối đa 20 điểm dữ liệu
-                if (dataHistory.temp.length > 20) {
-                    dataHistory.temp.shift();
-                    dataHistory.humi.shift();
-                    dataHistory.light.shift();
-                    dataHistory.air.shift();
-                    dataHistory.sound.shift();
-                    dataHistory.time.shift();
+        // Biểu đồ
+        const ctx = document.getElementById('sensorChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Nhiệt độ (°C)',
+                        data: [],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Độ ẩm (%)',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
                 }
-                
-                // Cập nhật biểu đồ
-                updateCharts();
-                
-                // Cập nhật trend
-                updateTrends();
-                
-                document.getElementById('esp-status').innerHTML = 
-                    `<span style="color: #4CAF50;">Đã kết nối (${espIP})</span>`;
-                
-            } catch (error) {
-                console.error('Lỗi khi cập nhật dữ liệu:', error);
-                document.getElementById('esp-status').innerHTML = 
-                    '<span style="color: #f44336;">Mất kết nối</span>';
             }
+        });
+
+        // Cập nhật thời gian
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = 
+                now.toLocaleTimeString('vi-VN');
         }
-        
-        // Cập nhật trạng thái thiết bị
-        function updateDeviceStatus() {
-            const ledOn = document.getElementById('btn-led-on');
-            const ledOff = document.getElementById('btn-led-off');
-            const fanOn = document.getElementById('btn-fan-on');
-            const fanOff = document.getElementById('btn-fan-off');
-            const autoBtn = document.getElementById('btn-auto');
-            
-            // LED
-            if (sensorData.led_state) {
-                ledOn.disabled = true;
-                ledOff.disabled = false;
-                document.getElementById('led-mode').textContent = 'ĐANG BẬT';
-                document.getElementById('led-mode').className = 'mode-indicator auto';
-            } else {
-                ledOn.disabled = false;
-                ledOff.disabled = true;
-                document.getElementById('led-mode').textContent = 'ĐANG TẮT';
-                document.getElementById('led-mode').className = 'mode-indicator manual';
-            }
-            
-            // FAN
-            if (sensorData.fan_state) {
-                fanOn.disabled = true;
-                fanOff.disabled = false;
-                document.getElementById('fan-mode').textContent = 'ĐANG BẬT';
-                document.getElementById('fan-mode').className = 'mode-indicator auto';
-            } else {
-                fanOn.disabled = false;
-                fanOff.disabled = true;
-                document.getElementById('fan-mode').textContent = 'ĐANG TẮT';
-                document.getElementById('fan-mode').className = 'mode-indicator manual';
-            }
-            
-            // Auto mode
-            if (sensorData.auto_mode) {
-                autoBtn.disabled = true;
-                document.getElementById('auto-mode').textContent = 'TỰ ĐỘNG';
-                document.getElementById('auto-mode').className = 'mode-indicator auto';
-            } else {
-                autoBtn.disabled = false;
-                document.getElementById('auto-mode').textContent = 'THỦ CÔNG';
-                document.getElementById('auto-mode').className = 'mode-indicator manual';
-            }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Lấy dữ liệu cảm biến
+        function fetchSensorData() {
+            fetch('/get_sensor_data')
+                .then(response => response.json())
+                .then(data => {
+                    // Cập nhật giá trị
+                    document.getElementById('temp-value').textContent = data.nhiet_do.toFixed(1);
+                    document.getElementById('hum-value').textContent = data.do_am.toFixed(1);
+                    document.getElementById('light-value').textContent = Math.round(data.anh_sang);
+                    document.getElementById('air-value').textContent = Math.round(data.chat_luong_kk);
+                    document.getElementById('last-update').textContent = data.timestamp || '--:--:--';
+
+                    // Cập nhật biểu đồ
+                    const now = new Date().toLocaleTimeString('vi-VN', {hour12: false});
+                    chart.data.labels.push(now);
+                    chart.data.datasets[0].data.push(data.nhiet_do);
+                    chart.data.datasets[1].data.push(data.do_am);
+                    
+                    if (chart.data.labels.length > 20) {
+                        chart.data.labels.shift();
+                        chart.data.datasets[0].data.shift();
+                        chart.data.datasets[1].data.shift();
+                    }
+                    chart.update();
+
+                    // Đánh giá tiết học
+                    evaluateClass(data);
+
+                    // Kiểm tra cảnh báo
+                    checkAlerts(data);
+                })
+                .catch(error => console.error('Lỗi:', error));
         }
-        
+
+        // Đánh giá môi trường học tập
+        function evaluateClass(data) {
+            // Đánh giá nhiệt độ
+            let tempEval, tempColor;
+            if (data.nhiet_do < 20) {
+                tempEval = 'Lạnh';
+                tempColor = 'info';
+            } else if (data.nhiet_do <= 28) {
+                tempEval = 'Lý tưởng';
+                tempColor = 'success';
+            } else if (data.nhiet_do <= 32) {
+                tempEval = 'Hơi nóng';
+                tempColor = 'warning';
+            } else {
+                tempEval = 'Quá nóng';
+                tempColor = 'danger';
+            }
+            document.getElementById('eval-temp').textContent = tempEval;
+            document.getElementById('eval-temp').className = `badge bg-${tempColor}`;
+
+            // Đánh giá độ ồn
+            let noiseEval, noiseColor;
+            if (data.do_on < 50) {
+                noiseEval = 'Yên tĩnh';
+                noiseColor = 'success';
+            } else if (data.do_on <= 70) {
+                noiseEval = 'Bình thường';
+                noiseColor = 'warning';
+            } else {
+                noiseEval = 'Ồn ào';
+                noiseColor = 'danger';
+            }
+            document.getElementById('eval-noise').textContent = noiseEval;
+            document.getElementById('eval-noise').className = `badge bg-${noiseColor}`;
+
+            // Đánh giá không khí
+            let airEval, airColor;
+            if (data.chat_luong_kk < 400) {
+                airEval = 'Trong lành';
+                airColor = 'success';
+            } else if (data.chat_luong_kk <= 800) {
+                airEval = 'Trung bình';
+                airColor = 'warning';
+            } else {
+                airEval = 'Ô nhiễm';
+                airColor = 'danger';
+            }
+            document.getElementById('eval-air').textContent = airEval;
+            document.getElementById('eval-air').className = `badge bg-${airColor}`;
+
+            // Đánh giá tổng thể
+            let overallScore = 0;
+            if (data.nhiet_do >= 20 && data.nhiet_do <= 28) overallScore += 2;
+            else if (data.nhiet_do > 28 && data.nhiet_do <= 32) overallScore += 1;
+            
+            if (data.do_on < 70) overallScore += 2;
+            else overallScore += 1;
+            
+            if (data.chat_luong_kk < 800) overallScore += 2;
+            else overallScore += 1;
+            
+            let overallEval, overallColor;
+            if (overallScore >= 5) {
+                overallEval = 'Tốt';
+                overallColor = 'success';
+            } else if (overallScore >= 3) {
+                overallEval = 'Khá';
+                overallColor = 'warning';
+            } else {
+                overallEval = 'Cần cải thiện';
+                overallColor = 'danger';
+            }
+            document.getElementById('eval-overall').textContent = overallEval;
+            document.getElementById('eval-overall').className = `badge bg-${overallColor}`;
+
+            // Khuyến nghị
+            let recommendations = [];
+            if (data.nhiet_do > 28) {
+                recommendations.push('Nhiệt độ cao: Nên bật quạt hoặc điều hòa');
+            }
+            if (data.do_on > 70) {
+                recommendations.push('Lớp học ồn: Cần giảm tiếng ồn');
+            }
+            if (data.chat_luong_kk > 800) {
+                recommendations.push('Chất lượng không khí kém: Nên mở cửa thông thoáng');
+            }
+            if (data.anh_sang < 300) {
+                recommendations.push('Ánh sáng yếu: Nên bật đèn');
+            }
+            
+            const recHtml = recommendations.length > 0 ? 
+                '<strong>Khuyến nghị:</strong><br>' + recommendations.join('<br>') :
+                '<div class="text-success"><i class="fas fa-check-circle"></i> Môi trường học tập tốt!</div>';
+            
+            document.getElementById('recommendations').innerHTML = recHtml;
+        }
+
+        // Kiểm tra cảnh báo
+        function checkAlerts(data) {
+            const alerts = [];
+            if (data.nhiet_do > 32) {
+                alerts.push({
+                    type: 'danger',
+                    message: '⚠️ Nhiệt độ quá cao! Cần làm mát ngay.'
+                });
+            }
+            if (data.do_on > 80) {
+                alerts.push({
+                    type: 'warning',
+                    message: '🔊 Lớp học quá ồn! Cần giữ trật tự.'
+                });
+            }
+            if (data.chat_luong_kk > 1000) {
+                alerts.push({
+                    type: 'danger',
+                    message: '💨 Chất lượng không khí nguy hiểm! Mở cửa ngay.'
+                });
+            }
+            
+            showAlerts(alerts);
+        }
+
+        // Hiển thị cảnh báo
+        function showAlerts(alerts) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = '';
+            
+            alerts.forEach(alert => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${alert.type} alert-dismissible fade show`;
+                alertDiv.innerHTML = `
+                    ${alert.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                container.appendChild(alertDiv);
+            });
+        }
+
         // Điều khiển thiết bị
-        async function controlDevice(device, action) {
-            if ("{{ user.role }}" !== 'admin') {
-                alert('Chỉ tài khoản Admin mới có quyền điều khiển!');
+        function controlDevice(device, action) {
+            if ("{{ role }}" !== 'admin') {
+                alert('Bạn không có quyền điều khiển!');
                 return;
             }
             
-            try {
-                const espIP = getESPIP();
-                const response = await fetch('/api/control', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        esp_ip: espIP,
-                        device: device,
-                        action: action
-                    })
-                });
-                
-                const result = await response.json();
-                alert(result.message || 'Đã thực hiện!');
-                
-                // Cập nhật lại dữ liệu
-                setTimeout(updateData, 1000);
-                
-            } catch (error) {
-                alert('Lỗi khi điều khiển thiết bị: ' + error.message);
-            }
+            fetch('/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    device: device,
+                    action: action
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Thành công', `Đã ${action === 'on' ? 'bật' : 'tắt'} ${device}`, 'success');
+                } else {
+                    showToast('Lỗi', data.error || 'Có lỗi xảy ra', 'danger');
+                }
+            });
         }
-        
-        // Cập nhật biểu đồ
-        function updateCharts() {
-            // Biểu đồ 1: Nhiệt độ & Độ ẩm
-            if (!chart1) {
-                const ctx1 = document.getElementById('tempHumChart').getContext('2d');
-                chart1 = new Chart(ctx1, {
-                    type: 'line',
-                    data: {
-                        labels: dataHistory.time,
-                        datasets: [
-                            {
-                                label: 'Nhiệt độ (°C)',
-                                data: dataHistory.temp,
-                                borderColor: '#FF6B6B',
-                                backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                                tension: 0.4
-                            },
-                            {
-                                label: 'Độ ẩm (%)',
-                                data: dataHistory.humi,
-                                borderColor: '#4ECDC4',
-                                backgroundColor: 'rgba(78, 205, 196, 0.1)',
-                                tension: 0.4
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: false
-                            }
-                        }
-                    }
-                });
-            } else {
-                chart1.data.labels = dataHistory.time;
-                chart1.data.datasets[0].data = dataHistory.temp;
-                chart1.data.datasets[1].data = dataHistory.humi;
-                chart1.update();
-            }
+
+        // Hiển thị thông báo nhỏ
+        function showToast(title, message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <strong>${title}:</strong> ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
             
-            // Biểu đồ 2: Môi trường
-            if (!chart2) {
-                const ctx2 = document.getElementById('envChart').getContext('2d');
-                chart2 = new Chart(ctx2, {
-                    type: 'bar',
-                    data: {
-                        labels: dataHistory.time,
-                        datasets: [
-                            {
-                                label: 'Ánh sáng (lux)',
-                                data: dataHistory.light,
-                                backgroundColor: 'rgba(255, 217, 61, 0.7)',
-                                borderColor: '#FFD93D',
-                                borderWidth: 1
-                            },
-                            {
-                                label: 'Âm thanh (dB)',
-                                data: dataHistory.sound,
-                                backgroundColor: 'rgba(184, 233, 148, 0.7)',
-                                borderColor: '#B8E994',
-                                borderWidth: 1
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            } else {
-                chart2.data.labels = dataHistory.time;
-                chart2.data.datasets[0].data = dataHistory.light;
-                chart2.data.datasets[1].data = dataHistory.sound;
-                chart2.update();
-            }
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.appendChild(toast);
+            document.body.appendChild(container);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', function () {
+                container.remove();
+            });
         }
-        
-        // Cập nhật trend
-        function updateTrends() {
-            if (dataHistory.temp.length < 2) return;
-            
-            const lastTemp = dataHistory.temp[dataHistory.temp.length - 1];
-            const prevTemp = dataHistory.temp[dataHistory.temp.length - 2];
-            const tempDiff = lastTemp - prevTemp;
-            
-            document.getElementById('temp-trend').textContent = 
-                tempDiff > 0 ? `↗ Tăng ${tempDiff.toFixed(1)}°C` : 
-                tempDiff < 0 ? `↘ Giảm ${Math.abs(tempDiff).toFixed(1)}°C` : '→ Ổn định';
-            
-            document.getElementById('temp-trend').style.background = 
-                tempDiff > 0 ? '#ffebee' : tempDiff < 0 ? '#e8f5e9' : '#e3f2fd';
-            document.getElementById('temp-trend').style.color = 
-                tempDiff > 0 ? '#f44336' : tempDiff < 0 ? '#4CAF50' : '#2196F3';
-        }
-        
-        // Khởi tạo
-        document.addEventListener('DOMContentLoaded', function() {
-            // Đặt IP ESP32
-            document.getElementById('esp-ip').value = getESPIP();
-            
-            // Cập nhật dữ liệu lần đầu
-            updateData();
-            
-            // Cập nhật mỗi 5 giây
-            setInterval(updateData, 5000);
-            
-            // Cảnh báo nếu là viewer
-            if ("{{ user.role }}" === 'viewer') {
-                console.log('Tài khoản Viewer: Chỉ xem, không điều khiển');
-            }
-        });
+
+        // Tự động cập nhật dữ liệu mỗi 5 giây
+        setInterval(fetchSensorData, 5000);
+        fetchSensorData(); // Lấy dữ liệu ngay khi tải trang
     </script>
 </body>
 </html>
