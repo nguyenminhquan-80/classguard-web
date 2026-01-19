@@ -1,9 +1,6 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 import random
 from datetime import datetime
-from io import BytesIO
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'classguard_2024_minhquan'
@@ -155,84 +152,13 @@ def data():
 
 @app.route('/export_pdf')
 def export_pdf():
-    """Xuất báo cáo PDF"""
+    """Xuất báo cáo PDF - TẠM THỜI VÔ HIỆU HÓA"""
     # Kiểm tra đăng nhập
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    # Tạo PDF
-    buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    
-    # Tiêu đề
-    p.setFont("Helvetica-Bold", 16)
-    p.drawString(100, 750, "BÁO CÁO CLASSGUARD")
-    p.drawString(100, 730, f"Thời gian: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-    
-    # Thông tin người dùng
-    p.setFont("Helvetica", 12)
-    p.drawString(100, 700, f"Người xuất: {session.get('username', 'Unknown')}")
-    p.drawString(100, 680, f"Vai trò: {session.get('role', 'Unknown')}")
-    
-    # Dữ liệu cảm biến
-    y = 640
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(100, y, "DỮ LIỆU CẢM BIẾN:")
-    y -= 30
-    
-    p.setFont("Helvetica", 12)
-    sensor_display = [
-        ("🌡️ Nhiệt độ", f"{sensor_data['nhiet_do']} °C"),
-        ("💧 Độ ẩm", f"{sensor_data['do_am']} %"),
-        ("☀️ Ánh sáng", f"{sensor_data['anh_sang']} lux"),
-        ("💨 Chất lượng không khí", f"{sensor_data['chat_luong_kk']} PPM"),
-        ("🔊 Độ ồn", f"{sensor_data['do_on']} dB"),
-        ("🌀 Quạt", sensor_data['quat']),
-        ("💡 Đèn", sensor_data['den'])
-    ]
-    
-    for label, value in sensor_display:
-        p.drawString(100, y, f"{label}: {value}")
-        y -= 25
-    
-    # Đánh giá
-    y -= 20
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(100, y, "ĐÁNH GIÁ MÔI TRƯỜNG:")
-    y -= 30
-    
-    p.setFont("Helvetica", 12)
-    # Tính điểm đánh giá
-    score = 0
-    if 20 <= sensor_data['nhiet_do'] <= 28:
-        score += 1
-    if 40 <= sensor_data['do_am'] <= 70:
-        score += 1
-    if sensor_data['anh_sang'] >= 300:
-        score += 1
-    if sensor_data['chat_luong_kk'] < 800:
-        score += 1
-    if sensor_data['do_on'] < 70:
-        score += 1
-    
-    if score >= 4:
-        evaluation = "TỐT - Môi trường lý tưởng cho học tập"
-    elif score >= 3:
-        evaluation = "KHÁ - Môi trường chấp nhận được"
-    else:
-        evaluation = "CẦN CẢI THIỆN - Có vấn đề cần xử lý"
-    
-    p.drawString(100, y, f"Điểm đánh giá: {score}/5")
-    y -= 25
-    p.drawString(100, y, f"Kết luận: {evaluation}")
-    
-    p.save()
-    buffer.seek(0)
-    
-    return send_file(buffer,
-                    download_name=f'classguard_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf',
-                    as_attachment=True,
-                    mimetype='application/pdf')
+    # TẠM THỜI: Trả về thông báo
+    return "Tính năng xuất PDF tạm thời không khả dụng. Đang cập nhật..."
 
 # ========== CHẠY ỨNG DỤNG ==========
 if __name__ == '__main__':
