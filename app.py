@@ -6,8 +6,8 @@ import csv
 import io
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'classguard_final_fix_2024'
-app.secret_key = 'classguard_final_fix_2024'
+app.config['SECRET_KEY'] = 'classguard_final_v3_2024'
+app.secret_key = 'classguard_final_v3_2024'
 
 # ========== TÀI KHOẢN ==========
 USERS = {
@@ -42,7 +42,7 @@ history = {
 }
 
 # Cài đặt
-settings = {
+system_settings = {
     'auto_mode': True,
     'temp_min': 20,
     'temp_max': 28,
@@ -66,6 +66,7 @@ def login():
             session['username'] = username
             session['role'] = USERS[username]['role']
             session['name'] = USERS[username]['name']
+            session['login_time'] = datetime.now().strftime("%H:%M:%S %d/%m/%Y")
             return redirect(url_for('dashboard'))
         else:
             return render_template('login.html', error="Sai tên đăng nhập hoặc mật khẩu!")
@@ -88,10 +89,11 @@ def dashboard():
     return render_template('dashboard.html',
                          data=sensor_data,
                          evaluation=evaluation,
-                         settings=settings,
+                         settings=system_settings,
                          username=session['username'],
                          name=session['name'],
-                         role=session['role'])
+                         role=session['role'],
+                         login_time=session.get('login_time', ''))
 
 @app.route('/get_sensor_data')
 def get_sensor_data():
@@ -104,7 +106,8 @@ def get_sensor_data():
     return jsonify({
         'sensors': sensor_data,
         'evaluation': evaluation,
-        'history': history
+        'history': history,
+        'settings': system_settings
     })
 
 @app.route('/control', methods=['POST'])
@@ -112,8 +115,12 @@ def control():
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
+    # Kiểm tra chế độ tự động - nếu đang bật thì không cho điều khiển thủ công
+    if system_settings['auto_mode']:
+        return jsonify({'error': '❌ Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.'}), 403
+    
     if session['role'] not in ['admin', 'teacher']:
-        return jsonify({'error': 'Không có quyền điều khiển!'}), 403
+        return jsonify({'error': '❌ Không có quyền điều khiển!'}), 403
     
     data = request.json
     device = data.get('device')
@@ -123,11 +130,31 @@ def control():
         sensor_data[device] = action
         return jsonify({
             'success': True,
-            'message': f'Đã {action.lower()} {device}',
+            'message': f'✅ Đã {action.lower()} {device}',
             'status': action
         })
     
     return jsonify({'error': 'Thiếu thông tin'}), 400
+
+@app.route('/update_settings', methods=['POST'])
+def update_settings():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if session['role'] != 'admin':
+        return jsonify({'error': 'Không có quyền!'}), 403
+    
+    try:
+        system_settings['auto_mode'] = request.json.get('auto_mode', system_settings['auto_mode'])
+        system_settings['temp_min'] = float(request.json.get('temp_min', system_settings['temp_min']))
+        system_settings['temp_max'] = float(request.json.get('temp_max', system_settings['temp_max']))
+        system_settings['light_min'] = float(request.json.get('light_min', system_settings['light_min']))
+        system_settings['noise_max'] = float(request.json.get('noise_max', system_settings['noise_max']))
+        system_settings['air_max'] = float(request.json.get('air_max', system_settings['air_max']))
+        
+        return jsonify({'success': True, 'message': '✅ Đã cập nhật cài đặt!'})
+    except:
+        return jsonify({'error': '❌ Dữ liệu không hợp lệ!'}), 400
 
 @app.route('/data')
 def data_page():
@@ -187,21 +214,8 @@ def settings_page():
     if session['role'] != 'admin':
         return redirect(url_for('dashboard'))
     
-    if request.method == 'POST':
-        try:
-            settings['auto_mode'] = request.form.get('auto_mode') == 'on'
-            settings['temp_min'] = float(request.form.get('temp_min', 20))
-            settings['temp_max'] = float(request.form.get('temp_max', 28))
-            settings['light_min'] = float(request.form.get('light_min', 300))
-            settings['noise_max'] = float(request.form.get('noise_max', 70))
-            settings['air_max'] = float(request.form.get('air_max', 800))
-            
-            return jsonify({'success': True, 'message': 'Đã cập nhật cài đặt!'})
-        except:
-            return jsonify({'error': 'Dữ liệu không hợp lệ!'}), 400
-    
     return render_template('settings.html',
-                         settings=settings,
+                         settings=system_settings,
                          role=session['role'])
 
 @app.route('/export_csv')
@@ -212,23 +226,37 @@ def export_csv():
     output = io.StringIO()
     writer = csv.writer(output)
     
-    writer.writerow(['CLASSGUARD - BÁO CÁO'])
-    writer.writerow(['Thời gian', datetime.now().strftime("%d/%m/%Y %H:%M")])
-    writer.writerow(['Tên', session.get('name', 'Unknown')])
+    writer.writerow(['CLASSGUARD - BÁO CÁO MÔI TRƯỜNG LỚP HỌC'])
+    writer.writerow(['Thời gian xuất', datetime.now().strftime("%d/%m/%Y %H:%M:%S")])
+    writer.writerow(['Người xuất', session.get('name', 'Unknown')])
+    writer.writerow(['Vai trò', session.get('role', 'Unknown')])
     writer.writerow([])
-    writer.writerow(['Thông số', 'Giá trị', 'Đơn vị'])
-    writer.writerow(['Nhiệt độ', f"{sensor_data['nhiet_do']:.1f}", '°C'])
-    writer.writerow(['Độ ẩm', f"{sensor_data['do_am']:.1f}", '%'])
-    writer.writerow(['Ánh sáng', str(sensor_data['anh_sang']), 'lux'])
-    writer.writerow(['Chất lượng KK', str(sensor_data['chat_luong_kk']), 'PPM'])
-    writer.writerow(['Độ ồn', str(sensor_data['do_on']), 'dB'])
+    writer.writerow(['THÔNG SỐ CẢM BIẾN'])
+    writer.writerow(['Thông số', 'Giá trị', 'Đơn vị', 'Trạng thái'])
+    writer.writerow(['Nhiệt độ', f"{sensor_data['nhiet_do']:.1f}", '°C', 
+                     'Tốt' if 20 <= sensor_data['nhiet_do'] <= 28 else 'Cảnh báo' if 28 < sensor_data['nhiet_do'] <= 32 else 'Nguy hiểm'])
+    writer.writerow(['Độ ẩm', f"{sensor_data['do_am']:.1f}", '%',
+                     'Tốt' if 40 <= sensor_data['do_am'] <= 70 else 'Cảnh báo'])
+    writer.writerow(['Ánh sáng', str(sensor_data['anh_sang']), 'lux',
+                     'Tốt' if sensor_data['anh_sang'] >= 300 else 'Cảnh báo' if sensor_data['anh_sang'] >= 200 else 'Thiếu sáng'])
+    writer.writerow(['Chất lượng KK', str(sensor_data['chat_luong_kk']), 'PPM',
+                     'Tốt' if sensor_data['chat_luong_kk'] < 400 else 'Trung bình' if sensor_data['chat_luong_kk'] < 800 else 'Ô nhiễm'])
+    writer.writerow(['Độ ồn', str(sensor_data['do_on']), 'dB',
+                     'Tốt' if sensor_data['do_on'] < 50 else 'Bình thường' if sensor_data['do_on'] < 70 else 'Ồn ào'])
+    writer.writerow([])
+    writer.writerow(['TRẠNG THÁI THIẾT BỊ'])
+    writer.writerow(['Thiết bị', 'Trạng thái'])
+    writer.writerow(['Quạt', sensor_data['quat']])
+    writer.writerow(['Đèn', sensor_data['den']])
+    writer.writerow(['Cửa sổ', sensor_data['cua_so']])
+    writer.writerow(['Cảnh báo', sensor_data['canh_bao']])
     
     output.seek(0)
     
     return Response(
         output,
         mimetype="text/csv",
-        headers={"Content-disposition": f"attachment; filename=classguard_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+        headers={"Content-disposition": f"attachment; filename=classguard_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
     )
 
 # ========== HÀM PHỤ TRỢ ==========
@@ -238,57 +266,57 @@ def evaluate_environment():
     
     temp = sensor_data['nhiet_do']
     if 20 <= temp <= 28:
-        evaluations.append(('Nhiệt độ', 'Lý tưởng', 'success'))
+        evaluations.append(('🌡️ Nhiệt độ', 'Lý tưởng', 'success'))
         scores.append(2)
     elif 18 <= temp < 20 or 28 < temp <= 30:
-        evaluations.append(('Nhiệt độ', 'Chấp nhận', 'warning'))
+        evaluations.append(('🌡️ Nhiệt độ', 'Chấp nhận', 'warning'))
         scores.append(1)
     else:
-        evaluations.append(('Nhiệt độ', 'Không tốt', 'danger'))
+        evaluations.append(('🌡️ Nhiệt độ', 'Không tốt', 'danger'))
         scores.append(0)
     
     humidity = sensor_data['do_am']
     if 40 <= humidity <= 70:
-        evaluations.append(('Độ ẩm', 'Tốt', 'success'))
+        evaluations.append(('💧 Độ ẩm', 'Tốt', 'success'))
         scores.append(2)
     elif 30 <= humidity < 40 or 70 < humidity <= 80:
-        evaluations.append(('Độ ẩm', 'Trung bình', 'warning'))
+        evaluations.append(('💧 Độ ẩm', 'Trung bình', 'warning'))
         scores.append(1)
     else:
-        evaluations.append(('Độ ẩm', 'Không tốt', 'danger'))
+        evaluations.append(('💧 Độ ẩm', 'Không tốt', 'danger'))
         scores.append(0)
     
     light = sensor_data['anh_sang']
     if light >= 300:
-        evaluations.append(('Ánh sáng', 'Đủ sáng', 'success'))
+        evaluations.append(('☀️ Ánh sáng', 'Đủ sáng', 'success'))
         scores.append(2)
     elif 200 <= light < 300:
-        evaluations.append(('Ánh sáng', 'Hơi tối', 'warning'))
+        evaluations.append(('☀️ Ánh sáng', 'Hơi tối', 'warning'))
         scores.append(1)
     else:
-        evaluations.append(('Ánh sáng', 'Thiếu sáng', 'danger'))
+        evaluations.append(('☀️ Ánh sáng', 'Thiếu sáng', 'danger'))
         scores.append(0)
     
     air = sensor_data['chat_luong_kk']
     if air < 400:
-        evaluations.append(('Không khí', 'Trong lành', 'success'))
+        evaluations.append(('💨 Chất lượng KK', 'Trong lành', 'success'))
         scores.append(2)
     elif 400 <= air < 800:
-        evaluations.append(('Không khí', 'Trung bình', 'warning'))
+        evaluations.append(('💨 Chất lượng KK', 'Trung bình', 'warning'))
         scores.append(1)
     else:
-        evaluations.append(('Không khí', 'Ô nhiễm', 'danger'))
+        evaluations.append(('💨 Chất lượng KK', 'Ô nhiễm', 'danger'))
         scores.append(0)
     
     noise = sensor_data['do_on']
     if noise < 50:
-        evaluations.append(('Độ ồn', 'Yên tĩnh', 'success'))
+        evaluations.append(('🔊 Độ ồn', 'Yên tĩnh', 'success'))
         scores.append(2)
     elif 50 <= noise < 70:
-        evaluations.append(('Độ ồn', 'Bình thường', 'warning'))
+        evaluations.append(('🔊 Độ ồn', 'Bình thường', 'warning'))
         scores.append(1)
     else:
-        evaluations.append(('Độ ồn', 'Ồn ào', 'danger'))
+        evaluations.append(('🔊 Độ ồn', 'Ồn ào', 'danger'))
         scores.append(0)
     
     total_score = sum(scores)
@@ -297,15 +325,15 @@ def evaluate_environment():
     if percentage >= 80:
         overall = 'TỐT'
         overall_class = 'success'
-        advice = 'Môi trường học tập lý tưởng!'
+        advice = 'Môi trường học tập lý tưởng! Tiết học có thể diễn ra hiệu quả.'
     elif percentage >= 60:
         overall = 'KHÁ'
         overall_class = 'warning'
-        advice = 'Môi trường chấp nhận được.'
+        advice = 'Môi trường chấp nhận được. Có một số yếu tố cần cải thiện.'
     else:
         overall = 'CẦN CẢI THIỆN'
         overall_class = 'danger'
-        advice = 'Cần điều chỉnh môi trường.'
+        advice = 'Môi trường không phù hợp. Cần điều chỉnh trước khi học.'
     
     if total_score >= 8:
         class_eval = 'Tiết học lý tưởng'
@@ -330,6 +358,7 @@ def evaluate_environment():
 
 def update_demo_data():
     """Cập nhật dữ liệu demo"""
+    # Thêm biến động ngẫu nhiên
     sensor_data['nhiet_do'] = round(24 + random.random() * 4, 1)
     sensor_data['do_am'] = round(50 + random.random() * 20, 1)
     sensor_data['anh_sang'] = round(200 + random.random() * 300)
@@ -337,30 +366,38 @@ def update_demo_data():
     sensor_data['do_on'] = round(30 + random.random() * 50)
     sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
     
-    # Tự động điều khiển
-    if settings['auto_mode']:
-        if sensor_data['nhiet_do'] > settings['temp_max']:
-            sensor_data['quat'] = 'BẬT'
-        elif sensor_data['nhiet_do'] < settings['temp_min']:
-            sensor_data['quat'] = 'TẮT'
-        
-        if sensor_data['anh_sang'] < settings['light_min']:
-            sensor_data['den'] = 'BẬT'
-        else:
-            sensor_data['den'] = 'TẮT'
-        
-        if sensor_data['chat_luong_kk'] > settings['air_max']:
-            sensor_data['cua_so'] = 'MỞ'
-        else:
-            sensor_data['cua_so'] = 'ĐÓNG'
-        
-        if sensor_data['do_on'] > settings['noise_max']:
-            sensor_data['canh_bao'] = 'BẬT'
-        else:
-            sensor_data['canh_bao'] = 'TẮT'
+    # Tự động điều khiển nếu chế độ tự động bật
+    if system_settings['auto_mode']:
+        auto_control()
     
     # Cập nhật history
     update_history()
+
+def auto_control():
+    """Tự động điều khiển thiết bị"""
+    # Nhiệt độ
+    if sensor_data['nhiet_do'] > system_settings['temp_max']:
+        sensor_data['quat'] = 'BẬT'
+    elif sensor_data['nhiet_do'] < system_settings['temp_min']:
+        sensor_data['quat'] = 'TẮT'
+    
+    # Ánh sáng
+    if sensor_data['anh_sang'] < system_settings['light_min']:
+        sensor_data['den'] = 'BẬT'
+    else:
+        sensor_data['den'] = 'TẮT'
+    
+    # Chất lượng không khí
+    if sensor_data['chat_luong_kk'] > system_settings['air_max']:
+        sensor_data['cua_so'] = 'MỞ'
+    else:
+        sensor_data['cua_so'] = 'ĐÓNG'
+    
+    # Độ ồn
+    if sensor_data['do_on'] > system_settings['noise_max']:
+        sensor_data['canh_bao'] = 'BẬT'
+    else:
+        sensor_data['canh_bao'] = 'TẮT'
 
 def update_history():
     """Cập nhật lịch sử cho biểu đồ"""
