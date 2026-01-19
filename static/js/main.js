@@ -1,9 +1,12 @@
-// CLASSGUARD - Main JavaScript (Optimized Charts)
+// CLASSGUARD - Main JavaScript (Final Fix)
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Initializing CLASSGUARD system...');
     
+    // Đặt kích thước cố định cho chart containers trước
+    fixChartContainers();
+    
     // Khởi tạo biểu đồ
-    initCharts();
+    setTimeout(initCharts, 100);
     
     // Khởi tạo event listeners
     initEventListeners();
@@ -25,152 +28,166 @@ let lineChart = null;
 let barChart = null;
 let isAutoMode = true;
 
+function fixChartContainers() {
+    console.log('📐 Fixing chart containers...');
+    
+    // Đặt kích thước cố định tuyệt đối
+    const lineContainer = document.getElementById('lineChartContainer');
+    const barContainer = document.getElementById('barChartContainer');
+    
+    if (lineContainer) {
+        lineContainer.style.height = '280px';
+        lineContainer.style.minHeight = '280px';
+        lineContainer.style.maxHeight = '280px';
+        lineContainer.style.position = 'relative';
+        lineContainer.style.overflow = 'hidden';
+    }
+    
+    if (barContainer) {
+        barContainer.style.height = '280px';
+        barContainer.style.minHeight = '280px';
+        barContainer.style.maxHeight = '280px';
+        barContainer.style.position = 'relative';
+        barContainer.style.overflow = 'hidden';
+        barContainer.style.display = 'none'; // Ẩn ban đầu
+    }
+    
+    // Đặt kích thước cho canvas
+    setTimeout(() => {
+        const canvases = document.querySelectorAll('#lineChart, #barChart');
+        canvases.forEach(canvas => {
+            if (canvas) {
+                canvas.style.width = '100% !important';
+                canvas.style.height = '280px !important';
+                canvas.style.maxHeight = '280px !important';
+            }
+        });
+    }, 200);
+}
+
 function initCharts() {
     console.log('📊 Initializing optimized charts...');
     
     const ctxLine = document.getElementById('lineChart');
     const ctxBar = document.getElementById('barChart');
     
+    // Destroy existing charts if any
+    if (lineChart) lineChart.destroy();
+    if (barChart) barChart.destroy();
+    
     if (ctxLine) {
+        // Đặt kích thước canvas
+        ctxLine.style.width = '100%';
+        ctxLine.style.height = '280px';
+        
         lineChart = new Chart(ctxLine.getContext('2d'), {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [
                     {
-                        label: '🌡️ Nhiệt độ',
+                        label: '🌡️ Nhiệt độ (°C)',
                         data: [],
                         borderColor: '#dc3545',
                         backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                        tension: 0.4,
+                        tension: 0.3,
                         fill: true,
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#dc3545',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
                     },
                     {
-                        label: '💧 Độ ẩm',
+                        label: '💧 Độ ẩm (%)',
                         data: [],
                         borderColor: '#0d6efd',
                         backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                        tension: 0.4,
+                        tension: 0.3,
                         fill: true,
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#0d6efd',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
                     }
                 ]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 2,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         position: 'top',
                         labels: {
-                            font: {
-                                size: 12,
-                                family: "'Segoe UI', sans-serif"
-                            },
-                            padding: 20,
+                            padding: 15,
                             usePointStyle: true,
-                            pointStyle: 'circle'
+                            font: {
+                                size: 11
+                            }
                         }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleFont: {
-                            size: 13
-                        },
-                        bodyFont: {
-                            size: 12
-                        },
-                        padding: 12,
-                        cornerRadius: 8
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        padding: 10,
+                        cornerRadius: 6
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: false,
                         grid: {
-                            color: 'rgba(0,0,0,0.05)',
-                            drawBorder: false
+                            color: 'rgba(0,0,0,0.05)'
                         },
                         ticks: {
                             font: {
-                                size: 11,
-                                family: "'Segoe UI', sans-serif"
+                                size: 10
                             },
-                            padding: 10,
+                            padding: 5,
                             callback: function(value) {
                                 return value.toFixed(1);
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Giá trị',
-                            font: {
-                                size: 12,
-                                weight: 'bold'
                             }
                         }
                     },
                     x: {
                         grid: {
-                            color: 'rgba(0,0,0,0.05)',
-                            drawBorder: false
+                            color: 'rgba(0,0,0,0.05)'
                         },
                         ticks: {
                             font: {
-                                size: 11,
-                                family: "'Segoe UI', sans-serif"
+                                size: 10
                             },
                             maxRotation: 0,
                             autoSkip: true,
-                            maxTicksLimit: 8
-                        },
-                        title: {
-                            display: true,
-                            text: 'Thời gian',
-                            font: {
-                                size: 12,
-                                weight: 'bold'
-                            }
+                            maxTicksLimit: 6
                         }
                     }
                 },
                 interaction: {
                     intersect: false,
                     mode: 'index'
-                },
-                animation: {
-                    duration: 1000,
-                    easing: 'easeOutQuart'
                 }
             }
         });
-        console.log('✅ Line chart initialized (Temperature & Humidity only)');
+        console.log('✅ Line chart initialized');
     }
     
     if (ctxBar) {
+        // Đặt kích thước canvas
+        ctxBar.style.width = '100%';
+        ctxBar.style.height = '280px';
+        
         barChart = new Chart(ctxBar.getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['🌡️ Nhiệt độ', '💧 Độ ẩm', '☀️ Ánh sáng', '💨 Chất lượng KK', '🔊 Độ ồn'],
+                labels: ['🌡️', '💧', '☀️', '💨', '🔊'],
                 datasets: [{
-                    label: 'Giá trị hiện tại',
+                    label: 'Giá trị',
                     data: [0, 0, 0, 0, 0],
                     backgroundColor: [
-                        'rgba(220, 53, 69, 0.8)',
-                        'rgba(13, 110, 253, 0.8)',
-                        'rgba(255, 193, 7, 0.8)',
-                        'rgba(25, 135, 84, 0.8)',
-                        'rgba(111, 66, 193, 0.8)'
+                        'rgba(220, 53, 69, 0.7)',
+                        'rgba(13, 110, 253, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(25, 135, 84, 0.7)',
+                        'rgba(111, 66, 193, 0.7)'
                     ],
                     borderColor: [
                         '#dc3545',
@@ -179,48 +196,35 @@ function initCharts() {
                         '#198754',
                         '#6f42c1'
                     ],
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    borderSkipped: false
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    borderSkipped: false,
+                    categoryPercentage: 0.6,
+                    barPercentage: 0.8
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 2,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: false
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleFont: {
-                            size: 13
-                        },
-                        bodyFont: {
-                            size: 12
-                        },
-                        padding: 12,
-                        cornerRadius: 8,
                         callbacks: {
                             label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
+                                const labels = ['Nhiệt độ', 'Độ ẩm', 'Ánh sáng', 'Chất lượng KK', 'Độ ồn'];
+                                const units = ['°C', '%', 'lux', 'PPM', 'dB'];
+                                const index = context.dataIndex;
+                                let value = context.parsed.y;
+                                
+                                if (index === 0 || index === 1) {
+                                    value = value.toFixed(1);
+                                } else {
+                                    value = Math.round(value);
                                 }
-                                if (context.parsed.y !== null) {
-                                    if (context.dataIndex === 0) {
-                                        label += context.parsed.y.toFixed(1) + ' °C';
-                                    } else if (context.dataIndex === 1) {
-                                        label += context.parsed.y.toFixed(1) + ' %';
-                                    } else {
-                                        label += Math.round(context.parsed.y);
-                                        if (context.dataIndex === 2) label += ' lux';
-                                        else if (context.dataIndex === 3) label += ' PPM';
-                                        else if (context.dataIndex === 4) label += ' dB';
-                                    }
-                                }
-                                return label;
+                                
+                                return `${labels[index]}: ${value} ${units[index]}`;
                             }
                         }
                     }
@@ -229,23 +233,13 @@ function initCharts() {
                     y: {
                         beginAtZero: true,
                         grid: {
-                            color: 'rgba(0,0,0,0.05)',
-                            drawBorder: false
+                            color: 'rgba(0,0,0,0.05)'
                         },
                         ticks: {
                             font: {
-                                size: 11,
-                                family: "'Segoe UI', sans-serif"
+                                size: 10
                             },
-                            padding: 10
-                        },
-                        title: {
-                            display: true,
-                            text: 'Giá trị',
-                            font: {
-                                size: 12,
-                                weight: 'bold'
-                            }
+                            padding: 5
                         }
                     },
                     x: {
@@ -254,19 +248,15 @@ function initCharts() {
                         },
                         ticks: {
                             font: {
-                                size: 11,
-                                family: "'Segoe UI', sans-serif"
+                                size: 14,
+                                weight: 'bold'
                             }
                         }
                     }
-                },
-                animation: {
-                    duration: 1000,
-                    easing: 'easeOutQuart'
                 }
             }
         });
-        console.log('✅ Bar chart initialized (5 parameters)');
+        console.log('✅ Bar chart initialized');
     }
 }
 
@@ -291,7 +281,7 @@ function initEventListeners() {
     if (chartToggle) {
         chartToggle.addEventListener('change', function() {
             console.log('📈 Chart toggle changed:', this.checked);
-            updateChartVisibility();
+            updateChartVisibility(this.checked);
         });
     }
     
@@ -323,8 +313,6 @@ async function updateDashboard() {
         console.log('🔄 Updating dashboard data...');
         const response = await fetch('/get_sensor_data');
         const data = await response.json();
-        
-        console.log('📡 Received sensor data:', data.sensors);
         
         if (data.sensors) {
             updateSensorDisplays(data.sensors);
@@ -401,39 +389,31 @@ function updateSensorColor(type, value) {
 }
 
 function updateCharts(data) {
-    if (!data.history) {
-        console.warn('⚠️ No history data available');
-        return;
-    }
+    if (!data.history) return;
     
     const history = data.history;
     const sensors = data.sensors;
     
-    console.log('📈 Updating charts with history data...');
-    
     // Biểu đồ đường (chỉ 2 thông số)
     if (lineChart && history.time && history.nhiet_do && history.do_am) {
-        // Giữ tối đa 8 điểm cho gọn
-        const maxPoints = 8;
+        // Giữ tối đa 6 điểm cho gọn
+        const maxPoints = 6;
         const start = Math.max(0, history.time.length - maxPoints);
         
         const displayTimes = history.time.slice(start);
         const displayTemp = history.nhiet_do.slice(start);
         const displayHum = history.do_am.slice(start);
         
-        // Format thời gian ngắn gọn hơn
+        // Format thời gian ngắn gọn
         const formattedTimes = displayTimes.map(time => {
-            const [hours, minutes, seconds] = time.split(':');
+            const [hours, minutes] = time.split(':');
             return `${hours}:${minutes}`;
         });
         
         lineChart.data.labels = formattedTimes;
         lineChart.data.datasets[0].data = displayTemp;
         lineChart.data.datasets[1].data = displayHum;
-        
-        // Cập nhật với animation mượt mà
         lineChart.update('none');
-        console.log('✅ Line chart updated (2 parameters)');
     }
     
     // Biểu đồ cột (5 thông số)
@@ -446,15 +426,11 @@ function updateCharts(data) {
             sensors.do_on
         ];
         barChart.update('none');
-        console.log('✅ Bar chart updated (5 parameters)');
     }
 }
 
 function updateEvaluation(evaluation) {
-    if (!evaluation) {
-        console.warn('⚠️ No evaluation data available');
-        return;
-    }
+    if (!evaluation) return;
     
     // Đánh giá tổng thể
     updateElement('overall-evaluation', evaluation.overall);
@@ -511,8 +487,6 @@ function updateEvaluation(evaluation) {
 }
 
 function updateDeviceStatus(sensors) {
-    console.log('🔧 Updating device status...');
-    
     const devices = ['quat', 'den', 'cua_so', 'canh_bao'];
     
     devices.forEach(device => {
@@ -522,28 +496,30 @@ function updateDeviceStatus(sensors) {
         // Cập nhật icon với hiệu ứng đặc biệt cho cửa sổ
         const iconElement = document.getElementById(`${device}-icon`);
         if (iconElement) {
+            // Xóa tất cả class hiệu ứng cũ
+            iconElement.classList.remove('fa-spin', 'fa-shake', 'window-open', 'window-close');
+            
             if (device === 'quat') {
                 iconElement.className = isOn ? 'fas fa-fan fa-spin text-success fs-4' : 'fas fa-fan text-secondary fs-4';
-                iconElement.style.transform = isOn ? 'scale(1.1)' : 'scale(1)';
             } else if (device === 'den') {
                 iconElement.className = isOn ? 'fas fa-lightbulb text-warning fs-4' : 'fas fa-lightbulb text-secondary fs-4';
-                iconElement.style.filter = isOn ? 'brightness(1.5) drop-shadow(0 0 8px rgba(255,193,7,0.7))' : 'brightness(0.7)';
+                iconElement.style.filter = isOn ? 'brightness(1.3)' : 'brightness(0.7)';
             } else if (device === 'canh_bao') {
-                iconElement.className = isOn ? 'fas fa-bell text-danger fa-shake fs-4' : 'fas fa-bell text-secondary fs-4';
+                iconElement.className = isOn ? 'fas fa-bell fa-shake text-danger fs-4' : 'fas fa-bell text-secondary fs-4';
             } else if (device === 'cua_so') {
-                // Hiệu ứng đặc biệt cho cửa sổ
+                // HIỆU ỨNG CỬA SỔ - QUAN TRỌNG!
                 if (isOn) {
-                    iconElement.className = 'fas fa-window-open text-info fs-4';
-                    iconElement.style.transform = 'rotateY(0deg)';
-                    iconElement.style.transition = 'transform 0.5s ease';
-                    // Thêm hiệu ứng mở cửa
-                    setTimeout(() => {
-                        iconElement.style.transform = 'rotateY(20deg) scale(1.1)';
-                    }, 100);
+                    // Cửa MỞ
+                    iconElement.className = 'fas fa-window-open text-info fs-4 window-open';
+                    // Hiệu ứng mở cửa
+                    iconElement.style.transform = 'perspective(500px) rotateY(30deg)';
+                    iconElement.style.transition = 'transform 0.5s ease, color 0.3s ease';
                 } else {
-                    iconElement.className = 'fas fa-window-closed text-secondary fs-4';
-                    iconElement.style.transform = 'rotateY(0deg) scale(1)';
-                    iconElement.style.transition = 'transform 0.5s ease';
+                    // Cửa ĐÓNG
+                    iconElement.className = 'fas fa-window-closed text-secondary fs-4 window-close';
+                    // Hiệu ứng đóng cửa
+                    iconElement.style.transform = 'perspective(500px) rotateY(0deg)';
+                    iconElement.style.transition = 'transform 0.5s ease, color 0.3s ease';
                 }
             }
         }
@@ -554,14 +530,14 @@ function updateDeviceStatus(sensors) {
         
         if (onBtn && offBtn) {
             // Reset classes
-            onBtn.classList.remove('btn-success', 'btn-outline-success', 'shadow');
-            offBtn.classList.remove('btn-danger', 'btn-outline-danger', 'shadow');
+            onBtn.classList.remove('btn-success', 'btn-outline-success', 'shadow', 'active');
+            offBtn.classList.remove('btn-danger', 'btn-outline-danger', 'shadow', 'active');
             
             if (isOn) {
-                onBtn.classList.add('btn-success', 'shadow');
+                onBtn.classList.add('btn-success', 'shadow', 'active');
                 offBtn.classList.add('btn-outline-danger');
             } else {
-                offBtn.classList.add('btn-danger', 'shadow');
+                offBtn.classList.add('btn-danger', 'shadow', 'active');
                 onBtn.classList.add('btn-outline-success');
             }
         }
@@ -597,7 +573,6 @@ async function controlDevice(device, action) {
         });
         
         const result = await response.json();
-        console.log('📨 Control response:', result);
         
         if (result.success) {
             showToast('✅ Thành công', result.message, 'success');
@@ -627,7 +602,6 @@ async function updateAutoMode(enabled) {
         });
         
         const result = await response.json();
-        console.log('Auto mode update response:', result);
         
         if (result.success) {
             isAutoMode = enabled;
@@ -673,13 +647,11 @@ function updateControlButtonsState(enabled) {
     controlButtons.forEach(btn => {
         if (enabled) {
             btn.disabled = false;
-            btn.classList.remove('disabled');
             btn.style.opacity = '1';
             btn.style.cursor = 'pointer';
         } else {
             btn.disabled = true;
-            btn.classList.add('disabled');
-            btn.style.opacity = '0.6';
+            btn.style.opacity = '0.5';
             btn.style.cursor = 'not-allowed';
         }
     });
@@ -708,31 +680,20 @@ function updateControlButtonsState(enabled) {
     }
 }
 
-function updateChartVisibility() {
-    const chartToggle = document.getElementById('chartToggle');
+function updateChartVisibility(isBarChart) {
     const lineContainer = document.getElementById('lineChartContainer');
     const barContainer = document.getElementById('barChartContainer');
     const chartLabel = document.getElementById('chartLabel');
     
-    if (chartToggle && lineContainer && barContainer && chartLabel) {
-        if (chartToggle.checked) {
+    if (lineContainer && barContainer && chartLabel) {
+        if (isBarChart) {
             lineContainer.style.display = 'none';
             barContainer.style.display = 'block';
             chartLabel.textContent = 'Biểu đồ cột';
-            
-            // Resize bar chart để không phình to
-            if (barChart) {
-                barChart.resize();
-            }
         } else {
             lineContainer.style.display = 'block';
             barContainer.style.display = 'none';
             chartLabel.textContent = 'Biểu đồ đường';
-            
-            // Resize line chart
-            if (lineChart) {
-                lineChart.resize();
-            }
         }
     }
 }
@@ -742,8 +703,6 @@ function updateRealTime() {
     const timeElement = document.getElementById('current-time');
     if (timeElement) {
         timeElement.textContent = now.toLocaleTimeString('vi-VN');
-        // Hiệu ứng nhấp nháy
-        timeElement.classList.toggle('text-primary');
     }
 }
 
@@ -771,7 +730,7 @@ function showToast(title, message, type) {
     // Hiển thị toast
     const toastElement = document.getElementById(toastId);
     const toast = new bootstrap.Toast(toastElement, {
-        delay: 4000
+        delay: 3000
     });
     toast.show();
     
@@ -781,65 +740,92 @@ function showToast(title, message, type) {
     });
 }
 
-// Thêm CSS cho hiệu ứng cửa sổ
+// Thêm CSS inline cho hiệu ứng cửa sổ
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes windowOpen {
-        0% { transform: rotateY(0deg) scale(1); }
-        50% { transform: rotateY(45deg) scale(1.1); }
-        100% { transform: rotateY(0deg) scale(1.1); }
+    /* FIX CHART CONTAINERS - QUAN TRỌNG! */
+    #lineChartContainer,
+    #barChartContainer {
+        height: 280px !important;
+        min-height: 280px !important;
+        max-height: 280px !important;
+        position: relative !important;
+        overflow: hidden !important;
     }
     
-    @keyframes windowClose {
-        0% { transform: rotateY(0deg) scale(1.1); }
-        50% { transform: rotateY(-45deg) scale(1); }
-        100% { transform: rotateY(0deg) scale(1); }
+    #lineChart,
+    #barChart {
+        width: 100% !important;
+        height: 280px !important;
+        max-height: 280px !important;
     }
     
+    /* Hiệu ứng cửa sổ 3D */
     .window-open {
-        animation: windowOpen 0.5s ease-out forwards;
+        color: #17a2b8 !important;
+        transform: perspective(500px) rotateY(30deg) scale(1.1) !important;
+        transition: transform 0.5s ease, color 0.3s ease !important;
     }
     
     .window-close {
-        animation: windowClose 0.5s ease-out forwards;
+        color: #6c757d !important;
+        transform: perspective(500px) rotateY(0deg) scale(1) !important;
+        transition: transform 0.5s ease, color 0.3s ease !important;
     }
     
-    /* Fix chart container height */
-    .chart-container {
-        height: 300px !important;
-        min-height: 300px;
-        max-height: 300px;
-        position: relative;
+    /* Hiệu ứng cho các icon */
+    .fa-fan.fa-spin {
+        animation: fa-spin 1.5s infinite linear !important;
     }
     
-    /* Responsive chart fix */
+    .fa-bell.fa-shake {
+        animation: shake 0.5s infinite !important;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-10deg); }
+        75% { transform: rotate(10deg); }
+    }
+    
+    /* Responsive cho mobile */
     @media (max-width: 768px) {
-        .chart-container {
-            height: 250px !important;
+        #lineChartContainer,
+        #barChartContainer {
+            height: 240px !important;
+            min-height: 240px !important;
+            max-height: 240px !important;
         }
+        
+        #lineChart,
+        #barChart {
+            height: 240px !important;
+            max-height: 240px !important;
+        }
+    }
+    
+    /* Chart toggle button */
+    .form-switch .form-check-input {
+        width: 50px;
+        height: 26px;
+        cursor: pointer;
+    }
+    
+    .form-switch .form-check-input:checked {
+        background-color: #4361ee;
+        border-color: #4361ee;
     }
 `;
 document.head.appendChild(style);
 
-// Hiệu ứng hover cho các card
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.sensor-card').forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-8px)';
-            this.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.15)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(-5px)';
-            this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.12)';
-        });
-    });
-    
-    // Đảm bảo chart containers có height fixed
-    const chartContainers = document.querySelectorAll('.chart-container');
-    chartContainers.forEach(container => {
-        container.style.height = '300px';
-        container.style.minHeight = '300px';
-        container.style.maxHeight = '300px';
-    });
+// Force resize charts on window resize
+window.addEventListener('resize', function() {
+    if (lineChart) lineChart.resize();
+    if (barChart) barChart.resize();
 });
+
+// Initial resize
+setTimeout(() => {
+    if (lineChart) lineChart.resize();
+    if (barChart) barChart.resize();
+}, 1000);
