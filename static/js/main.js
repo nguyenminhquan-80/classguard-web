@@ -66,7 +66,7 @@ function fixChartContainers() {
 }
 
 function initCharts() {
-    console.log('📊 Initializing optimized charts...');
+    console.log('📊 Initializing optimized charts with 5 lines...');
     
     const ctxLine = document.getElementById('lineChart');
     const ctxBar = document.getElementById('barChart');
@@ -78,7 +78,7 @@ function initCharts() {
     if (ctxLine) {
         // Đặt kích thước canvas
         ctxLine.style.width = '100%';
-        ctxLine.style.height = '280px';
+        ctxLine.style.height = '320px';
         
         lineChart = new Chart(ctxLine.getContext('2d'), {
             type: 'line',
@@ -86,26 +86,64 @@ function initCharts() {
                 labels: [],
                 datasets: [
                     {
-                        label: '🌡️ Nhiệt độ (°C)',
+                        label: '🌡️ Nhiệt độ',
                         data: [],
                         borderColor: '#dc3545',
                         backgroundColor: 'rgba(220, 53, 69, 0.1)',
                         tension: 0.3,
-                        fill: true,
+                        fill: false,
                         borderWidth: 2,
                         pointRadius: 3,
-                        pointHoverRadius: 5
+                        pointHoverRadius: 5,
+                        yAxisID: 'y1'
                     },
                     {
-                        label: '💧 Độ ẩm (%)',
+                        label: '💧 Độ ẩm',
                         data: [],
                         borderColor: '#0d6efd',
                         backgroundColor: 'rgba(13, 110, 253, 0.1)',
                         tension: 0.3,
-                        fill: true,
+                        fill: false,
                         borderWidth: 2,
                         pointRadius: 3,
-                        pointHoverRadius: 5
+                        pointHoverRadius: 5,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '☀️ Ánh sáng',
+                        data: [],
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        tension: 0.3,
+                        fill: false,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        yAxisID: 'y2'
+                    },
+                    {
+                        label: '💨 Chất lượng KK',
+                        data: [],
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                        tension: 0.3,
+                        fill: false,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        yAxisID: 'y2'
+                    },
+                    {
+                        label: '🔊 Độ ồn',
+                        data: [],
+                        borderColor: '#6f42c1',
+                        backgroundColor: 'rgba(111, 66, 193, 0.1)',
+                        tension: 0.3,
+                        fill: false,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        yAxisID: 'y2'
                     }
                 ]
             },
@@ -114,14 +152,8 @@ function initCharts() {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
+                        display: false, // Ẩn legend vì đã có custom
                         position: 'top',
-                        labels: {
-                            padding: 15,
-                            usePointStyle: true,
-                            font: {
-                                size: 11
-                            }
-                        }
                     },
                     tooltip: {
                         mode: 'index',
@@ -132,8 +164,15 @@ function initCharts() {
                     }
                 },
                 scales: {
-                    y: {
-                        beginAtZero: false,
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Nhiệt độ (°C) & Độ ẩm (%)',
+                            color: '#666'
+                        },
                         grid: {
                             color: 'rgba(0,0,0,0.05)'
                         },
@@ -142,9 +181,25 @@ function initCharts() {
                                 size: 10
                             },
                             padding: 5,
-                            callback: function(value) {
-                                return value.toFixed(1);
-                            }
+                        }
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Ánh sáng, KK, Ồn',
+                            color: '#666'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                        ticks: {
+                            font: {
+                                size: 10
+                            },
+                            padding: 5,
                         }
                     },
                     x: {
@@ -167,18 +222,18 @@ function initCharts() {
                 }
             }
         });
-        console.log('✅ Line chart initialized');
+        console.log('✅ Line chart with 5 lines initialized');
     }
     
     if (ctxBar) {
         // Đặt kích thước canvas
         ctxBar.style.width = '100%';
-        ctxBar.style.height = '280px';
+        ctxBar.style.height = '320px';
         
         barChart = new Chart(ctxBar.getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['🌡️', '💧', '☀️', '💨', '🔊'],
+                labels: ['🌡️ Nhiệt độ', '💧 Độ ẩm', '☀️ Ánh sáng', '💨 Chất lượng KK', '🔊 Độ ồn'],
                 datasets: [{
                     label: 'Giá trị',
                     data: [0, 0, 0, 0, 0],
@@ -248,7 +303,7 @@ function initCharts() {
                         },
                         ticks: {
                             font: {
-                                size: 14,
+                                size: 12,
                                 weight: 'bold'
                             }
                         }
@@ -263,7 +318,7 @@ function initCharts() {
 function initEventListeners() {
     console.log('🔄 Setting up event listeners...');
     
-    // Nút điều khiển thiết bị
+    // Nút điều khiển thiết bị - THÊM XỬ LÝ ĐẶC BIỆT CHO CỬA
     document.querySelectorAll('.control-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const device = this.dataset.device;
@@ -271,11 +326,31 @@ function initEventListeners() {
             console.log(`🎮 Control clicked: ${device} -> ${action}`);
             
             if (device && action) {
+                // Nếu là cửa, thêm hiệu ứng ngay lập tức
+                if (device === 'cua_so') {
+                    const iconElement = document.getElementById('cua_so-icon');
+                    const statusElement = document.getElementById('cua_so-status');
+                    
+                    if (action === 'MỞ') {
+                        // Cập nhật ngay icon
+                        iconElement.className = 'fas fa-door-open text-success fs-4 pulse';
+                        statusElement.textContent = 'MỞ';
+                        statusElement.style.color = '#28a745';
+                    } else {
+                        // Cập nhật ngay icon
+                        iconElement.className = 'fas fa-door-closed text-danger fs-4';
+                        statusElement.textContent = 'ĐÓNG';
+                        statusElement.style.color = '#dc3545';
+                    }
+                }
+                
                 controlDevice(device, action);
             }
         });
     });
     
+    // ... phần còn lại giữ nguyên
+}   
     // Chuyển đổi biểu đồ
     const chartToggle = document.getElementById('chartToggle');
     if (chartToggle) {
@@ -394,15 +469,22 @@ function updateCharts(data) {
     const history = data.history;
     const sensors = data.sensors;
     
-    // Biểu đồ đường (chỉ 2 thông số)
-    if (lineChart && history.time && history.nhiet_do && history.do_am) {
-        // Giữ tối đa 6 điểm cho gọn
-        const maxPoints = 6;
+    // Biểu đồ đường (5 thông số)
+    if (lineChart && history.time) {
+        // Giữ tối đa 10 điểm cho gọn
+        const maxPoints = 10;
         const start = Math.max(0, history.time.length - maxPoints);
         
         const displayTimes = history.time.slice(start);
-        const displayTemp = history.nhiet_do.slice(start);
-        const displayHum = history.do_am.slice(start);
+        
+        // Lấy dữ liệu cho 5 đường
+        const datasets = [
+            history.nhiet_do ? history.nhiet_do.slice(start) : [],
+            history.do_am ? history.do_am.slice(start) : [],
+            history.anh_sang ? history.anh_sang.slice(start) : [],
+            history.chat_luong_kk ? history.chat_luong_kk.slice(start) : [],
+            history.do_on ? history.do_on.slice(start) : []
+        ];
         
         // Format thời gian ngắn gọn
         const formattedTimes = displayTimes.map(time => {
@@ -410,9 +492,16 @@ function updateCharts(data) {
             return `${hours}:${minutes}`;
         });
         
+        // Cập nhật labels
         lineChart.data.labels = formattedTimes;
-        lineChart.data.datasets[0].data = displayTemp;
-        lineChart.data.datasets[1].data = displayHum;
+        
+        // Cập nhật data cho 5 đường
+        datasets.forEach((data, index) => {
+            if (lineChart.data.datasets[index]) {
+                lineChart.data.datasets[index].data = data;
+            }
+        });
+        
         lineChart.update('none');
     }
     
@@ -497,7 +586,7 @@ function updateDeviceStatus(sensors) {
         const iconElement = document.getElementById(`${device}-icon`);
         if (iconElement) {
             // Xóa tất cả class hiệu ứng cũ
-            iconElement.classList.remove('fa-spin', 'fa-shake', 'window-open', 'window-close');
+            iconElement.classList.remove('fa-spin', 'fa-shake', 'fa-window-open', 'fa-window-closed', 'fa-door-open', 'fa-door-closed');
             
             if (device === 'quat') {
                 iconElement.className = isOn ? 'fas fa-fan fa-spin text-success fs-4' : 'fas fa-fan text-secondary fs-4';
@@ -507,24 +596,24 @@ function updateDeviceStatus(sensors) {
             } else if (device === 'canh_bao') {
                 iconElement.className = isOn ? 'fas fa-bell fa-shake text-danger fs-4' : 'fas fa-bell text-secondary fs-4';
             } else if (device === 'cua_so') {
-                // HIỆU ỨNG CỬA SỔ - QUAN TRỌNG!
+                // HIỆU ỨNG CỬA - SỬA LẠI THEO YÊU CẦU
                 if (isOn) {
-                    // Cửa MỞ
-                    iconElement.className = 'fas fa-window-open text-info fs-4 window-open';
-                    // Hiệu ứng mở cửa
-                    iconElement.style.transform = 'perspective(500px) rotateY(30deg)';
-                    iconElement.style.transition = 'transform 0.5s ease, color 0.3s ease';
+                    // Cửa MỞ - Sử dụng icon cửa mở
+                    iconElement.className = 'fas fa-door-open text-success fs-4';
+                    iconElement.style.color = '#28a745'; // Màu xanh lá
+                    iconElement.style.transform = 'scale(1.1)';
+                    iconElement.style.transition = 'transform 0.3s ease, color 0.3s ease';
                 } else {
-                    // Cửa ĐÓNG
-                    iconElement.className = 'fas fa-window-closed text-secondary fs-4 window-close';
-                    // Hiệu ứng đóng cửa
-                    iconElement.style.transform = 'perspective(500px) rotateY(0deg)';
-                    iconElement.style.transition = 'transform 0.5s ease, color 0.3s ease';
+                    // Cửa ĐÓNG - Sử dụng icon cửa đóng
+                    iconElement.className = 'fas fa-door-closed text-danger fs-4';
+                    iconElement.style.color = '#dc3545'; // Màu đỏ
+                    iconElement.style.transform = 'scale(1)';
+                    iconElement.style.transition = 'transform 0.3s ease, color 0.3s ease';
                 }
             }
         }
         
-        // Cập nhật nút điều khiển
+        // Cập nhật nút điều khiển - QUAN TRỌNG: Thêm xử lý riêng cho cửa
         const onBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'MỞ' : 'BẬT'}"]`);
         const offBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'ĐÓNG' : 'TẮT'}"]`);
         
@@ -536,9 +625,21 @@ function updateDeviceStatus(sensors) {
             if (isOn) {
                 onBtn.classList.add('btn-success', 'shadow', 'active');
                 offBtn.classList.add('btn-outline-danger');
+                
+                // Đổi màu riêng cho cửa
+                if (device === 'cua_so') {
+                    onBtn.style.backgroundColor = '#28a745';
+                    onBtn.style.color = 'white';
+                }
             } else {
                 offBtn.classList.add('btn-danger', 'shadow', 'active');
                 onBtn.classList.add('btn-outline-success');
+                
+                // Đổi màu riêng cho cửa
+                if (device === 'cua_so') {
+                    offBtn.style.backgroundColor = '#dc3545';
+                    offBtn.style.color = 'white';
+                }
             }
         }
         
@@ -547,6 +648,11 @@ function updateDeviceStatus(sensors) {
         const statusElement = document.getElementById(`${device}-status`);
         if (statusElement) {
             statusElement.className = `status-badge status-${isOn ? 'on' : 'off'}`;
+            // Đổi màu text riêng cho cửa
+            if (device === 'cua_so') {
+                statusElement.style.color = isOn ? '#28a745' : '#dc3545';
+                statusElement.style.backgroundColor = isOn ? 'rgba(40, 167, 69, 0.15)' : 'rgba(220, 53, 69, 0.15)';
+            }
         }
     });
 }
@@ -746,9 +852,9 @@ style.textContent = `
     /* FIX CHART CONTAINERS - QUAN TRỌNG! */
     #lineChartContainer,
     #barChartContainer {
-        height: 280px !important;
-        min-height: 280px !important;
-        max-height: 280px !important;
+        height: 320px !important;
+        min-height: 320px !important;
+        max-height: 320px !important;
         position: relative !important;
         overflow: hidden !important;
     }
@@ -756,21 +862,23 @@ style.textContent = `
     #lineChart,
     #barChart {
         width: 100% !important;
-        height: 280px !important;
-        max-height: 280px !important;
+        height: 320px !important;
+        max-height: 320px !important;
     }
     
-    /* Hiệu ứng cửa sổ 3D */
-    .window-open {
-        color: #17a2b8 !important;
-        transform: perspective(500px) rotateY(30deg) scale(1.1) !important;
-        transition: transform 0.5s ease, color 0.3s ease !important;
+    /* Hiệu ứng cửa - MỚI */
+    .fa-door-open {
+        color: #28a745 !important;
+        transform: scale(1.1) !important;
+        transition: all 0.3s ease !important;
+        filter: drop-shadow(0 2px 4px rgba(40, 167, 69, 0.3));
     }
     
-    .window-close {
-        color: #6c757d !important;
-        transform: perspective(500px) rotateY(0deg) scale(1) !important;
-        transition: transform 0.5s ease, color 0.3s ease !important;
+    .fa-door-closed {
+        color: #dc3545 !important;
+        transform: scale(1) !important;
+        transition: all 0.3s ease !important;
+        filter: drop-shadow(0 2px 4px rgba(220, 53, 69, 0.3));
     }
     
     /* Hiệu ứng cho các icon */
@@ -788,19 +896,39 @@ style.textContent = `
         75% { transform: rotate(10deg); }
     }
     
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+        100% { transform: scale(1.1); }
+    }
+    
+    .pulse {
+        animation: pulse 0.5s ease-in-out;
+    }
+    
+    /* Legend cho biểu đồ */
+    .legend-color {
+        display: inline-block;
+        border-radius: 3px;
+    }
+    
     /* Responsive cho mobile */
     @media (max-width: 768px) {
         #lineChartContainer,
         #barChartContainer {
-            height: 240px !important;
-            min-height: 240px !important;
-            max-height: 240px !important;
+            height: 280px !important;
+            min-height: 280px !important;
+            max-height: 280px !important;
         }
         
         #lineChart,
         #barChart {
-            height: 240px !important;
-            max-height: 240px !important;
+            height: 280px !important;
+            max-height: 280px !important;
+        }
+        
+        #lineChartLegend {
+            font-size: 0.8rem;
         }
     }
     
@@ -829,3 +957,5 @@ setTimeout(() => {
     if (lineChart) lineChart.resize();
     if (barChart) barChart.resize();
 }, 1000);
+
+
