@@ -107,8 +107,7 @@
         .input-group-text {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
-            border-right: none;
-            border-radius: 12px 0 0 12px;
+            border-radius: 12px;
         }
         
         .btn-login {
@@ -155,6 +154,33 @@
             font-size: 0.8rem;
             padding: 4px 10px;
             border-radius: 20px;
+        }
+        
+        /* Style cho toggle password */
+        .password-toggle {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+        }
+        
+        .password-toggle:hover {
+            background: #e9ecef;
+        }
+        
+        .password-toggle i {
+            color: #6c757d;
+            transition: color 0.3s;
+        }
+        
+        .password-toggle:hover i {
+            color: #4361ee;
         }
         
         @keyframes fadeIn {
@@ -234,8 +260,11 @@
                         <span class="input-group-text">
                             <i class="fas fa-key"></i>
                         </span>
-                        <input type="password" class="form-control" name="password" 
+                        <input type="password" class="form-control" id="password" name="password" 
                                placeholder="Nhập mật khẩu" required>
+                        <span class="input-group-text password-toggle" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </span>
                     </div>
                 </div>
                 
@@ -299,7 +328,54 @@
         
         // Auto-focus vào trường username
         document.querySelector('input[name="username"]').focus();
+        
+        // Toggle hiển thị mật khẩu
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+        
+        if (togglePassword && password) {
+            togglePassword.addEventListener('click', function() {
+                // Toggle the type attribute
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                
+                // Toggle the eye icon
+                const icon = this.querySelector('i');
+                if (type === 'password') {
+                    icon.className = 'fas fa-eye';
+                    this.title = "Hiển thị mật khẩu";
+                } else {
+                    icon.className = 'fas fa-eye-slash';
+                    this.title = "Ẩn mật khẩu";
+                }
+            });
+            
+            // Thêm tooltip cho toggle button
+            togglePassword.title = "Hiển thị mật khẩu";
+            
+            // Thêm hiệu ứng hover cho toggle button
+            togglePassword.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.1)';
+                this.style.transition = 'transform 0.2s ease';
+            });
+            
+            togglePassword.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        }
+        
+        // Keyboard shortcut để toggle password (Alt+P)
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey && e.key === 'p') {
+                e.preventDefault();
+                if (togglePassword && password) {
+                    togglePassword.click();
+                }
+            }
+        });
+        
+        // Hiển thị thông báo shortcut
+        console.log('💡 Nhấn Alt+P để hiển thị/ẩn mật khẩu');
     </script>
 </body>
 </html>
-
