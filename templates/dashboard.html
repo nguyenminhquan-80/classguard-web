@@ -24,117 +24,127 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
         }
+        
         /* ====== FIX CHART CONTAINERS ====== */
-.chart-container {
-    height: 280px !important;
-    min-height: 280px !important;
-    max-height: 280px !important;
-    position: relative;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
+        .chart-container {
+            height: 300px !important;
+            min-height: 300px !important;
+            max-height: 300px !important;
+            position: relative;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
 
-/* Đảm bảo chart canvas không phình to */
-.chart-container canvas {
-    width: 100% !important;
-    height: 280px !important;
-    max-height: 280px !important;
-}
+        /* Đảm bảo chart canvas không phình to */
+        .chart-container canvas {
+            width: 100% !important;
+            height: 300px !important;
+            max-height: 300px !important;
+        }
 
-/* Hiệu ứng cửa sổ 3D */
-.fa-window-open {
-    color: #17a2b8;
-    transform: perspective(500px) rotateY(30deg);
-    transition: transform 0.5s ease, color 0.3s ease;
-}
+        /* Hiệu ứng cửa */
+        .door-open {
+            color: #28a745 !important;
+            animation: doorOpen 0.5s ease;
+        }
+        
+        .door-closed {
+            color: #dc3545 !important;
+            animation: doorClose 0.5s ease;
+        }
+        
+        @keyframes doorOpen {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(-20deg); }
+        }
+        
+        @keyframes doorClose {
+            0% { transform: rotateY(-20deg); }
+            100% { transform: rotateY(0deg); }
+        }
 
-.fa-window-closed {
-    color: #6c757d;
-    transform: perspective(500px) rotateY(0deg);
-    transition: transform 0.5s ease, color 0.3s ease;
-}
+        /* Animation cho quạt */
+        .fa-fan.fa-spin {
+            animation: fa-spin 1.5s infinite linear;
+        }
 
-/* Animation cho quạt */
-.fa-fan.fa-spin {
-    animation: fa-spin 1.5s infinite linear;
-}
+        /* Animation cho chuông cảnh báo */
+        @keyframes bell-shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            75% { transform: rotate(15deg); }
+            100% { transform: rotate(0deg); }
+        }
 
-/* Animation cho chuông cảnh báo */
-@keyframes bell-shake {
-    0% { transform: rotate(0deg); }
-    25% { transform: rotate(-15deg); }
-    75% { transform: rotate(15deg); }
-    100% { transform: rotate(0deg); }
-}
+        .fa-bell.fa-shake {
+            animation: bell-shake 0.5s infinite;
+        }
 
-.fa-bell.fa-shake {
-    animation: bell-shake 0.5s infinite;
-}
+        /* Chart toggle button */
+        .form-switch .form-check-input {
+            width: 50px;
+            height: 26px;
+            cursor: pointer;
+        }
 
-/* Chart toggle button */
-.form-switch .form-check-input {
-    width: 50px;
-    height: 26px;
-    cursor: pointer;
-}
+        .form-switch .form-check-input:checked {
+            background-color: #4361ee;
+            border-color: #4361ee;
+        }
 
-.form-switch .form-check-input:checked {
-    background-color: #4361ee;
-    border-color: #4361ee;
-}
+        .form-switch .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        }
 
-.form-switch .form-check-input:focus {
-    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
-}
+        /* Responsive cho mobile */
+        @media (max-width: 992px) {
+            .chart-container {
+                height: 260px !important;
+                min-height: 260px !important;
+                max-height: 260px !important;
+            }
+            
+            .chart-container canvas {
+                height: 260px !important;
+                max-height: 260px !important;
+            }
+        }
 
-/* Responsive cho mobile */
-@media (max-width: 992px) {
-    .chart-container {
-        height: 260px !important;
-        min-height: 260px !important;
-        max-height: 260px !important;
-    }
-    
-    .chart-container canvas {
-        height: 260px !important;
-        max-height: 260px !important;
-    }
-}
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 240px !important;
+                min-height: 240px !important;
+                max-height: 240px !important;
+            }
+            
+            .chart-container canvas {
+                height: 240px !important;
+                max-height: 240px !important;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 10px;
+            }
+            
+            .section-header h2 {
+                margin-bottom: 0;
+            }
+        }
 
-@media (max-width: 768px) {
-    .chart-container {
-        height: 240px !important;
-        min-height: 240px !important;
-        max-height: 240px !important;
-    }
-    
-    .chart-container canvas {
-        height: 240px !important;
-        max-height: 240px !important;
-    }
-    
-    .section-header {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 10px;
-    }
-    
-    .section-header h2 {
-        margin-bottom: 0;
-    }
-}
+        /* Đảm bảo charts section không bị phình */
+        .charts-section {
+            overflow: hidden;
+            padding-bottom: 10px;
+        }
 
-/* Đảm bảo charts section không bị phình */
-.charts-section {
-    overflow: hidden;
-    padding-bottom: 10px;
-}
-
-/* Chart labels nhỏ gọn */
-#chartLabel {
-    font-weight: 600;
-    color: #4361ee;
-}       
+        /* Chart labels nhỏ gọn */
+        #chartLabel {
+            font-weight: 600;
+            color: #4361ee;
+        }
+        
         /* Main Container */
         .main-container {
             max-width: 1400px;
@@ -384,11 +394,6 @@
             font-weight: 700;
             color: var(--dark);
             margin: 0;
-        }
-        
-        .chart-container {
-            height: 300px;
-            position: relative;
         }
         
         /* Control Panel */
@@ -825,7 +830,7 @@
             <i class="fas fa-robot me-2 fs-4"></i>
             <div>
                 <strong>Chế độ tự động đang bật</strong>
-                <div class="small">Hệ thống sẽ tự động điều khiển thiết bị dựa trên ngưỡng cài đặt</div>
+                <div class="small">Hệ thống sẽ tự động điều chỉnh thiết bị dựa trên ngưỡng cài đặt</div>
             </div>
         </div>
 
@@ -926,56 +931,28 @@
         </div>
 
         <!-- Charts Section -->
-<div class="charts-section fade-in">
-    <div class="section-header">
-        <h2 class="section-title">
-            <i class="fas fa-chart-line me-2"></i>Biểu đồ dữ liệu
-        </h2>
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="chartToggle" style="width: 60px; height: 30px;">
-            <label class="form-check-label fw-bold" for="chartToggle">
-                <span id="chartLabel">Biểu đồ đường</span>
-            </label>
-        </div>
-    </div>
-    
-    <div class="chart-container" style="height: 320px;">
-        <div id="lineChartContainer">
-            <canvas id="lineChart" style="width: 100%; height: 320px;"></canvas>
-        </div>
-        <div id="barChartContainer" style="display: none;">
-            <canvas id="barChart" style="width: 100%; height: 320px;"></canvas>
-        </div>
-    </div>
-    
-    <!-- Legend cho 5 đường biểu đồ -->
-    <div class="row mt-3" id="lineChartLegend">
-        <div class="col-12">
-            <div class="d-flex flex-wrap justify-content-center gap-3">
-                <div class="d-flex align-items-center">
-                    <div class="legend-color" style="background-color: #dc3545; width: 20px; height: 10px; margin-right: 8px;"></div>
-                    <small class="text-muted">🌡️ Nhiệt độ (°C)</small>
+        <div class="charts-section fade-in">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line me-2"></i>Biểu đồ dữ liệu
+                </h2>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="chartToggle" style="width: 60px; height: 30px;">
+                    <label class="form-check-label fw-bold" for="chartToggle">
+                        <span id="chartLabel">Biểu đồ đường</span>
+                    </label>
                 </div>
-                <div class="d-flex align-items-center">
-                    <div class="legend-color" style="background-color: #0d6efd; width: 20px; height: 10px; margin-right: 8px;"></div>
-                    <small class="text-muted">💧 Độ ẩm (%)</small>
+            </div>
+            
+            <div class="chart-container">
+                <div id="lineChartContainer">
+                    <canvas id="lineChart"></canvas>
                 </div>
-                <div class="d-flex align-items-center">
-                    <div class="legend-color" style="background-color: #ffc107; width: 20px; height: 10px; margin-right: 8px;"></div>
-                    <small class="text-muted">☀️ Ánh sáng (lux)</small>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="legend-color" style="background-color: #198754; width: 20px; height: 10px; margin-right: 8px;"></div>
-                    <small class="text-muted">💨 Chất lượng KK (PPM)</small>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="legend-color" style="background-color: #6f42c1; width: 20px; height: 10px; margin-right: 8px;"></div>
-                    <small class="text-muted">🔊 Độ ồn (dB)</small>
+                <div id="barChartContainer" style="display: none;">
+                    <canvas id="barChart"></canvas>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
         <!-- Control Panel -->
         <div class="control-panel fade-in">
@@ -1067,7 +1044,7 @@
                 <div class="device-card">
                     <div class="device-header">
                         <div class="device-icon-wrapper">
-                            <i class="fas fa-window-restore" id="cua_so-icon"></i>
+                            <i class="fas fa-door-closed" id="cua_so-icon"></i>
                         </div>
                         <div class="device-info">
                             <h5>🚪 Cửa sổ</h5>
@@ -1079,12 +1056,12 @@
                         <button class="control-btn btn-on" 
                                 data-device="cua_so" 
                                 data-action="MỞ">
-                            <i class="fas fa-expand-alt me-1"></i> MỞ
+                            <i class="fas fa-door-open me-1"></i> MỞ
                         </button>
                         <button class="control-btn btn-off active" 
                                 data-device="cua_so" 
                                 data-action="ĐÓNG">
-                            <i class="fas fa-compress-alt me-1"></i> ĐÓNG
+                            <i class="fas fa-door-closed me-1"></i> ĐÓNG
                         </button>
                     </div>
                     
@@ -1293,7 +1270,3 @@
     </script>
 </body>
 </html>
-
-
-
-
