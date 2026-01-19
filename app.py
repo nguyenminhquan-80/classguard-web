@@ -141,8 +141,8 @@ def update_settings():
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    if session['role'] != 'admin':
-        return jsonify({'error': 'Không có quyền!'}), 403
+    if session['role'] not in ['admin', 'teacher']:
+    return jsonify({'error': '❌ Không có quyền điều khiển!'}), 403
     
     try:
         system_settings['auto_mode'] = request.json.get('auto_mode', system_settings['auto_mode'])
@@ -418,3 +418,4 @@ def update_history():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
