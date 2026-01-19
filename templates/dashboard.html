@@ -24,70 +24,60 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
         }
-
-        /* Fix chart containers */
+        /* ====== FIX CHART CONTAINERS ====== */
 .chart-container {
-    height: 300px !important;
-    min-height: 300px;
-    max-height: 300px;
+    height: 280px !important;
+    min-height: 280px !important;
+    max-height: 280px !important;
     position: relative;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
-/* Window animation */
-@keyframes windowOpen {
-    0% { transform: rotateY(0deg) scale(1); }
-    50% { transform: rotateY(45deg) scale(1.1); }
-    100% { transform: rotateY(0deg) scale(1.1); }
+/* Đảm bảo chart canvas không phình to */
+.chart-container canvas {
+    width: 100% !important;
+    height: 280px !important;
+    max-height: 280px !important;
 }
 
-@keyframes windowClose {
-    0% { transform: rotateY(0deg) scale(1.1); }
-    50% { transform: rotateY(-45deg) scale(1); }
-    100% { transform: rotateY(0deg) scale(1); }
+/* Hiệu ứng cửa sổ 3D */
+.fa-window-open {
+    color: #17a2b8;
+    transform: perspective(500px) rotateY(30deg);
+    transition: transform 0.5s ease, color 0.3s ease;
 }
 
-.window-open {
-    animation: windowOpen 0.5s ease-out forwards;
+.fa-window-closed {
+    color: #6c757d;
+    transform: perspective(500px) rotateY(0deg);
+    transition: transform 0.5s ease, color 0.3s ease;
 }
 
-.window-close {
-    animation: windowClose 0.5s ease-out forwards;
-}
-
-/* Responsive chart fix */
-@media (max-width: 992px) {
-    .chart-container {
-        height: 280px !important;
-        min-height: 280px;
-        max-height: 280px;
-    }
-}
-
-@media (max-width: 768px) {
-    .chart-container {
-        height: 250px !important;
-        min-height: 250px;
-        max-height: 250px;
-    }
-}
-
-/* Device icon effects */
+/* Animation cho quạt */
 .fa-fan.fa-spin {
-    animation: fa-spin 2s infinite linear;
+    animation: fa-spin 1.5s infinite linear;
 }
 
-.fa-bell.fa-shake {
-    animation: fa-shake 0.5s infinite;
-}
-
-@keyframes fa-shake {
+/* Animation cho chuông cảnh báo */
+@keyframes bell-shake {
     0% { transform: rotate(0deg); }
-    25% { transform: rotate(-10deg); }
-    75% { transform: rotate(10deg); }
+    25% { transform: rotate(-15deg); }
+    75% { transform: rotate(15deg); }
     100% { transform: rotate(0deg); }
 }
 
+.fa-bell.fa-shake {
+    animation: bell-shake 0.5s infinite;
+}
+
 /* Chart toggle button */
+.form-switch .form-check-input {
+    width: 50px;
+    height: 26px;
+    cursor: pointer;
+}
+
 .form-switch .form-check-input:checked {
     background-color: #4361ee;
     border-color: #4361ee;
@@ -95,7 +85,56 @@
 
 .form-switch .form-check-input:focus {
     box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
-}        
+}
+
+/* Responsive cho mobile */
+@media (max-width: 992px) {
+    .chart-container {
+        height: 260px !important;
+        min-height: 260px !important;
+        max-height: 260px !important;
+    }
+    
+    .chart-container canvas {
+        height: 260px !important;
+        max-height: 260px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 240px !important;
+        min-height: 240px !important;
+        max-height: 240px !important;
+    }
+    
+    .chart-container canvas {
+        height: 240px !important;
+        max-height: 240px !important;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    
+    .section-header h2 {
+        margin-bottom: 0;
+    }
+}
+
+/* Đảm bảo charts section không bị phình */
+.charts-section {
+    overflow: hidden;
+    padding-bottom: 10px;
+}
+
+/* Chart labels nhỏ gọn */
+#chartLabel {
+    font-weight: 600;
+    color: #4361ee;
+}       
         /* Main Container */
         .main-container {
             max-width: 1400px;
@@ -1226,5 +1265,6 @@
     </script>
 </body>
 </html>
+
 
 
