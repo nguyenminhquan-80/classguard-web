@@ -1,1 +1,585 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLASSGUARD - Cài đặt hệ thống</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .settings-container {
+            background: white;
+            min-height: 100vh;
+        }
+        
+        .navbar-settings {
+            background: white;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .settings-header {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+            padding: 30px 0;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .settings-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .settings-card:hover {
+            border-color: #4361ee;
+            transform: translateY(-5px);
+        }
+        
+        .threshold-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #e9ecef;
+            outline: none;
+        }
+        
+        .threshold-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4361ee;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .value-display {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #4361ee;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 5px solid #4cc9f0;
+        }
+        
+        .device-status {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        .status-online {
+            background: #4cc9f0;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-offline {
+            background: #6c757d;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-settings">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold" href="/dashboard">
+                    <i class="fas fa-arrow-left me-2"></i>CLASSGUARD
+                </a>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-danger me-3 p-2">
+                        <i class="fas fa-user-shield me-1"></i>Quản trị viên
+                    </span>
+                    <a href="/logout" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </nav>
 
+        <!-- Header -->
+        <div class="settings-header">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="fw-bold">
+                            <i class="fas fa-cog me-3"></i>Cài đặt hệ thống
+                        </h1>
+                        <p class="mb-0 opacity-90">
+                            Cấu hình ngưỡng và chế độ hoạt động tự động
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-light btn-lg" onclick="saveSettings()">
+                            <i class="fas fa-save me-2"></i>Lưu cài đặt
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="container py-4">
+            <!-- Alert Container -->
+            <div id="alert-container"></div>
+            
+            <!-- Auto Mode Settings -->
+            <div class="settings-card">
+                <h3 class="fw-bold mb-4">
+                    <i class="fas fa-robot me-2"></i>Chế độ tự động
+                </h3>
+                
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" id="autoModeToggle" 
+                           style="width: 60px; height: 30px;"
+                           {% if settings.auto_mode %}checked{% endif %}>
+                    <label class="form-check-label fw-bold fs-5" for="autoModeToggle">
+                        Kích hoạt chế độ tự động
+                    </label>
+                </div>
+                
+                <div class="info-box">
+                    <h6><i class="fas fa-info-circle me-2"></i>Thông tin:</h6>
+                    <p class="mb-0">
+                        Khi bật chế độ tự động, hệ thống sẽ tự động điều khiển các thiết bị 
+                        dựa trên ngưỡng cài đặt bên dưới. Hệ thống ưu tiên sức khỏe và 
+                        hiệu quả học tập của học sinh.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Temperature Settings -->
+            <div class="settings-card">
+                <h3 class="fw-bold mb-4">
+                    <i class="fas fa-thermometer-half me-2"></i>Nhiệt độ
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label fw-bold">
+                            Nhiệt độ tối thiểu: <span id="tempMinValue" class="text-primary">{{ settings.temp_min }}</span>°C
+                        </label>
+                        <input type="range" class="threshold-slider" id="tempMinSlider" 
+                               min="15" max="25" step="0.5" value="{{ settings.temp_min }}">
+                        <div class="range-labels">
+                            <span>15°C (Lạnh)</span>
+                            <span>25°C (Ấm)</span>
+                        </div>
+                        <div class="mt-2 small text-muted">
+                            Khi nhiệt độ dưới ngưỡng này, quạt sẽ tự động tắt
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label fw-bold">
+                            Nhiệt độ tối đa: <span id="tempMaxValue" class="text-danger">{{ settings.temp_max }}</span>°C
+                        </label>
+                        <input type="range" class="threshold-slider" id="tempMaxSlider" 
+                               min="25" max="35" step="0.5" value="{{ settings.temp_max }}">
+                        <div class="range-labels">
+                            <span>25°C (Ấm)</span>
+                            <span>35°C (Nóng)</span>
+                        </div>
+                        <div class="mt-2 small text-muted">
+                            Khi nhiệt độ trên ngưỡng này, quạt sẽ tự động bật
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-check-circle text-success me-2"></i>Phạm vi lý tưởng:</h6>
+                            <p class="mb-0">20°C - 28°C (Nhiệt độ phòng học tốt nhất)</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-exclamation-triangle text-danger me-2"></i>Cảnh báo:</h6>
+                            <p class="mb-0">Dưới 18°C hoặc trên 32°C ảnh hưởng học tập</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Light Settings -->
+            <div class="settings-card">
+                <h3 class="fw-bold mb-4">
+                    <i class="fas fa-sun me-2"></i>Ánh sáng
+                </h3>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">
+                        Ngưỡng ánh sáng tối thiểu: <span id="lightMinValue" class="text-warning">{{ settings.light_min }}</span> lux
+                    </label>
+                    <input type="range" class="threshold-slider" id="lightMinSlider" 
+                           min="100" max="500" step="10" value="{{ settings.light_min }}">
+                    <div class="range-labels">
+                        <span>100 lux (Tối)</span>
+                        <span>500 lux (Sáng)</span>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-moon text-secondary me-2"></i>Dưới 200 lux:</h6>
+                            <p class="small mb-0">Quá tối, cần bật đèn</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-sun text-warning me-2"></i>200-300 lux:</h6>
+                            <p class="small mb-0">Hơi tối, có thể bật đèn</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-sun text-success me-2"></i>Trên 300 lux:</h6>
+                            <p class="small mb-0">Đủ sáng cho học tập</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Air Quality Settings -->
+            <div class="settings-card">
+                <h3 class="fw-bold mb-4">
+                    <i class="fas fa-wind me-2"></i>Chất lượng không khí
+                </h3>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">
+                        Ngưỡng chất lượng không khí: <span id="airMaxValue" class="text-success">{{ settings.air_max }}</span> PPM
+                    </label>
+                    <input type="range" class="threshold-slider" id="airMaxSlider" 
+                           min="200" max="1200" step="50" value="{{ settings.air_max }}">
+                    <div class="range-labels">
+                        <span>200 PPM (Tốt)</span>
+                        <span>1200 PPM (Ô nhiễm)</span>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Khi vượt ngưỡng này, hệ thống sẽ đề nghị mở cửa sổ
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-leaf text-success me-2"></i>Dưới 400 PPM:</h6>
+                            <p class="small mb-0">Không khí trong lành</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-cloud text-warning me-2"></i>400-800 PPM:</h6>
+                            <p class="small mb-0">Chất lượng trung bình</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-smog text-danger me-2"></i>Trên 800 PPM:</h6>
+                            <p class="small mb-0">Cần thông thoáng ngay</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Noise Settings -->
+            <div class="settings-card">
+                <h3 class="fw-bold mb-4">
+                    <i class="fas fa-volume-up me-2"></i>Độ ồn
+                </h3>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">
+                        Ngưỡng độ ồn tối đa: <span id="noiseMaxValue" class="text-danger">{{ settings.noise_max }}</span> dB
+                    </label>
+                    <input type="range" class="threshold-slider" id="noiseMaxSlider" 
+                           min="30" max="100" step="5" value="{{ settings.noise_max }}">
+                    <div class="range-labels">
+                        <span>30 dB (Yên tĩnh)</span>
+                        <span>100 dB (Rất ồn)</span>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Khi vượt ngưỡng này, hệ thống sẽ phát cảnh báo
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h6><i class="fas fa-volume-mute text-success me-2"></i>Dưới 50 dB:</h6>
+                            <p class="small mb-0">Yên tĩnh, lý tưởng</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6><i class="fas fa-volume-down text-warning me-2"></i>50-70 dB:</h6>
+                            <p class="small mb-0">Bình thường</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6><i class="fas fa-volume-up text-danger me-2"></i>70-90 dB:</h6>
+                            <p class="small mb-0">Ồn, gây mất tập trung</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6><i class="fas fa-volume-off text-danger me-2"></i>Trên 90 dB:</h6>
+                            <p class="small mb-0">Rất ồn, có hại thính giác</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="settings-card">
+                <h3 class="fw-bold mb-4">
+                    <i class="fas fa-heartbeat me-2"></i>Trạng thái hệ thống
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="device-status">
+                            <h6><span class="status-indicator status-online"></span> Web Server</h6>
+                            <div class="small text-success">Đang hoạt động</div>
+                            <div class="small text-muted mt-1">Phiên bản 2.0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="device-status">
+                            <h6><span class="status-indicator status-online"></span> Database</h6>
+                            <div class="small text-success">Đang hoạt động</div>
+                            <div class="small text-muted mt-1">SQLite</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="device-status">
+                            <h6><span class="status-indicator status-online"></span> MQTT Broker</h6>
+                            <div class="small text-success">Đã kết nối</div>
+                            <div class="small text-muted mt-1">broker.hivemq.com</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box mt-4">
+                    <h6><i class="fas fa-history me-2"></i>Thông tin hệ thống:</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="small">Thời gian hoạt động: <span class="fw-bold">24/7</span></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="small">Tần suất cập nhật: <span class="fw-bold">5 giây</span></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="small">Dung lượng dữ liệu: <span class="fw-bold">50 bản ghi</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="settings-card border-danger">
+                <h3 class="fw-bold mb-4 text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Khu vực nguy hiểm
+                </h3>
+                
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-radiation me-2"></i>Cảnh báo:</h6>
+                    <p class="mb-3">
+                        Các thao tác trong khu vực này có thể ảnh hưởng đến hoạt động của hệ thống. 
+                        Chỉ thực hiện khi bạn biết rõ hậu quả.
+                    </p>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-danger w-100" onclick="resetSettings()">
+                                <i class="fas fa-redo me-2"></i>Đặt lại cài đặt
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-danger w-100" onclick="clearHistory()">
+                                <i class="fas fa-trash me-2"></i>Xóa lịch sử
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-danger w-100" onclick="restartSystem()">
+                                <i class="fas fa-power-off me-2"></i>Khởi động lại
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update slider values
+        document.addEventListener('DOMContentLoaded', function() {
+            // Temperature sliders
+            const tempMinSlider = document.getElementById('tempMinSlider');
+            const tempMaxSlider = document.getElementById('tempMaxSlider');
+            const tempMinValue = document.getElementById('tempMinValue');
+            const tempMaxValue = document.getElementById('tempMaxValue');
+            
+            if (tempMinSlider && tempMinValue) {
+                tempMinSlider.addEventListener('input', function() {
+                    tempMinValue.textContent = this.value;
+                });
+            }
+            
+            if (tempMaxSlider && tempMaxValue) {
+                tempMaxSlider.addEventListener('input', function() {
+                    tempMaxValue.textContent = this.value;
+                });
+            }
+            
+            // Light slider
+            const lightSlider = document.getElementById('lightMinSlider');
+            const lightValue = document.getElementById('lightMinValue');
+            if (lightSlider && lightValue) {
+                lightSlider.addEventListener('input', function() {
+                    lightValue.textContent = this.value;
+                });
+            }
+            
+            // Air quality slider
+            const airSlider = document.getElementById('airMaxSlider');
+            const airValue = document.getElementById('airMaxValue');
+            if (airSlider && airValue) {
+                airSlider.addEventListener('input', function() {
+                    airValue.textContent = this.value;
+                });
+            }
+            
+            // Noise slider
+            const noiseSlider = document.getElementById('noiseMaxSlider');
+            const noiseValue = document.getElementById('noiseMaxValue');
+            if (noiseSlider && noiseValue) {
+                noiseSlider.addEventListener('input', function() {
+                    noiseValue.textContent = this.value;
+                });
+            }
+        });
+        
+        function saveSettings() {
+            const autoMode = document.getElementById('autoModeToggle').checked;
+            const tempMin = document.getElementById('tempMinSlider').value;
+            const tempMax = document.getElementById('tempMaxSlider').value;
+            const lightMin = document.getElementById('lightMinSlider').value;
+            const airMax = document.getElementById('airMaxSlider').value;
+            const noiseMax = document.getElementById('noiseMaxSlider').value;
+            
+            fetch('/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `auto_mode=${autoMode ? 'on' : 'off'}&temp_min=${tempMin}&temp_max=${tempMax}&light_min=${lightMin}&air_max=${airMax}&noise_max=${noiseMax}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', '✅ Đã lưu cài đặt thành công!');
+                } else {
+                    showAlert('danger', '❌ Lỗi: ' + (data.error || 'Không thể lưu cài đặt'));
+                }
+            })
+            .catch(error => {
+                showAlert('danger', '❌ Lỗi kết nối: ' + error);
+            });
+        }
+        
+        function resetSettings() {
+            if (confirm('Bạn có chắc chắn muốn đặt lại tất cả cài đặt về mặc định?')) {
+                document.getElementById('autoModeToggle').checked = true;
+                document.getElementById('tempMinSlider').value = 20;
+                document.getElementById('tempMaxSlider').value = 28;
+                document.getElementById('lightMinSlider').value = 300;
+                document.getElementById('airMaxSlider').value = 800;
+                document.getElementById('noiseMaxSlider').value = 70;
+                
+                // Update display values
+                document.getElementById('tempMinValue').textContent = 20;
+                document.getElementById('tempMaxValue').textContent = 28;
+                document.getElementById('lightMinValue').textContent = 300;
+                document.getElementById('airMaxValue').textContent = 800;
+                document.getElementById('noiseMaxValue').textContent = 70;
+                
+                showAlert('info', '⚠️ Đã đặt lại cài đặt, nhấn "Lưu cài đặt" để áp dụng');
+            }
+        }
+        
+        function clearHistory() {
+            if (confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử dữ liệu?')) {
+                showAlert('warning', '⏳ Đang xóa lịch sử...');
+                setTimeout(() => {
+                    showAlert('success', '✅ Đã xóa lịch sử dữ liệu');
+                }, 1000);
+            }
+        }
+        
+        function restartSystem() {
+            if (confirm('Bạn có chắc chắn muốn khởi động lại hệ thống? Hệ thống sẽ tạm ngừng trong vài giây.')) {
+                showAlert('warning', '⏳ Đang khởi động lại hệ thống...');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 2000);
+            }
+        }
+        
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alert-container');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertHtml = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            alertContainer.innerHTML = alertHtml;
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
