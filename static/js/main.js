@@ -1,4 +1,4 @@
-// CLASSGUARD - Main JavaScript (Fixed Auto Mode)
+// CLASSGUARD - Main JavaScript (Optimized Charts)
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Initializing CLASSGUARD system...');
     
@@ -26,7 +26,7 @@ let barChart = null;
 let isAutoMode = true;
 
 function initCharts() {
-    console.log('📊 Initializing charts...');
+    console.log('📊 Initializing optimized charts...');
     
     const ctxLine = document.getElementById('lineChart');
     const ctxBar = document.getElementById('barChart');
@@ -38,80 +38,139 @@ function initCharts() {
                 labels: [],
                 datasets: [
                     {
-                        label: 'Nhiệt độ (°C)',
+                        label: '🌡️ Nhiệt độ',
                         data: [],
                         borderColor: '#dc3545',
                         backgroundColor: 'rgba(220, 53, 69, 0.1)',
                         tension: 0.4,
                         fill: true,
-                        borderWidth: 2
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#dc3545',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
                     },
                     {
-                        label: 'Độ ẩm (%)',
+                        label: '💧 Độ ẩm',
                         data: [],
                         borderColor: '#0d6efd',
                         backgroundColor: 'rgba(13, 110, 253, 0.1)',
                         tension: 0.4,
                         fill: true,
-                        borderWidth: 2
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#0d6efd',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
                     }
                 ]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
                 plugins: {
                     legend: {
                         position: 'top',
                         labels: {
                             font: {
-                                size: 12
-                            }
+                                size: 12,
+                                family: "'Segoe UI', sans-serif"
+                            },
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
                         }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: {
+                            size: 13
+                        },
+                        bodyFont: {
+                            size: 12
+                        },
+                        padding: 12,
+                        cornerRadius: 8
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: false,
                         grid: {
-                            color: 'rgba(0,0,0,0.05)'
+                            color: 'rgba(0,0,0,0.05)',
+                            drawBorder: false
                         },
                         ticks: {
                             font: {
-                                size: 11
+                                size: 11,
+                                family: "'Segoe UI', sans-serif"
+                            },
+                            padding: 10,
+                            callback: function(value) {
+                                return value.toFixed(1);
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Giá trị',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
                             }
                         }
                     },
                     x: {
                         grid: {
-                            color: 'rgba(0,0,0,0.05)'
+                            color: 'rgba(0,0,0,0.05)',
+                            drawBorder: false
                         },
                         ticks: {
                             font: {
-                                size: 11
+                                size: 11,
+                                family: "'Segoe UI', sans-serif"
                             },
-                            maxRotation: 45
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 8
+                        },
+                        title: {
+                            display: true,
+                            text: 'Thời gian',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
                         }
                     }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
                 }
             }
         });
+        console.log('✅ Line chart initialized (Temperature & Humidity only)');
     }
     
     if (ctxBar) {
         barChart = new Chart(ctxBar.getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['Nhiệt độ', 'Độ ẩm', 'Ánh sáng', 'Chất lượng KK', 'Độ ồn'],
+                labels: ['🌡️ Nhiệt độ', '💧 Độ ẩm', '☀️ Ánh sáng', '💨 Chất lượng KK', '🔊 Độ ồn'],
                 datasets: [{
-                    label: 'Giá trị',
+                    label: 'Giá trị hiện tại',
                     data: [0, 0, 0, 0, 0],
                     backgroundColor: [
-                        'rgba(220, 53, 69, 0.7)',
-                        'rgba(13, 110, 253, 0.7)',
-                        'rgba(255, 193, 7, 0.7)',
-                        'rgba(25, 135, 84, 0.7)',
-                        'rgba(111, 66, 193, 0.7)'
+                        'rgba(220, 53, 69, 0.8)',
+                        'rgba(13, 110, 253, 0.8)',
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(25, 135, 84, 0.8)',
+                        'rgba(111, 66, 193, 0.8)'
                     ],
                     borderColor: [
                         '#dc3545',
@@ -120,40 +179,94 @@ function initCharts() {
                         '#198754',
                         '#6f42c1'
                     ],
-                    borderWidth: 1,
-                    borderRadius: 5
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: {
+                            size: 13
+                        },
+                        bodyFont: {
+                            size: 12
+                        },
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    if (context.dataIndex === 0) {
+                                        label += context.parsed.y.toFixed(1) + ' °C';
+                                    } else if (context.dataIndex === 1) {
+                                        label += context.parsed.y.toFixed(1) + ' %';
+                                    } else {
+                                        label += Math.round(context.parsed.y);
+                                        if (context.dataIndex === 2) label += ' lux';
+                                        else if (context.dataIndex === 3) label += ' PPM';
+                                        else if (context.dataIndex === 4) label += ' dB';
+                                    }
+                                }
+                                return label;
+                            }
+                        }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
                         grid: {
-                            color: 'rgba(0,0,0,0.05)'
+                            color: 'rgba(0,0,0,0.05)',
+                            drawBorder: false
                         },
                         ticks: {
                             font: {
-                                size: 11
+                                size: 11,
+                                family: "'Segoe UI', sans-serif"
+                            },
+                            padding: 10
+                        },
+                        title: {
+                            display: true,
+                            text: 'Giá trị',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
                             }
                         }
                     },
                     x: {
+                        grid: {
+                            display: false
+                        },
                         ticks: {
                             font: {
-                                size: 11
+                                size: 11,
+                                family: "'Segoe UI', sans-serif"
                             }
                         }
                     }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
                 }
             }
         });
+        console.log('✅ Bar chart initialized (5 parameters)');
     }
 }
 
@@ -182,12 +295,23 @@ function initEventListeners() {
         });
     }
     
-    // Chế độ tự động
+    // Chế độ tự động (cả 2 toggle)
     const autoModeToggle = document.getElementById('autoModeToggle');
+    const autoModeToggle2 = document.getElementById('autoModeToggle2');
+    
     if (autoModeToggle) {
         autoModeToggle.addEventListener('change', function() {
             console.log('🤖 Auto mode changed:', this.checked);
             updateAutoMode(this.checked);
+            if (autoModeToggle2) autoModeToggle2.checked = this.checked;
+        });
+    }
+    
+    if (autoModeToggle2) {
+        autoModeToggle2.addEventListener('change', function() {
+            console.log('🤖 Auto mode (2) changed:', this.checked);
+            updateAutoMode(this.checked);
+            if (autoModeToggle) autoModeToggle.checked = this.checked;
         });
     }
     
@@ -200,7 +324,7 @@ async function updateDashboard() {
         const response = await fetch('/get_sensor_data');
         const data = await response.json();
         
-        console.log('📡 Received sensor data:', data);
+        console.log('📡 Received sensor data:', data.sensors);
         
         if (data.sensors) {
             updateSensorDisplays(data.sensors);
@@ -285,19 +409,34 @@ function updateCharts(data) {
     const history = data.history;
     const sensors = data.sensors;
     
-    // Biểu đồ đường
-    if (lineChart && history.time && history.nhiet_do) {
-        // Giữ tối đa 10 điểm
-        const maxPoints = 10;
+    console.log('📈 Updating charts with history data...');
+    
+    // Biểu đồ đường (chỉ 2 thông số)
+    if (lineChart && history.time && history.nhiet_do && history.do_am) {
+        // Giữ tối đa 8 điểm cho gọn
+        const maxPoints = 8;
         const start = Math.max(0, history.time.length - maxPoints);
         
-        lineChart.data.labels = history.time.slice(start);
-        lineChart.data.datasets[0].data = history.nhiet_do.slice(start);
-        lineChart.data.datasets[1].data = history.do_am.slice(start);
+        const displayTimes = history.time.slice(start);
+        const displayTemp = history.nhiet_do.slice(start);
+        const displayHum = history.do_am.slice(start);
+        
+        // Format thời gian ngắn gọn hơn
+        const formattedTimes = displayTimes.map(time => {
+            const [hours, minutes, seconds] = time.split(':');
+            return `${hours}:${minutes}`;
+        });
+        
+        lineChart.data.labels = formattedTimes;
+        lineChart.data.datasets[0].data = displayTemp;
+        lineChart.data.datasets[1].data = displayHum;
+        
+        // Cập nhật với animation mượt mà
         lineChart.update('none');
+        console.log('✅ Line chart updated (2 parameters)');
     }
     
-    // Biểu đồ cột
+    // Biểu đồ cột (5 thông số)
     if (barChart) {
         barChart.data.datasets[0].data = [
             sensors.nhiet_do,
@@ -307,6 +446,7 @@ function updateCharts(data) {
             sensors.do_on
         ];
         barChart.update('none');
+        console.log('✅ Bar chart updated (5 parameters)');
     }
 }
 
@@ -327,7 +467,9 @@ function updateEvaluation(evaluation) {
     updateElement('score-value', `${evaluation.total_score}/10`);
     const scoreElement = document.getElementById('score-value');
     if (scoreElement) {
-        scoreElement.className = `badge bg-${evaluation.overall_class} p-2 fs-4`;
+        // Update score circle class
+        scoreElement.classList.remove('score-success', 'score-warning', 'score-danger');
+        scoreElement.classList.add(`score-${evaluation.overall_class}`);
     }
     
     // Progress bar
@@ -335,7 +477,7 @@ function updateEvaluation(evaluation) {
     if (progressBar) {
         progressBar.style.width = `${evaluation.percentage}%`;
         progressBar.textContent = `${evaluation.percentage}%`;
-        progressBar.className = `progress-bar progress-bar-striped progress-bar-animated bg-${evaluation.overall_class}`;
+        progressBar.className = `progress-bar bg-${evaluation.overall_class}`;
     }
     
     // Khuyến nghị
@@ -355,30 +497,29 @@ function updateEvaluation(evaluation) {
     // Đánh giá chi tiết
     const detailsElement = document.getElementById('evaluation-details');
     if (detailsElement && evaluation.evaluations) {
-        let html = '<div class="row g-2">';
+        let html = '';
         evaluation.evaluations.forEach(item => {
             html += `
-                <div class="col-md-6 col-sm-12 mb-2">
-                    <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                        <span class="small">${item[0]}</span>
-                        <span class="badge bg-${item[2]}">${item[1]}</span>
-                    </div>
+                <div class="eval-item">
+                    <span class="eval-label">${item[0]}</span>
+                    <span class="eval-value bg-${item[2]} text-white">${item[1]}</span>
                 </div>
             `;
         });
-        html += '</div>';
         detailsElement.innerHTML = html;
     }
 }
 
 function updateDeviceStatus(sensors) {
+    console.log('🔧 Updating device status...');
+    
     const devices = ['quat', 'den', 'cua_so', 'canh_bao'];
     
     devices.forEach(device => {
         const status = sensors[device];
         const isOn = status === 'BẬT' || status === 'MỞ';
         
-        // Cập nhật icon với hiệu ứng
+        // Cập nhật icon với hiệu ứng đặc biệt cho cửa sổ
         const iconElement = document.getElementById(`${device}-icon`);
         if (iconElement) {
             if (device === 'quat') {
@@ -389,8 +530,21 @@ function updateDeviceStatus(sensors) {
                 iconElement.style.filter = isOn ? 'brightness(1.5) drop-shadow(0 0 8px rgba(255,193,7,0.7))' : 'brightness(0.7)';
             } else if (device === 'canh_bao') {
                 iconElement.className = isOn ? 'fas fa-bell text-danger fa-shake fs-4' : 'fas fa-bell text-secondary fs-4';
-            } else {
-                iconElement.className = isOn ? 'fas fa-window-open text-info fs-4' : 'fas fa-window-closed text-secondary fs-4';
+            } else if (device === 'cua_so') {
+                // Hiệu ứng đặc biệt cho cửa sổ
+                if (isOn) {
+                    iconElement.className = 'fas fa-window-open text-info fs-4';
+                    iconElement.style.transform = 'rotateY(0deg)';
+                    iconElement.style.transition = 'transform 0.5s ease';
+                    // Thêm hiệu ứng mở cửa
+                    setTimeout(() => {
+                        iconElement.style.transform = 'rotateY(20deg) scale(1.1)';
+                    }, 100);
+                } else {
+                    iconElement.className = 'fas fa-window-closed text-secondary fs-4';
+                    iconElement.style.transform = 'rotateY(0deg) scale(1)';
+                    iconElement.style.transition = 'transform 0.5s ease';
+                }
             }
         }
         
@@ -399,15 +553,15 @@ function updateDeviceStatus(sensors) {
         const offBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'ĐÓNG' : 'TẮT'}"]`);
         
         if (onBtn && offBtn) {
+            // Reset classes
+            onBtn.classList.remove('btn-success', 'btn-outline-success', 'shadow');
+            offBtn.classList.remove('btn-danger', 'btn-outline-danger', 'shadow');
+            
             if (isOn) {
-                onBtn.classList.remove('btn-outline-success');
                 onBtn.classList.add('btn-success', 'shadow');
-                offBtn.classList.remove('btn-danger');
                 offBtn.classList.add('btn-outline-danger');
             } else {
-                offBtn.classList.remove('btn-outline-danger');
                 offBtn.classList.add('btn-danger', 'shadow');
-                onBtn.classList.remove('btn-success');
                 onBtn.classList.add('btn-outline-success');
             }
         }
@@ -416,7 +570,7 @@ function updateDeviceStatus(sensors) {
         updateElement(`${device}-status`, status);
         const statusElement = document.getElementById(`${device}-status`);
         if (statusElement) {
-            statusElement.className = `badge bg-${isOn ? 'success' : 'secondary'} p-2`;
+            statusElement.className = `status-badge status-${isOn ? 'on' : 'off'}`;
         }
     });
 }
@@ -484,29 +638,28 @@ async function updateAutoMode(enabled) {
             updateControlButtonsState(!enabled);
         } else {
             // Rollback toggle
-            const toggle = document.getElementById('autoModeToggle');
-            if (toggle) toggle.checked = !enabled;
+            const toggle1 = document.getElementById('autoModeToggle');
+            const toggle2 = document.getElementById('autoModeToggle2');
+            if (toggle1) toggle1.checked = !enabled;
+            if (toggle2) toggle2.checked = !enabled;
             showToast('❌ Lỗi', result.error || 'Không thể cập nhật chế độ tự động', 'danger');
         }
     } catch (error) {
         console.error('❌ Auto mode update error:', error);
-        const toggle = document.getElementById('autoModeToggle');
-        if (toggle) toggle.checked = !enabled;
+        const toggle1 = document.getElementById('autoModeToggle');
+        const toggle2 = document.getElementById('autoModeToggle2');
+        if (toggle1) toggle1.checked = !enabled;
+        if (toggle2) toggle2.checked = !enabled;
         showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
     }
 }
 
 function updateAutoModeUI(enabled) {
-    const toggle = document.getElementById('autoModeToggle');
     const statusElement = document.getElementById('auto-mode-status');
-    
-    if (toggle) {
-        toggle.checked = enabled;
-    }
     
     if (statusElement) {
         statusElement.textContent = enabled ? 'ĐANG BẬT' : 'ĐANG TẮT';
-        statusElement.className = `badge ${enabled ? 'bg-success' : 'bg-secondary'}`;
+        statusElement.className = `badge ${enabled ? 'bg-success' : 'bg-secondary'} p-2`;
     }
     
     // Cập nhật trạng thái nút điều khiển
@@ -515,26 +668,42 @@ function updateAutoModeUI(enabled) {
 
 function updateControlButtonsState(enabled) {
     const controlButtons = document.querySelectorAll('.control-btn');
+    const controlNotice = document.getElementById('control-notice');
     
     controlButtons.forEach(btn => {
         if (enabled) {
             btn.disabled = false;
             btn.classList.remove('disabled');
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
         } else {
             btn.disabled = true;
             btn.classList.add('disabled');
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
         }
     });
     
     // Hiển thị thông báo
-    const controlNotice = document.getElementById('control-notice');
     if (controlNotice) {
         if (enabled) {
-            controlNotice.innerHTML = '<i class="fas fa-check-circle text-success"></i> Có thể điều khiển thủ công';
-            controlNotice.className = 'alert alert-success p-2 small';
+            controlNotice.innerHTML = `
+                <i class="fas fa-check-circle text-success me-2 fs-4"></i>
+                <div>
+                    <strong>Chế độ thủ công đang bật</strong>
+                    <div class="small">Bạn có thể điều khiển thiết bị thủ công</div>
+                </div>
+            `;
+            controlNotice.className = 'alert alert-success d-flex align-items-center mb-3';
         } else {
-            controlNotice.innerHTML = '<i class="fas fa-robot text-warning"></i> Đang ở chế độ tự động - Không thể điều khiển thủ công';
-            controlNotice.className = 'alert alert-warning p-2 small';
+            controlNotice.innerHTML = `
+                <i class="fas fa-robot text-warning me-2 fs-4"></i>
+                <div>
+                    <strong>Chế độ tự động đang bật</strong>
+                    <div class="small">Hệ thống tự động điều khiển thiết bị dựa trên ngưỡng cài đặt</div>
+                </div>
+            `;
+            controlNotice.className = 'alert alert-warning d-flex align-items-center mb-3';
         }
     }
 }
@@ -550,10 +719,20 @@ function updateChartVisibility() {
             lineContainer.style.display = 'none';
             barContainer.style.display = 'block';
             chartLabel.textContent = 'Biểu đồ cột';
+            
+            // Resize bar chart để không phình to
+            if (barChart) {
+                barChart.resize();
+            }
         } else {
             lineContainer.style.display = 'block';
             barContainer.style.display = 'none';
             chartLabel.textContent = 'Biểu đồ đường';
+            
+            // Resize line chart
+            if (lineChart) {
+                lineChart.resize();
+            }
         }
     }
 }
@@ -602,17 +781,65 @@ function showToast(title, message, type) {
     });
 }
 
+// Thêm CSS cho hiệu ứng cửa sổ
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes windowOpen {
+        0% { transform: rotateY(0deg) scale(1); }
+        50% { transform: rotateY(45deg) scale(1.1); }
+        100% { transform: rotateY(0deg) scale(1.1); }
+    }
+    
+    @keyframes windowClose {
+        0% { transform: rotateY(0deg) scale(1.1); }
+        50% { transform: rotateY(-45deg) scale(1); }
+        100% { transform: rotateY(0deg) scale(1); }
+    }
+    
+    .window-open {
+        animation: windowOpen 0.5s ease-out forwards;
+    }
+    
+    .window-close {
+        animation: windowClose 0.5s ease-out forwards;
+    }
+    
+    /* Fix chart container height */
+    .chart-container {
+        height: 300px !important;
+        min-height: 300px;
+        max-height: 300px;
+        position: relative;
+    }
+    
+    /* Responsive chart fix */
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 250px !important;
+        }
+    }
+`;
+document.head.appendChild(style);
+
 // Hiệu ứng hover cho các card
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.sensor-card').forEach(card => {
         card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px)';
-            this.style.boxShadow = '0 10px 20px rgba(0,0,0,0.1)';
+            this.style.transform = 'translateY(-8px)';
+            this.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.15)';
         });
         
         card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)';
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.12)';
         });
+    });
+    
+    // Đảm bảo chart containers có height fixed
+    const chartContainers = document.querySelectorAll('.chart-container');
+    chartContainers.forEach(container => {
+        container.style.height = '300px';
+        container.style.minHeight = '300px';
+        container.style.maxHeight = '300px';
     });
 });
