@@ -3,110 +3,407 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CLASSGUARD - Dữ liệu</title>
+    <title>CLASSGUARD - Dữ liệu cảm biến</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: #f8f9fa;
-            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .header {
+        
+        .data-container {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 100vh;
+            border-radius: 0;
         }
+        
+        .navbar-data {
+            background: white;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .data-header {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-radius: 0 0 20px 20px;
+        }
+        
         .table-container {
             background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+        
+        .table th {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 15px;
+        }
+        
+        .table td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+        
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+            transform: scale(1.01);
+            transition: all 0.3s;
+        }
+        
+        .filter-box {
+            background: #f8f9fa;
+            border-radius: 15px;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .stats-box {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            border-left: 5px solid #4361ee;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #4361ee;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2><i class="fas fa-database"></i> Dữ liệu cảm biến</h2>
-                    <p class="text-muted">Lịch sử dữ liệu môi trường lớp học</p>
+    <div class="data-container">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-data">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold" href="/dashboard">
+                    <i class="fas fa-arrow-left me-2"></i>CLASSGUARD
+                </a>
+                <div class="d-flex align-items-center">
+                    <span class="me-3">
+                        <i class="fas fa-user-circle me-1"></i>
+                        {{ 'Quản trị viên' if role == 'admin' else 'Giáo viên' if role == 'teacher' else 'Học sinh' if role == 'student' else 'Khách xem' }}
+                    </span>
+                    <a href="/logout" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
                 </div>
-                <div>
-                    <a href="/dashboard" class="btn btn-primary">
-                        <i class="fas fa-arrow-left"></i> Quay lại Dashboard
-                    </a>
-                    <a href="/export_pdf" class="btn btn-success">
-                        <i class="fas fa-file-pdf"></i> Xuất PDF
-                    </a>
+            </div>
+        </nav>
+
+        <!-- Header -->
+        <div class="data-header">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="fw-bold">
+                            <i class="fas fa-database me-3"></i>Dữ liệu cảm biến
+                        </h1>
+                        <p class="mb-0 opacity-90">
+                            Lịch sử 50 bản ghi gần nhất với đánh giá tiết học
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="/export_csv" class="btn btn-light btn-lg">
+                            <i class="fas fa-file-export me-2"></i>Xuất CSV
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="mt-4">
-                <div class="alert alert-info">
-                    <h5><i class="fas fa-info-circle"></i> Giải thích chỉ số:</h5>
-                    <ul class="mb-0">
-                        <li><span class="badge bg-success">Tốt</span> - Môi trường lý tưởng cho học tập</li>
-                        <li><span class="badge bg-warning">Cảnh báo</span> - Cần chú ý và theo dõi</li>
-                        <li><span class="badge bg-danger">Nguy hiểm</span> - Cần can thiệp ngay</li>
+        <!-- Main Content -->
+        <div class="container">
+            <!-- Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-box">
+                        <div class="stat-item">
+                            <div class="stat-value">{{ data|length }}</div>
+                            <div class="stat-label">Bản ghi</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-box">
+                        <div class="stat-item">
+                            {% set good_count = data|selectattr('danh_gia', 'equalto', 'Tốt')|list|length %}
+                            <div class="stat-value text-success">{{ good_count }}</div>
+                            <div class="stat-label">Tiết học Tốt</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-box">
+                        <div class="stat-item">
+                            {% set avg_count = data|selectattr('danh_gia', 'equalto', 'Khá')|list|length %}
+                            <div class="stat-value text-warning">{{ avg_count }}</div>
+                            <div class="stat-label">Tiết học Khá</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-box">
+                        <div class="stat-item">
+                            {% set poor_count = data|selectattr('danh_gia', 'equalto', 'Cần cải thiện')|list|length %}
+                            <div class="stat-value text-danger">{{ poor_count }}</div>
+                            <div class="stat-label">Cần cải thiện</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Box -->
+            <div class="filter-box mb-4">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-filter me-2"></i>Lọc theo:
+                        </label>
+                        <select class="form-select" id="filterType">
+                            <option value="all">Tất cả</option>
+                            <option value="good">Tiết học Tốt</option>
+                            <option value="average">Tiết học Khá</option>
+                            <option value="poor">Cần cải thiện</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-sort-amount-down me-2"></i>Sắp xếp:
+                        </label>
+                        <select class="form-select" id="sortType">
+                            <option value="newest">Mới nhất</option>
+                            <option value="oldest">Cũ nhất</option>
+                            <option value="temp_high">Nhiệt độ cao</option>
+                            <option value="temp_low">Nhiệt độ thấp</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-search me-2"></i>Tìm kiếm:
+                        </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Tìm theo thời gian, đánh giá...">
+                            <button class="btn btn-primary" id="searchBtn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" id="resetBtn">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th><i class="fas fa-calendar me-1"></i> Ngày</th>
+                                <th><i class="fas fa-clock me-1"></i> Thời gian</th>
+                                <th><i class="fas fa-thermometer-half me-1"></i> Nhiệt độ (°C)</th>
+                                <th><i class="fas fa-tint me-1"></i> Độ ẩm (%)</th>
+                                <th><i class="fas fa-sun me-1"></i> Ánh sáng (lux)</th>
+                                <th><i class="fas fa-wind me-1"></i> Chất lượng KK (PPM)</th>
+                                <th><i class="fas fa-volume-up me-1"></i> Độ ồn (dB)</th>
+                                <th><i class="fas fa-star me-1"></i> Nhận xét tiết học</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in data %}
+                            <tr>
+                                <td class="fw-bold">{{ item.stt }}</td>
+                                <td>{{ item.ngay }}</td>
+                                <td class="text-primary fw-bold">{{ item.thoi_gian }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if item.nhiet_do > 32 else 'warning' if item.nhiet_do > 28 else 'success' }} p-2">
+                                        {{ item.nhiet_do|round(1) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if item.do_am < 40 or item.do_am > 70 else 'success' }} p-2">
+                                        {{ item.do_am|round(1) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if item.anh_sang < 200 else 'warning' if item.anh_sang < 300 else 'success' }} p-2">
+                                        {{ item.anh_sang }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if item.chat_luong_kk > 800 else 'warning' if item.chat_luong_kk > 400 else 'success' }} p-2">
+                                        {{ item.chat_luong_kk }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if item.do_on > 70 else 'warning' if item.do_on > 50 else 'success' }} p-2">
+                                        {{ item.do_on }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ item.danh_gia_color }} p-2 fs-6">
+                                        <i class="fas fa-{{ 'smile' if item.danh_gia == 'Tốt' else 'meh' if item.danh_gia == 'Khá' else 'frown' }} me-1"></i>
+                                        {{ item.danh_gia }}
+                                    </span>
+                                    <div class="small text-muted mt-1">
+                                        {% if item.danh_gia == 'Tốt' %}
+                                        <i class="fas fa-check-circle text-success"></i> Môi trường lý tưởng
+                                        {% elif item.danh_gia == 'Khá' %}
+                                        <i class="fas fa-exclamation-triangle text-warning"></i> Có thể cải thiện
+                                        {% else %}
+                                        <i class="fas fa-times-circle text-danger"></i> Cần điều chỉnh
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
                     </ul>
+                </nav>
+                
+                <!-- Summary -->
+                <div class="alert alert-info mt-4">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5><i class="fas fa-chart-pie me-2"></i>Tổng kết dữ liệu:</h5>
+                            <div class="row mt-2">
+                                <div class="col-md-4">
+                                    <div class="small">Nhiệt độ trung bình: 
+                                        <span class="fw-bold">
+                                            {{ (data|map(attribute='nhiet_do')|sum / data|length if data else 0)|round(1) }}°C
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="small">Độ ẩm trung bình: 
+                                        <span class="fw-bold">
+                                            {{ (data|map(attribute='do_am')|sum / data|length if data else 0)|round(1) }}%
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="small">Tiết học tốt: 
+                                        <span class="fw-bold text-success">
+                                            {{ (good_count / data|length * 100 if data else 0)|round(1) }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-primary" onclick="window.print()">
+                                <i class="fas fa-print me-2"></i>In báo cáo
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th><i class="fas fa-clock"></i> Thời gian</th>
-                            <th><i class="fas fa-thermometer-half"></i> Nhiệt độ (°C)</th>
-                            <th><i class="fas fa-tint"></i> Độ ẩm (%)</th>
-                            <th><i class="fas fa-sun"></i> Ánh sáng (lux)</th>
-                            <th><i class="fas fa-wind"></i> Chất lượng KK (PPM)</th>
-                            <th><i class="fas fa-volume-up"></i> Độ ồn (dB)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in data %}
-                        <tr>
-                            <td>{{ item.thoi_gian }}</td>
-                            <td>
-                                <span class="badge bg-{{ 'danger' if item.nhiet_do > 30 else 'warning' if item.nhiet_do > 28 else 'success' }}">
-                                    {{ item.nhiet_do }}
-                                </span>
-                            </td>
-                            <td>{{ item.do_am }}</td>
-                            <td>
-                                <span class="badge bg-{{ 'danger' if item.anh_sang < 200 else 'warning' if item.anh_sang < 300 else 'success' }}">
-                                    {{ item.anh_sang }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge bg-{{ 'danger' if item.chat_luong_kk > 800 else 'warning' if item.chat_luong_kk > 400 else 'success' }}">
-                                    {{ item.chat_luong_kk }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge bg-{{ 'danger' if item.do_on > 70 else 'warning' if item.do_on > 50 else 'success' }}">
-                                    {{ item.do_on }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>                     
-                <footer class="mt-4 text-center text-muted">
-            <p>CLASSGUARD - Hệ thống giám sát môi trường lớp học thông minh</p>
-            <p>Dữ liệu được cập nhật tự động mỗi 5 giây</p>
-        </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Filter and search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterType = document.getElementById('filterType');
+            const sortType = document.getElementById('sortType');
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const tableRows = document.querySelectorAll('#dataTable tbody tr');
+            
+            function filterTable() {
+                const filterValue = filterType.value;
+                const searchValue = searchInput.value.toLowerCase();
+                
+                tableRows.forEach(row => {
+                    const evalCell = row.querySelector('td:last-child');
+                    const evalText = evalCell.textContent.toLowerCase();
+                    const rowText = row.textContent.toLowerCase();
+                    
+                    let showRow = true;
+                    
+                    // Filter by evaluation
+                    if (filterValue === 'good' && !evalText.includes('tốt')) {
+                        showRow = false;
+                    } else if (filterValue === 'average' && !evalText.includes('khá')) {
+                        showRow = false;
+                    } else if (filterValue === 'poor' && !evalText.includes('cải thiện')) {
+                        showRow = false;
+                    }
+                    
+                    // Search filter
+                    if (searchValue && !rowText.includes(searchValue)) {
+                        showRow = false;
+                    }
+                    
+                    row.style.display = showRow ? '' : 'none';
+                });
+            }
+            
+            // Event listeners
+            filterType.addEventListener('change', filterTable);
+            sortType.addEventListener('change', filterTable);
+            searchBtn.addEventListener('click', filterTable);
+            searchInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') filterTable();
+            });
+            
+            resetBtn.addEventListener('click', function() {
+                filterType.value = 'all';
+                sortType.value = 'newest';
+                searchInput.value = '';
+                filterTable();
+            });
+        });
+    </script>
 </body>
 </html>
-
