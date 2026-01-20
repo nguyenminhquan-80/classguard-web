@@ -419,3 +419,84 @@ def update_history():
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
 
+# ========== API CHO ESP32 ==========
+@app.route('/api/esp32/data', methods=['POST'])
+def receive_esp32_data():
+    try:
+        data = request.json
+        
+        # Lưu dữ liệu từ ESP32
+        if 'sensors' in data:
+            sensors = data['sensors']
+            # Cập nhật dữ liệu cảm biến
+            sensor_data['nhiet_do'] = sensors.get('temperature', sensor_data['nhiet_do'])
+            sensor_data['do_am'] = sensors.get('humidity', sensor_data['do_am'])
+            sensor_data['anh_sang'] = sensors.get('light', sensor_data['anh_sang'])
+            sensor_data['chat_luong_kk'] = sensors.get('air_quality', sensor_data['chat_luong_kk'])
+            sensor_data['do_on'] = sensors.get('noise', sensor_data['do_on'])
+            
+            # Cập nhật trạng thái thiết bị
+            if 'devices' in data:
+                devices = data['devices']
+                # Đồng bộ trạng thái với ESP32
+        
+        # Kiểm tra cảnh báo
+        alerts = check_esp32_alerts(sensors)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Đã nhận dữ liệu từ ESP32',
+            'alert': alerts[0] if alerts else None,
+            'thresholds': system_settings
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/esp32/control', methods=['GET'])
+def get_esp32_control():
+    """ESP32 lấy lệnh điều khiển từ web"""
+    device_id = request.args.get('device_id', 'ESP32-S3-CLASSGUARD')
+    
+    # Kiểm tra nếu có lệnh chờ cho ESP32 này
+    # Ở đây bạn cần lưu lệnh vào database hoặc biến tạm
+    # Tạm thời trả về không có lệnh
+    
+    return jsonify({}), 204  # 204 No Content
+
+@app.route('/api/esp32/ack', methods=['POST'])
+def esp32_command_ack():
+    """ESP32 xác nhận đã thực hiện lệnh"""
+    data = request.json
+    command_id = data.get('command_id')
+    
+    # Cập nhật trạng thái lệnh
+    print(f"✅ ESP32 đã thực hiện lệnh: {command_id}")
+    
+    return jsonify({'success': True})
+
+@app.route('/api/esp32/status', methods=['GET'])
+def esp32_status():
+    """Kiểm tra kết nối API"""
+    return jsonify({
+        'status': 'online',
+        'server': 'classguard-web.onrender.com',
+        'project': 'CLASSGUARD THCS',
+        'version': '1.0',
+        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    })
+
+def check_esp32_alerts(sensors):
+    """Kiểm tra cảnh báo từ dữ liệu ESP32"""
+    alerts = []
+    
+    if sensors.get('temperature', 25) > 30:
+        alerts.append('Nhiệt độ quá cao (>30°C)')
+    if sensors.get('air_quality', 400) > 1000:
+        alerts.append('Chất lượng không khí kém (>1000 PPM)')
+    if sensors.get('noise', 45) > 80:
+        alerts.append('Độ ồn quá cao (>80 dB)')
+    if sensors.get('light', 300) < 200:
+        alerts.append('Ánh sáng quá yếu (<200 lux)')
+    
+    return alerts
