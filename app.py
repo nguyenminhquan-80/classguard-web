@@ -4,20 +4,76 @@ from datetime import datetime, timedelta
 import json
 import csv
 import io
+import sqlite3
+from threading import Lock
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'classguard_final_v3_2024'
 app.secret_key = 'classguard_final_v3_2024'
 
-# ========== TÀI KHOẢN ==========
-USERS = {
-    'admin': {'password': 'admin123', 'role': 'admin', 'name': 'Quản trị viên'},
-    'giaovien': {'password': 'giaovien123', 'role': 'teacher', 'name': 'Giáo viên'},
-    'hocsinh': {'password': 'hocsinh123', 'role': 'student', 'name': 'Học sinh'},
-    'xem': {'password': 'xem123', 'role': 'viewer', 'name': 'Khách xem'}
-}
+# ========== CẤU HÌNH DATABASE ==========
+def init_db():
+    conn = sqlite3.connect('classguard.db')
+    c = conn.cursor()
+    
+    # Bảng người dùng
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  username TEXT UNIQUE,
+                  password TEXT,
+                  role TEXT,
+                  name TEXT)''')
+    
+    # Bảng cảm biến (lưu lịch sử)
+    c.execute('''CREATE TABLE IF NOT EXISTS sensor_history
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  temperature REAL,
+                  humidity REAL,
+                  light INTEGER,
+                  air_quality INTEGER,
+                  noise INTEGER)''')
+    
+    # Bảng thiết bị điều khiển
+    c.execute('''CREATE TABLE IF NOT EXISTS device_control
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  device_name TEXT,
+                  status TEXT,
+                  command_time DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    
+    # Bảng lệnh chờ cho ESP32
+    c.execute('''CREATE TABLE IF NOT EXISTS pending_commands
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  device_id TEXT,
+                  command TEXT,
+                  value TEXT,
+                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  executed INTEGER DEFAULT 0)''')
+    
+    # Thêm tài khoản mẫu nếu chưa có
+    users_data = [
+        ('admin', 'admin123', 'admin', 'Quản trị viên'),
+        ('giaovien', 'giaovien123', 'teacher', 'Giáo viên'),
+        ('hocsinh', 'hocsinh123', 'student', 'Học sinh'),
+        ('xem', 'xem123', 'viewer', 'Khách xem')
+    ]
+    
+    for user in users_data:
+        try:
+            c.execute("INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)", user)
+        except:
+            pass
+    
+    conn.commit()
+    conn.close()
 
-# ========== DỮ LIỆU ==========
+# Khởi tạo database
+init_db()
+
+# Lock cho thread-safe
+data_lock = Lock()
+
+# ========== BIẾN TOÀN CỤC ==========
 sensor_data = {
     'nhiet_do': 26.5,
     'do_am': 65.0,
@@ -28,7 +84,8 @@ sensor_data = {
     'den': 'BẬT',
     'cua_so': 'ĐÓNG',
     'canh_bao': 'TẮT',
-    'timestamp': ''
+    'timestamp': '',
+    'device_status': 'online'
 }
 
 # Lịch sử dữ liệu cho biểu đồ
@@ -41,7 +98,7 @@ history = {
     'do_on': []
 }
 
-# Cài đặt
+# Cài đặt hệ thống
 system_settings = {
     'auto_mode': True,
     'temp_min': 20,
@@ -51,7 +108,10 @@ system_settings = {
     'air_max': 800
 }
 
-# ========== ROUTES ==========
+# Lưu lệnh chờ cho ESP32
+esp32_commands = {}
+
+# ========== ROUTES CHÍNH ==========
 @app.route('/')
 def home():
     return redirect(url_for('login'))
@@ -62,10 +122,16 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
         
-        if username in USERS and USERS[username]['password'] == password:
+        conn = sqlite3.connect('classguard.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+        user = c.fetchone()
+        conn.close()
+        
+        if user:
             session['username'] = username
-            session['role'] = USERS[username]['role']
-            session['name'] = USERS[username]['name']
+            session['role'] = user[3]  # role
+            session['name'] = user[4]  # name
             session['login_time'] = datetime.now().strftime("%H:%M:%S %d/%m/%Y")
             return redirect(url_for('dashboard'))
         else:
@@ -115,10 +181,7 @@ def control():
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # Kiểm tra chế độ tự động - nếu đang bật thì không cho điều khiển thủ công
-    if system_settings['auto_mode']:
-        return jsonify({'error': '❌ Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.'}), 403
-    
+    # CHỈNH SỬA PHÂN QUYỀN: Cho phép admin và teacher điều khiển
     if session['role'] not in ['admin', 'teacher']:
         return jsonify({'error': '❌ Không có quyền điều khiển!'}), 403
     
@@ -126,15 +189,35 @@ def control():
     device = data.get('device')
     action = data.get('action')
     
-    if device and action in ['BẬT', 'TẮT', 'MỞ', 'ĐÓNG']:
-        sensor_data[device] = action
-        return jsonify({
-            'success': True,
-            'message': f'✅ Đã {action.lower()} {device}',
-            'status': action
-        })
+    if not device or action not in ['BẬT', 'TẮT', 'MỞ', 'ĐÓNG']:
+        return jsonify({'error': 'Thiếu thông tin'}), 400
     
-    return jsonify({'error': 'Thiếu thông tin'}), 400
+    # Nếu đang ở chế độ tự động và cố gắng điều khiển thủ công
+    if system_settings['auto_mode']:
+        # Vẫn cho phép điều khiển nhưng sẽ hiển thị cảnh báo
+        # Thay vì từ chối
+        pass
+    
+    # Cập nhật trạng thái
+    sensor_data[device] = action
+    
+    # Tạo lệnh cho ESP32
+    command_map = {
+        'quat': {'BẬT': 'FAN_ON', 'TẮT': 'FAN_OFF'},
+        'den': {'BẬT': 'LIGHT_ON', 'TẮT': 'LIGHT_OFF'},
+        'cua_so': {'MỞ': 'WINDOW_OPEN', 'ĐÓNG': 'WINDOW_CLOSE'},
+        'canh_bao': {'BẬT': 'ALARM_ON', 'TẮT': 'ALARM_OFF'}
+    }
+    
+    if device in command_map and action in command_map[device]:
+        esp_command = command_map[device][action]
+        save_pending_command('ESP32-S3-CLASSGUARD', esp_command, '1')
+    
+    return jsonify({
+        'success': True,
+        'message': f'✅ Đã {action.lower()} {device}',
+        'status': action
+    })
 
 @app.route('/update_settings', methods=['POST'])
 def update_settings():
@@ -142,35 +225,40 @@ def update_settings():
         return jsonify({'error': 'Unauthorized'}), 401
     
     if session['role'] not in ['admin', 'teacher']:
-    return jsonify({'error': '❌ Không có quyền điều khiển!'}), 403
+        return jsonify({'error': '❌ Không có quyền cập nhật cài đặt!'}), 403
     
     try:
-        system_settings['auto_mode'] = request.json.get('auto_mode', system_settings['auto_mode'])
-        system_settings['temp_min'] = float(request.json.get('temp_min', system_settings['temp_min']))
-        system_settings['temp_max'] = float(request.json.get('temp_max', system_settings['temp_max']))
-        system_settings['light_min'] = float(request.json.get('light_min', system_settings['light_min']))
-        system_settings['noise_max'] = float(request.json.get('noise_max', system_settings['noise_max']))
-        system_settings['air_max'] = float(request.json.get('air_max', system_settings['air_max']))
+        data = request.json
+        system_settings['auto_mode'] = data.get('auto_mode', system_settings['auto_mode'])
+        system_settings['temp_min'] = float(data.get('temp_min', system_settings['temp_min']))
+        system_settings['temp_max'] = float(data.get('temp_max', system_settings['temp_max']))
+        system_settings['light_min'] = float(data.get('light_min', system_settings['light_min']))
+        system_settings['noise_max'] = float(data.get('noise_max', system_settings['noise_max']))
+        system_settings['air_max'] = float(data.get('air_max', system_settings['air_max']))
         
         return jsonify({'success': True, 'message': '✅ Đã cập nhật cài đặt!'})
     except:
         return jsonify({'error': '❌ Dữ liệu không hợp lệ!'}), 400
 
+# ========== CÁC TRANG KHÁC ==========
 @app.route('/data')
 def data_page():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    data_list = []
-    base_time = datetime.now()
+    # Lấy dữ liệu từ database
+    conn = sqlite3.connect('classguard.db')
+    c = conn.cursor()
+    c.execute('''SELECT timestamp, temperature, humidity, light, air_quality, noise 
+                 FROM sensor_history 
+                 ORDER BY timestamp DESC 
+                 LIMIT 30''')
+    records = c.fetchall()
+    conn.close()
     
-    for i in range(30):
-        record_time = base_time - timedelta(minutes=i*5)
-        temp = round(24 + random.random() * 4, 1)
-        humidity = round(55 + random.random() * 20, 1)
-        light = round(250 + random.random() * 250)
-        air = round(300 + random.random() * 500)
-        noise = round(35 + random.random() * 40)
+    data_list = []
+    for i, record in enumerate(records):
+        temp, humidity, light, air, noise = record[1:6]
         
         score = 0
         if 20 <= temp <= 28: score += 1
@@ -191,8 +279,8 @@ def data_page():
         
         data_list.append({
             'stt': i + 1,
-            'thoi_gian': record_time.strftime("%H:%M"),
-            'ngay': record_time.strftime("%d/%m/%Y"),
+            'thoi_gian': datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S').strftime("%H:%M"),
+            'ngay': datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S').strftime("%d/%m/%Y"),
             'nhiet_do': temp,
             'do_am': humidity,
             'anh_sang': light,
@@ -258,6 +346,133 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-disposition": f"attachment; filename=classguard_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
     )
+
+# ========== API CHO ESP32 ==========
+@app.route('/api/esp32/data', methods=['POST'])
+def receive_esp32_data():
+    """API nhận dữ liệu từ ESP32"""
+    try:
+        data = request.json
+        print(f"📥 Nhận dữ liệu từ ESP32: {data}")
+        
+        # Cập nhật dữ liệu cảm biến
+        with data_lock:
+            if 'temperature' in data:
+                sensor_data['nhiet_do'] = float(data['temperature'])
+            if 'humidity' in data:
+                sensor_data['do_am'] = float(data['humidity'])
+            if 'light' in data:
+                sensor_data['anh_sang'] = int(data['light'])
+            if 'air_quality' in data:
+                sensor_data['chat_luong_kk'] = int(data['air_quality'])
+            if 'noise' in data:
+                sensor_data['do_on'] = int(data['noise'])
+            
+            # Cập nhật trạng thái thiết bị từ ESP32
+            if 'fan' in data:
+                sensor_data['quat'] = 'BẬT' if data['fan'] == 1 else 'TẮT'
+            if 'light_relay' in data:
+                sensor_data['den'] = 'BẬT' if data['light_relay'] == 1 else 'TẮT'
+            if 'alarm' in data:
+                sensor_data['canh_bao'] = 'BẬT' if data['alarm'] == 1 else 'TẮT'
+            
+            sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
+            sensor_data['device_status'] = 'online'
+        
+        # Lưu vào database
+        conn = sqlite3.connect('classguard.db')
+        c = conn.cursor()
+        c.execute('''INSERT INTO sensor_history 
+                     (temperature, humidity, light, air_quality, noise)
+                     VALUES (?, ?, ?, ?, ?)''',
+                 (sensor_data['nhiet_do'], sensor_data['do_am'], 
+                  sensor_data['anh_sang'], sensor_data['chat_luong_kk'],
+                  sensor_data['do_on']))
+        conn.commit()
+        conn.close()
+        
+        # Cập nhật lịch sử cho biểu đồ
+        update_history()
+        
+        # Kiểm tra cảnh báo
+        alerts = check_esp32_alerts(data)
+        
+        # Kiểm tra và thực hiện điều khiển tự động
+        if system_settings['auto_mode']:
+            auto_control_logic(data)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Đã nhận dữ liệu từ ESP32',
+            'alerts': alerts,
+            'thresholds': system_settings,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        
+    except Exception as e:
+        print(f"❌ Lỗi nhận dữ liệu ESP32: {e}")
+        return jsonify({'error': str(e), 'success': False}), 400
+
+@app.route('/api/esp32/control', methods=['GET'])
+def get_esp32_control():
+    """ESP32 lấy lệnh điều khiển từ web"""
+    device_id = request.args.get('device_id', 'ESP32-S3-CLASSGUARD')
+    
+    # Lấy lệnh chờ từ database
+    conn = sqlite3.connect('classguard.db')
+    c = conn.cursor()
+    c.execute('''SELECT id, command, value 
+                 FROM pending_commands 
+                 WHERE device_id = ? AND executed = 0 
+                 ORDER BY created_at ASC 
+                 LIMIT 1''', (device_id,))
+    pending = c.fetchone()
+    
+    if pending:
+        command_id, command, value = pending
+        # Đánh dấu là đang xử lý
+        c.execute("UPDATE pending_commands SET executed = 1 WHERE id = ?", (command_id,))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'command': command,
+            'value': value,
+            'command_id': command_id
+        })
+    
+    conn.close()
+    return jsonify({}), 204  # 204 No Content
+
+@app.route('/api/esp32/ack', methods=['POST'])
+def esp32_command_ack():
+    """ESP32 xác nhận đã thực hiện lệnh"""
+    try:
+        data = request.json
+        command_id = data.get('command_id')
+        
+        conn = sqlite3.connect('classguard.db')
+        c = conn.cursor()
+        c.execute("DELETE FROM pending_commands WHERE id = ?", (command_id,))
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ ESP32 đã xác nhận lệnh: {command_id}")
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/esp32/status', methods=['GET'])
+def esp32_status():
+    """Kiểm tra kết nối API"""
+    return jsonify({
+        'status': 'online',
+        'server': 'classguard-web.onrender.com',
+        'project': 'CLASSGUARD THCS',
+        'version': '2.0',
+        'auto_mode': system_settings['auto_mode'],
+        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    })
 
 # ========== HÀM PHỤ TRỢ ==========
 def evaluate_environment():
@@ -357,7 +572,10 @@ def evaluate_environment():
     }
 
 def update_demo_data():
-    """Cập nhật dữ liệu demo"""
+    """Cập nhật dữ liệu demo khi không có ESP32"""
+    if sensor_data['device_status'] == 'online':
+        return  # Không cập nhật demo nếu ESP32 đang online
+    
     # Thêm biến động ngẫu nhiên
     sensor_data['nhiet_do'] = round(24 + random.random() * 4, 1)
     sensor_data['do_am'] = round(50 + random.random() * 20, 1)
@@ -368,35 +586,47 @@ def update_demo_data():
     
     # Tự động điều khiển nếu chế độ tự động bật
     if system_settings['auto_mode']:
-        auto_control()
+        auto_control_logic(sensor_data)
     
     # Cập nhật history
     update_history()
 
-def auto_control():
-    """Tự động điều khiển thiết bị"""
+def auto_control_logic(data):
+    """Logic điều khiển tự động"""
+    temp = data.get('temperature', sensor_data['nhiet_do'])
+    light = data.get('light', sensor_data['anh_sang'])
+    air = data.get('air_quality', sensor_data['chat_luong_kk'])
+    noise = data.get('noise', sensor_data['do_on'])
+    
     # Nhiệt độ
-    if sensor_data['nhiet_do'] > system_settings['temp_max']:
+    if temp > system_settings['temp_max']:
+        save_pending_command('ESP32-S3-CLASSGUARD', 'FAN_ON', '1')
         sensor_data['quat'] = 'BẬT'
-    elif sensor_data['nhiet_do'] < system_settings['temp_min']:
+    elif temp < system_settings['temp_min']:
+        save_pending_command('ESP32-S3-CLASSGUARD', 'FAN_OFF', '0')
         sensor_data['quat'] = 'TẮT'
     
     # Ánh sáng
-    if sensor_data['anh_sang'] < system_settings['light_min']:
+    if light < system_settings['light_min']:
+        save_pending_command('ESP32-S3-CLASSGUARD', 'LIGHT_ON', '1')
         sensor_data['den'] = 'BẬT'
     else:
+        save_pending_command('ESP32-S3-CLASSGUARD', 'LIGHT_OFF', '0')
         sensor_data['den'] = 'TẮT'
     
     # Chất lượng không khí
-    if sensor_data['chat_luong_kk'] > system_settings['air_max']:
+    if air > system_settings['air_max']:
         sensor_data['cua_so'] = 'MỞ'
+        # Không có relay cửa sổ thực tế
     else:
         sensor_data['cua_so'] = 'ĐÓNG'
     
     # Độ ồn
-    if sensor_data['do_on'] > system_settings['noise_max']:
+    if noise > system_settings['noise_max']:
+        save_pending_command('ESP32-S3-CLASSGUARD', 'ALARM_ON', '1')
         sensor_data['canh_bao'] = 'BẬT'
     else:
+        save_pending_command('ESP32-S3-CLASSGUARD', 'ALARM_OFF', '0')
         sensor_data['canh_bao'] = 'TẮT'
 
 def update_history():
@@ -416,87 +646,54 @@ def update_history():
     history['chat_luong_kk'].append(sensor_data['chat_luong_kk'])
     history['do_on'].append(sensor_data['do_on'])
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
-
-# ========== API CHO ESP32 ==========
-@app.route('/api/esp32/data', methods=['POST'])
-def receive_esp32_data():
-    try:
-        data = request.json
-        
-        # Lưu dữ liệu từ ESP32
-        if 'sensors' in data:
-            sensors = data['sensors']
-            # Cập nhật dữ liệu cảm biến
-            sensor_data['nhiet_do'] = sensors.get('temperature', sensor_data['nhiet_do'])
-            sensor_data['do_am'] = sensors.get('humidity', sensor_data['do_am'])
-            sensor_data['anh_sang'] = sensors.get('light', sensor_data['anh_sang'])
-            sensor_data['chat_luong_kk'] = sensors.get('air_quality', sensor_data['chat_luong_kk'])
-            sensor_data['do_on'] = sensors.get('noise', sensor_data['do_on'])
-            
-            # Cập nhật trạng thái thiết bị
-            if 'devices' in data:
-                devices = data['devices']
-                # Đồng bộ trạng thái với ESP32
-        
-        # Kiểm tra cảnh báo
-        alerts = check_esp32_alerts(sensors)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Đã nhận dữ liệu từ ESP32',
-            'alert': alerts[0] if alerts else None,
-            'thresholds': system_settings
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/api/esp32/control', methods=['GET'])
-def get_esp32_control():
-    """ESP32 lấy lệnh điều khiển từ web"""
-    device_id = request.args.get('device_id', 'ESP32-S3-CLASSGUARD')
-    
-    # Kiểm tra nếu có lệnh chờ cho ESP32 này
-    # Ở đây bạn cần lưu lệnh vào database hoặc biến tạm
-    # Tạm thời trả về không có lệnh
-    
-    return jsonify({}), 204  # 204 No Content
-
-@app.route('/api/esp32/ack', methods=['POST'])
-def esp32_command_ack():
-    """ESP32 xác nhận đã thực hiện lệnh"""
-    data = request.json
-    command_id = data.get('command_id')
-    
-    # Cập nhật trạng thái lệnh
-    print(f"✅ ESP32 đã thực hiện lệnh: {command_id}")
-    
-    return jsonify({'success': True})
-
-@app.route('/api/esp32/status', methods=['GET'])
-def esp32_status():
-    """Kiểm tra kết nối API"""
-    return jsonify({
-        'status': 'online',
-        'server': 'classguard-web.onrender.com',
-        'project': 'CLASSGUARD THCS',
-        'version': '1.0',
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    })
-
-def check_esp32_alerts(sensors):
+def check_esp32_alerts(data):
     """Kiểm tra cảnh báo từ dữ liệu ESP32"""
     alerts = []
     
-    if sensors.get('temperature', 25) > 30:
-        alerts.append('Nhiệt độ quá cao (>30°C)')
-    if sensors.get('air_quality', 400) > 1000:
-        alerts.append('Chất lượng không khí kém (>1000 PPM)')
-    if sensors.get('noise', 45) > 80:
-        alerts.append('Độ ồn quá cao (>80 dB)')
-    if sensors.get('light', 300) < 200:
-        alerts.append('Ánh sáng quá yếu (<200 lux)')
+    temp = data.get('temperature', 25)
+    air = data.get('air_quality', 400)
+    noise = data.get('noise', 45)
+    light = data.get('light', 300)
+    
+    if temp > 30:
+        alerts.append({'type': 'danger', 'message': '⚠️ Nhiệt độ quá cao (>30°C)'})
+    elif temp > 28:
+        alerts.append({'type': 'warning', 'message': '🌡️ Nhiệt độ hơi cao (>28°C)'})
+    
+    if air > 1000:
+        alerts.append({'type': 'danger', 'message': '⚠️ Chất lượng không khí kém (>1000 PPM)'})
+    elif air > 800:
+        alerts.append({'type': 'warning', 'message': '💨 Chất lượng không khí trung bình (>800 PPM)'})
+    
+    if noise > 80:
+        alerts.append({'type': 'danger', 'message': '⚠️ Độ ồn quá cao (>80 dB)'})
+    elif noise > 70:
+        alerts.append({'type': 'warning', 'message': '🔊 Độ ồn hơi cao (>70 dB)'})
+    
+    if light < 200:
+        alerts.append({'type': 'danger', 'message': '⚠️ Ánh sáng quá yếu (<200 lux)'})
+    elif light < 300:
+        alerts.append({'type': 'warning', 'message': '☀️ Ánh sáng hơi yếu (<300 lux)'})
     
     return alerts
+
+def save_pending_command(device_id, command, value):
+    """Lưu lệnh chờ vào database"""
+    try:
+        conn = sqlite3.connect('classguard.db')
+        c = conn.cursor()
+        c.execute('''INSERT INTO pending_commands (device_id, command, value)
+                     VALUES (?, ?, ?)''', (device_id, command, value))
+        conn.commit()
+        conn.close()
+        print(f"💾 Đã lưu lệnh: {command}={value} cho {device_id}")
+    except Exception as e:
+        print(f"❌ Lỗi lưu lệnh: {e}")
+
+# Chạy server
+if __name__ == '__main__':
+    print("🚀 CLASSGUARD Web Server đang khởi động...")
+    print("📊 Database đã được khởi tạo")
+    print("🌐 Web URL: http://localhost:5000")
+    print("📡 API Endpoint cho ESP32: http://localhost:5000/api/esp32/data")
+    app.run(debug=True, host='0.0.0.0', port=5000)
