@@ -51,6 +51,28 @@ system_settings = {
     'air_max': 800
 }
 
+# ========== DATABASE IN-MEMORY ==========
+# Lưu trạng thái ESP32
+esp32_state = {
+    'device_id': 'ESP32-S3-CLASSGUARD',
+    'temperature': 0,
+    'humidity': 0,
+    'light': 0,
+    'air_quality': 0,
+    'noise': 0,
+    'fan': False,
+    'light_relay': False,
+    'window': False,
+    'alarm': False,
+    'auto_mode': True,
+    'audio_enabled': True,
+    'last_sync': None
+}
+
+# Hàng đợi lệnh cho ESP32
+command_queue = []
+command_id_counter = 1
+
 # ========== ROUTES ==========
 @app.route('/')
 def home():
@@ -126,16 +148,51 @@ def control():
     device = data.get('device')
     action = data.get('action')
     
-    if device and action in ['BẬT', 'TẮT', 'MỞ', 'ĐÓNG']:
+    if not device or not action:
+        return jsonify({'error': 'Thiếu thông tin'}), 400
+    
+    # Map device name từ web sang ESP32
+    device_map = {
+        'quat': 'FAN',
+        'den': 'LIGHT',
+        'cua_so': 'WINDOW',
+        'canh_bao': 'ALARM'
+    }
+    
+    action_map = {
+        'BẬT': 'ON',
+        'TẮT': 'OFF',
+        'MỞ': 'OPEN',
+        'ĐÓNG': 'CLOSE'
+    }
+    
+    if device in device_map and action in action_map:
+        command = f"{device_map[device]}_{action_map[action]}"
+        
+        # Gửi lệnh đến ESP32
+        command_obj = {
+            'command_id': command_id_counter,
+            'command': command,
+            'value': '',
+            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'sender': session.get('name', 'Unknown')
+        }
+        
+        command_queue.append(command_obj)
+        command_id_counter += 1
+        
+        # Cập nhật ngay lập tức cho UX
         sensor_data[device] = action
+        
         return jsonify({
             'success': True,
-            'message': f'✅ Đã {action.lower()} {device}',
+            'message': f'✅ Đã gửi lệnh {action.lower()} {device} đến ESP32',
             'status': action
         })
     
-    return jsonify({'error': 'Thiếu thông tin'}), 400
-
+    return jsonify({'error': 'Thiết bị không hợp lệ'}), 400
+    
+# ========== HÀM update_settings() ==========
 @app.route('/update_settings', methods=['POST'])
 def update_settings():
     if 'username' not in session:
@@ -145,16 +202,31 @@ def update_settings():
         return jsonify({'error': 'Không có quyền!'}), 403
     
     try:
+        # Cập nhật hệ thống
         system_settings['auto_mode'] = request.json.get('auto_mode', system_settings['auto_mode'])
         system_settings['temp_min'] = float(request.json.get('temp_min', system_settings['temp_min']))
         system_settings['temp_max'] = float(request.json.get('temp_max', system_settings['temp_max']))
         system_settings['light_min'] = float(request.json.get('light_min', system_settings['light_min']))
         system_settings['noise_max'] = float(request.json.get('noise_max', system_settings['noise_max']))
         system_settings['air_max'] = float(request.json.get('air_max', system_settings['air_max']))
+        system_settings['audio_enabled'] = request.json.get('audio_enabled', True)
+        
+        # Gửi lệnh cập nhật đến ESP32 nếu có thay đổi auto_mode
+        if 'auto_mode' in request.json:
+            command = 'AUTO_MODE_ON' if system_settings['auto_mode'] else 'AUTO_MODE_OFF'
+            command_obj = {
+                'command_id': command_id_counter,
+                'command': command,
+                'value': '',
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'sender': session.get('name', 'Unknown')
+            }
+            command_queue.append(command_obj)
+            command_id_counter += 1
         
         return jsonify({'success': True, 'message': '✅ Đã cập nhật cài đặt!'})
-    except:
-        return jsonify({'error': '❌ Dữ liệu không hợp lệ!'}), 400
+    except Exception as e:
+        return jsonify({'error': f'❌ Dữ liệu không hợp lệ: {str(e)}'}), 400
 
 @app.route('/data')
 def data_page():
@@ -258,6 +330,114 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-disposition": f"attachment; filename=classguard_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
     )
+
+# ========== ROUTES MỚI CHO ĐỒNG BỘ ==========
+@app.route('/api/esp32/sync', methods=['POST'])
+def esp32_sync():
+    """API đồng bộ 2 chiều với ESP32"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'Không có dữ liệu'}), 400
+        
+        # Cập nhật trạng thái ESP32
+        esp32_state.update({
+            'temperature': data.get('temperature', esp32_state['temperature']),
+            'humidity': data.get('humidity', esp32_state['humidity']),
+            'light': data.get('light', esp32_state['light']),
+            'air_quality': data.get('air_quality', esp32_state['air_quality']),
+            'noise': data.get('noise', esp32_state['noise']),
+            'fan': data.get('fan', esp32_state['fan']),
+            'light_relay': data.get('light_relay', esp32_state['light_relay']),
+            'window': data.get('window', esp32_state['window']),
+            'alarm': data.get('alarm', esp32_state['alarm']),
+            'auto_mode': data.get('auto_mode', esp32_state['auto_mode']),
+            'audio_enabled': data.get('audio_enabled', esp32_state['audio_enabled']),
+            'last_sync': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+        
+        # Đồng bộ cảm biến với dashboard
+        sensor_data.update({
+            'nhiet_do': esp32_state['temperature'],
+            'do_am': esp32_state['humidity'],
+            'anh_sang': esp32_state['light'],
+            'chat_luong_kk': esp32_state['air_quality'],
+            'do_on': esp32_state['noise'],
+            'quat': 'BẬT' if esp32_state['fan'] else 'TẮT',
+            'den': 'BẬT' if esp32_state['light_relay'] else 'TẮT',
+            'cua_so': 'MỞ' if esp32_state['window'] else 'ĐÓNG',
+            'canh_bao': 'BẬT' if esp32_state['alarm'] else 'TẮT',
+            'timestamp': esp32_state['last_sync']
+        })
+        
+        # Chuẩn bị phản hồi cho ESP32
+        response = {
+            'success': True,
+            'message': 'Đồng bộ thành công',
+            'thresholds': {
+                'temp_min': system_settings['temp_min'],
+                'temp_max': system_settings['temp_max'],
+                'light_min': system_settings['light_min'],
+                'air_max': system_settings['air_max'],
+                'noise_max': system_settings['noise_max'],
+                'auto_mode': system_settings['auto_mode'],
+                'audio_enabled': system_settings.get('audio_enabled', True)
+            },
+            'commands': command_queue.copy()
+        }
+        
+        # Xóa hàng đợi sau khi gửi
+        command_queue.clear()
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        return jsonify({'error': f'Lỗi server: {str(e)}'}), 500
+
+@app.route('/api/esp32/ack', methods=['POST'])
+def esp32_ack():
+    """ESP32 xác nhận đã thực thi lệnh"""
+    data = request.json
+    print(f"[ESP32] ACK nhận được: {data}")
+    return jsonify({'success': True})
+
+@app.route('/api/esp32/send_command', methods=['POST'])
+def send_command_to_esp32():
+    """Web gửi lệnh đến ESP32"""
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.json
+    command = data.get('command')
+    value = data.get('value', '')
+    
+    if not command:
+        return jsonify({'error': 'Thiếu lệnh'}), 400
+    
+    global command_id_counter
+    command_obj = {
+        'command_id': command_id_counter,
+        'command': command,
+        'value': value,
+        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'sender': session.get('name', 'Unknown')
+    }
+    
+    command_queue.append(command_obj)
+    command_id_counter += 1
+    
+    print(f"[WEB] Lệnh gửi đến ESP32: {command_obj}")
+    
+    return jsonify({
+        'success': True,
+        'message': 'Đã gửi lệnh đến ESP32',
+        'command_id': command_id_counter - 1
+    })
+
+@app.route('/api/esp32/status')
+def get_esp32_status():
+    """Lấy trạng thái hiện tại của ESP32"""
+    return jsonify(esp32_state)
 
 # ========== HÀM PHỤ TRỢ ==========
 def evaluate_environment():
