@@ -28,6 +28,38 @@ let lineChart = null;
 let barChart = null;
 let isAutoMode = true;
 
+// Thêm hàm đồng bộ thời gian thực
+async function syncWithESP32() {
+    try {
+        const response = await fetch('/api/esp32/status');
+        const status = await response.json();
+        
+        if (status && status.temperature > 0) {
+            // Cập nhật giao diện với dữ liệu thực từ ESP32
+            updateSensorDisplays({
+                nhiet_do: status.temperature,
+                do_am: status.humidity,
+                anh_sang: status.light,
+                chat_luong_kk: status.air_quality,
+                do_on: status.noise,
+                quat: status.fan ? 'BẬT' : 'TẮT',
+                den: status.light_relay ? 'BẬT' : 'TẮT',
+                cua_so: status.window ? 'MỞ' : 'ĐÓNG',
+                canh_bao: status.alarm ? 'BẬT' : 'TẮT',
+                timestamp: status.last_sync || 'Đang đồng bộ...'
+            });
+            
+            // Cập nhật chế độ tự động
+            isAutoMode = status.auto_mode;
+            updateAutoModeUI(isAutoMode);
+            
+            console.log('🔄 Đã đồng bộ với ESP32');
+        }
+    } catch (error) {
+        console.error('❌ Lỗi đồng bộ ESP32:', error);
+    }
+}
+
 function fixChartContainers() {
     console.log('📐 Fixing chart containers...');
     
@@ -293,7 +325,7 @@ function initCharts() {
     }
 }
 
-function initEventListeners() {
+unction initEventListeners() {
     console.log('🔄 Setting up event listeners...');
     
     // Nút điều khiển thiết bị
@@ -301,10 +333,18 @@ function initEventListeners() {
         btn.addEventListener('click', function() {
             const device = this.dataset.device;
             const action = this.dataset.action;
-            console.log(`🎮 Control clicked: ${device} -> ${action}`);
             
-            if (device && action) {
+            // Kiểm tra quyền điều khiển cảnh báo
+            if (device === 'canh_bao') {
+                // Luôn cho phép điều khiển cảnh báo
                 controlDevice(device, action);
+            } else {
+                // Các thiết bị khác kiểm tra auto mode
+                if (!isAutoMode) {
+                    controlDevice(device, action);
+                } else {
+                    showToast('⚠️ Cảnh báo', 'Tắt chế độ tự động để điều khiển thủ công', 'warning');
+                }
             }
         });
     });
@@ -344,18 +384,21 @@ function initEventListeners() {
 async function updateDashboard() {
     try {
         console.log('🔄 Updating dashboard data...');
-        const response = await fetch('/get_sensor_data');
-        const data = await response.json();
         
-        if (data.sensors) {
-            updateSensorDisplays(data.sensors);
-            updateCharts(data);
-            updateEvaluation(data.evaluation);
-            updateDeviceStatus(data.sensors);
+        // Song song: lấy dữ liệu từ web và ESP32
+        const [webData, esp32Data] = await Promise.allSettled([
+            fetch('/get_sensor_data').then(r => r.json()),
+            syncWithESP32()
+        ]);
+        
+        if (webData.status === 'fulfilled' && webData.value.sensors) {
+            updateSensorDisplays(webData.value.sensors);
+            updateCharts(webData.value);
+            updateEvaluation(webData.value.evaluation);
+            updateDeviceStatus(webData.value.sensors);
             
-            // Cập nhật chế độ tự động
-            if (data.settings) {
-                isAutoMode = data.settings.auto_mode;
+            if (webData.value.settings) {
+                isAutoMode = webData.value.settings.auto_mode;
                 updateAutoModeUI(isAutoMode);
             }
         }
@@ -363,6 +406,9 @@ async function updateDashboard() {
         console.error('❌ Error updating dashboard:', error);
     }
 }
+
+// Cập nhật interval thành 2 giây (nhanh hơn)
+setInterval(updateDashboard, 2000);
 
 function updateSensorDisplays(sensors) {
     // Cập nhật giá trị
@@ -589,11 +635,49 @@ function updateDeviceStatus(sensors) {
     });
 }
 
+// Hàm cập nhật cục bộ
+function updateDeviceStatusLocally(device, isOn) {
+    const statusMap = {
+        'quat': { on: 'BẬT', off: 'TẮT' },
+        'den': { on: 'BẬT', off: 'TẮT' },
+        'cua_so': { on: 'MỞ', off: 'ĐÓNG' },
+        'canh_bao': { on: 'BẬT', off: 'TẮT' }
+    };
+    
+    if (statusMap[device]) {
+        const status = isOn ? statusMap[device].on : statusMap[device].off;
+        
+        // Cập nhật icon
+        const iconElement = document.getElementById(`${device}-icon`);
+        if (iconElement) {
+            updateIconAnimation(iconElement, device, isOn);
+        }
+        
+        // Cập nhật nút
+        const onBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'MỞ' : 'BẬT'}"]`);
+        const offBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'ĐÓNG' : 'TẮT'}"]`);
+        
+        if (onBtn && offBtn) {
+            onBtn.classList.remove('active');
+            offBtn.classList.remove('active');
+            
+            if (isOn) {
+                onBtn.classList.add('active');
+            } else {
+                offBtn.classList.add('active');
+            }
+        }
+        
+        // Cập nhật trạng thái text
+        updateElement(`${device}-status`, status);
+    }
+}
+
 async function controlDevice(device, action) {
-    console.log(`🎮 Sending control: ${device} -> ${action}`);
+    console.log(`🎮 Gửi lệnh: ${device} -> ${action}`);
     
     // Kiểm tra chế độ tự động
-    if (isAutoMode) {
+    if (isAutoMode && device !== 'canh_bao') {
         showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
         return;
     }
@@ -614,16 +698,19 @@ async function controlDevice(device, action) {
         
         if (result.success) {
             showToast('✅ Thành công', result.message, 'success');
-            // Cập nhật ngay lập tức
-            setTimeout(updateDashboard, 300);
+            
+            // Cập nhật ngay lập tức (optimistic update)
+            updateDeviceStatusLocally(device, action === 'BẬT' || action === 'MỞ');
+            
+            // Đồng bộ với ESP32 sau 500ms
+            setTimeout(syncWithESP32, 500);
         } else {
             showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
         }
     } catch (error) {
-        console.error('❌ Control error:', error);
+        console.error('❌ Lỗi điều khiển:', error);
         showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
     }
-}
 
 async function updateAutoMode(enabled) {
     console.log(`🤖 Updating auto mode to: ${enabled}`);
