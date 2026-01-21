@@ -66,6 +66,26 @@ def init_db():
                   setting_value TEXT NOT NULL,
                   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
     
+   # Thêm bảng thresholds để đồng bộ ngưỡng với ESP32
+    c.execute('''CREATE TABLE IF NOT EXISTS thresholds
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  temp_min REAL DEFAULT 20.0,
+                  temp_max REAL DEFAULT 28.0,
+                  light_min REAL DEFAULT 300.0,
+                  air_max INTEGER DEFAULT 800,
+                  noise_max INTEGER DEFAULT 70,
+                  auto_mode INTEGER DEFAULT 1,
+                  audio_enabled INTEGER DEFAULT 1,
+                  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    
+    # Thêm ngưỡng mặc định
+    c.execute('''INSERT OR IGNORE INTO thresholds 
+                 (id, temp_min, temp_max, light_min, air_max, noise_max, auto_mode, audio_enabled) 
+                 VALUES (1, 20.0, 28.0, 300.0, 800, 70, 1, 1)''')
+    
+    conn.commit()
+    conn.close()
+        
     # Thêm tài khoản mẫu nếu chưa có
     users_data = [
         ('admin', 'admin123', 'admin', 'Quản trị viên'),
@@ -1086,6 +1106,306 @@ def background_tasks():
 background_thread = threading.Thread(target=background_tasks, daemon=True)
 background_thread.start()
 
+# ========== API ĐỒNG BỘ NGƯỠNG ==========
+@app.route('/api/esp32/thresholds', methods=['GET'])
+def get_thresholds():
+    """API cung cấp ngưỡng cho ESP32"""
+    try:
+        conn = sqlite3.connect('classguard.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM thresholds WHERE id = 1")
+        threshold = c.fetchone()
+        conn.close()
+        
+        if threshold:
+            return jsonify({
+                'success': True,
+                'temp_min': threshold[1],
+                'temp_max': threshold[2],
+                'light_min': threshold[3],
+                'air_max': threshold[4],
+                'noise_max': threshold[5],
+                'auto_mode': bool(threshold[6]),
+                'audio_enabled': bool(threshold[7])
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'temp_min': 20.0,
+                'temp_max': 28.0,
+                'light_min': 300.0,
+                'air_max': 800,
+                'noise_max': 70,
+                'auto_mode': True,
+                'audio_enabled': True
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'temp_min': 20.0,
+            'temp_max': 28.0,
+            'light_min': 300.0,
+            'air_max': 800,
+            'noise_max': 70,
+            'auto_mode': True,
+            'audio_enabled': True
+        })
+
+# ========== CẬP NHẬT NGƯỠNG TỪ ESP32 ==========
+@app.route('/api/esp32/update_thresholds', methods=['POST'])
+def update_thresholds():
+    """ESP32 gửi yêu cầu cập nhật ngưỡng"""
+    try:
+        data = request.json
+        
+        conn = sqlite3.connect('classguard.db')
+        c = conn.cursor()
+        
+        c.execute('''UPDATE thresholds SET 
+                     temp_min = ?, temp_max = ?, light_min = ?,
+                     air_max = ?, noise_max = ?, auto_mode = ?,
+                     audio_enabled = ?, updated_at = CURRENT_TIMESTAMP
+                     WHERE id = 1''',
+                 (data.get('temp_min', 20.0),
+                  data.get('temp_max', 28.0),
+                  data.get('light_min', 300.0),
+                  data.get('air_max', 800),
+                  data.get('noise_max', 70),
+                  data.get('auto_mode', True),
+                  data.get('audio_enabled', True)))
+        
+        conn.commit()
+        conn.close()
+        
+        # Cập nhật biến toàn cục
+        system_settings['temp_min'] = data.get('temp_min', 20.0)
+        system_settings['temp_max'] = data.get('temp_max', 28.0)
+        system_settings['light_min'] = data.get('light_min', 300.0)
+        system_settings['air_max'] = data.get('air_max', 800)
+        system_settings['noise_max'] = data.get('noise_max', 70)
+        system_settings['auto_mode'] = data.get('auto_mode', True)
+        
+        return jsonify({'success': True, 'message': 'Đã cập nhật ngưỡng'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+# ========== CẬP NHẬT HÀM AUTO_CONTROL_LOGIC ==========
+def auto_control_logic(data):
+    """Logic điều khiển tự động - TÁCH RIÊNG CẢNH BÁO"""
+    temp = data.get('nhiet_do', sensor_data['nhiet_do'])
+    light = data.get('anh_sang', sensor_data['anh_sang'])
+    air = data.get('chat_luong_kk', sensor_data['chat_luong_kk'])
+    noise = data.get('do_on', sensor_data['do_on'])
+    
+    # Nhiệt độ - chỉ điều khiển quạt
+    if temp > system_settings['temp_max']:
+        sensor_data['quat'] = 'BẬT'
+        save_pending_command('ESP32-S3-CLASSGUARD', 'FAN_ON', '1')
+    elif temp < system_settings['temp_min']:
+        sensor_data['quat'] = 'TẮT'
+        save_pending_command('ESP32-S3-CLASSGUARD', 'FAN_OFF', '0')
+    
+    # Ánh sáng - chỉ điều khiển đèn
+    if light < system_settings['light_min']:
+        sensor_data['den'] = 'BẬT'
+        save_pending_command('ESP32-S3-CLASSGUARD', 'LIGHT_ON', '1')
+    else:
+        sensor_data['den'] = 'TẮT'
+        save_pending_command('ESP32-S3-CLASSGUARD', 'LIGHT_OFF', '0')
+    
+    # Chất lượng không khí - chỉ điều khiển cửa sổ
+    if air > system_settings['air_max']:
+        sensor_data['cua_so'] = 'MỞ'
+        save_pending_command('ESP32-S3-CLASSGUARD', 'WINDOW_OPEN', '1')
+    else:
+        sensor_data['cua_so'] = 'ĐÓNG'
+        save_pending_command('ESP32-S3-CLASSGUARD', 'WINDOW_CLOSE', '0')
+    
+    # Độ ồn - KHÔNG tự động điều khiển cảnh báo
+    # Cảnh báo chỉ được bật/tắt thủ công từ web
+    
+    print(f"🤖 Tự động: Quạt={sensor_data['quat']}, Đèn={sensor_data['den']}, Cửa={sensor_data['cua_so']}")
+
+# ========== HÀM KIỂM TRA CẢNH BÁO RIÊNG ==========
+def check_alerts_only(data):
+    """Chỉ kiểm tra và phát cảnh báo, không điều khiển thiết bị"""
+    alerts = []
+    
+    temp = data.get('temperature', 25)
+    air = data.get('air_quality', 400)
+    noise = data.get('noise', 45)
+    light = data.get('light', 300)
+    
+    # Ngưỡng cảnh báo (thấp hơn ngưỡng điều khiển)
+    temp_alert_threshold = system_settings['temp_max'] + 2  # 30°C nếu max=28
+    air_alert_threshold = 1000  # ppm
+    noise_alert_threshold = system_settings['noise_max'] + 10
+    light_alert_threshold = 200  # lux
+    
+    if temp > temp_alert_threshold:
+        alerts.append({'type': 'danger', 'message': '⚠️ Nhiệt độ quá cao', 'audio_file': '03.mp3'})
+    elif temp > system_settings['temp_max']:
+        alerts.append({'type': 'warning', 'message': '🌡️ Nhiệt độ hơi cao', 'audio_file': ''})
+    
+    if air > air_alert_threshold:
+        alerts.append({'type': 'danger', 'message': '⚠️ Chất lượng không khí kém', 'audio_file': '04.mp3'})
+    elif air > 800:
+        alerts.append({'type': 'warning', 'message': '💨 Chất lượng không khí trung bình', 'audio_file': ''})
+    
+    if noise > noise_alert_threshold:
+        alerts.append({'type': 'danger', 'message': '⚠️ Độ ồn quá cao', 'audio_file': '05.mp3'})
+    elif noise > system_settings['noise_max']:
+        alerts.append({'type': 'warning', 'message': '🔊 Độ ồn hơi cao', 'audio_file': ''})
+    
+    if light < light_alert_threshold:
+        alerts.append({'type': 'danger', 'message': '⚠️ Ánh sáng quá yếu', 'audio_file': '06.mp3'})
+    elif light < 300:
+        alerts.append({'type': 'warning', 'message': '☀️ Ánh sáng hơi yếu', 'audio_file': ''})
+    
+    return alerts
+
+# ========== CẬP NHẬT API NHẬN DỮ LIỆU ESP32 ==========
+@app.route('/api/esp32/data', methods=['POST'])
+def receive_esp32_data():
+    """API nhận dữ liệu từ ESP32 - TỐI ƯU TỐC ĐỘ"""
+    try:
+        data = request.json
+        print(f"📥 Nhận dữ liệu từ ESP32: {json.dumps(data, indent=2)}")
+        
+        with data_lock:
+            # Cập nhật dữ liệu cảm biến
+            sensor_data['nhiet_do'] = float(data.get('temperature', sensor_data['nhiet_do']))
+            sensor_data['do_am'] = float(data.get('humidity', sensor_data['do_am']))
+            sensor_data['anh_sang'] = int(data.get('light', sensor_data['anh_sang']))
+            sensor_data['chat_luong_kk'] = int(data.get('air_quality', sensor_data['chat_luong_kk']))
+            sensor_data['do_on'] = int(data.get('noise', sensor_data['do_on']))
+            
+            # Cập nhật trạng thái thiết bị
+            if 'fan' in data:
+                sensor_data['quat'] = 'BẬT' if data['fan'] == 1 else 'TẮT'
+            if 'light_relay' in data:
+                sensor_data['den'] = 'BẬT' if data['light_relay'] == 1 else 'TẮT'
+            if 'alarm' in data:
+                sensor_data['canh_bao'] = 'BẬT' if data['alarm'] == 1 else 'TẮT'
+            if 'window' in data:
+                sensor_data['cua_so'] = 'MỞ' if data['window'] == 1 else 'ĐÓNG'
+                
+            sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
+            sensor_data['device_status'] = 'online'
+        
+        # Lưu vào database
+        conn = sqlite3.connect('classguard.db')
+        c = conn.cursor()
+        c.execute('''INSERT INTO sensor_history 
+                     (temperature, humidity, light, air_quality, noise)
+                     VALUES (?, ?, ?, ?, ?)''',
+                 (sensor_data['nhiet_do'], sensor_data['do_am'], 
+                  sensor_data['anh_sang'], sensor_data['chat_luong_kk'],
+                  sensor_data['do_on']))
+        conn.commit()
+        conn.close()
+        
+        # Cập nhật lịch sử
+        update_history_from_db()
+        
+        # Kiểm tra cảnh báo (chỉ phát âm thanh)
+        alerts = check_alerts_only(data)
+        
+        # Điều khiển tự động (CHỈ 3 THIẾT BỊ: quạt, đèn, cửa)
+        if system_settings['auto_mode']:
+            auto_control_logic(sensor_data)
+        
+        # Tạo response với các audio commands nếu có cảnh báo
+        audio_commands = []
+        for alert in alerts:
+            if 'audio_file' in alert and alert['audio_file']:
+                audio_commands.append({'file': alert['audio_file']})
+        
+        # Lấy ngưỡng hiện tại từ database
+        conn = sqlite3.connect('classguard.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM thresholds WHERE id = 1")
+        threshold = c.fetchone()
+        conn.close()
+        
+        response_data = {
+            'success': True,
+            'message': 'Đã nhận dữ liệu từ ESP32',
+            'alerts': alerts,
+            'thresholds': {
+                'temp_min': system_settings['temp_min'],
+                'temp_max': system_settings['temp_max'],
+                'light_min': system_settings['light_min'],
+                'air_max': system_settings['air_max'],
+                'noise_max': system_settings['noise_max'],
+                'auto_mode': system_settings['auto_mode'],
+                'audio_enabled': True if threshold and threshold[7] == 1 else False
+            },
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        # Thêm audio commands nếu có
+        if audio_commands:
+            response_data['audio_commands'] = audio_commands
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"❌ Lỗi nhận dữ liệu ESP32: {str(e)}")
+        return jsonify({'error': str(e), 'success': False}), 400
+
+# ========== CẬP NHẬT HÀM UPDATE_SETTINGS ==========
+@app.route('/update_settings', methods=['POST'])
+def update_settings():
+    """Cập nhật cài đặt - ĐỒNG BỘ VỚI ESP32"""
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if session['role'] not in ['admin', 'teacher']:
+        return jsonify({'error': '❌ Không có quyền cập nhật cài đặt!'}), 403
+    
+    try:
+        data = request.json
+        
+        # Cập nhật biến toàn cục
+        system_settings['auto_mode'] = data.get('auto_mode', system_settings['auto_mode'])
+        system_settings['temp_min'] = float(data.get('temp_min', system_settings['temp_min']))
+        system_settings['temp_max'] = float(data.get('temp_max', system_settings['temp_max']))
+        system_settings['light_min'] = float(data.get('light_min', system_settings['light_min']))
+        system_settings['noise_max'] = float(data.get('noise_max', system_settings['noise_max']))
+        system_settings['air_max'] = float(data.get('air_max', system_settings['air_max']))
+        
+        # Lưu vào database thresholds
+        conn = sqlite3.connect('classguard.db')
+        c = conn.cursor()
+        c.execute('''UPDATE thresholds SET 
+                     temp_min = ?, temp_max = ?, light_min = ?,
+                     air_max = ?, noise_max = ?, auto_mode = ?,
+                     updated_at = CURRENT_TIMESTAMP
+                     WHERE id = 1''',
+                 (system_settings['temp_min'],
+                  system_settings['temp_max'],
+                  system_settings['light_min'],
+                  system_settings['air_max'],
+                  system_settings['noise_max'],
+                  1 if system_settings['auto_mode'] else 0))
+        conn.commit()
+        conn.close()
+        
+        # Gửi lệnh thay đổi chế độ tự động cho ESP32
+        if 'auto_mode' in data:
+            command = 'AUTO_MODE_ON' if data['auto_mode'] else 'AUTO_MODE_OFF'
+            save_pending_command('ESP32-S3-CLASSGUARD', command, '1')
+        
+        return jsonify({
+            'success': True, 
+            'message': '✅ Đã cập nhật cài đặt và đồng bộ với ESP32!'
+        })
+    except Exception as e:
+        print(f"❌ Lỗi cập nhật settings: {e}")
+        return jsonify({'error': '❌ Dữ liệu không hợp lệ!'}), 400
+
 # ========== RUN SERVER ==========
 if __name__ == '__main__':
     print("=" * 60)
@@ -1100,4 +1420,5 @@ if __name__ == '__main__':
     print("=" * 60)
     
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
+
 
