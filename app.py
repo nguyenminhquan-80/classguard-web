@@ -394,15 +394,20 @@ def control():
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # Kiểm tra chế độ tự động
-    if system.settings['auto_mode']:
+    # KIỂM TRA: Chỉ chặn nếu là thiết bị KHÔNG phải cảnh báo và auto_mode = True
+    data = request.json
+    device = data.get('device')
+    
+    # CẢNH BÁO: LUÔN cho phép điều khiển
+    if device == 'canh_bao':
+        # Cho phép luôn, không kiểm tra auto_mode
+        pass
+    elif system.settings['auto_mode']:
         return jsonify({'error': '❌ Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.'}), 403
     
     if session['role'] not in ['admin', 'teacher']:
         return jsonify({'error': '❌ Không có quyền điều khiển!'}), 403
     
-    data = request.json
-    device = data.get('device')
     action = data.get('action')
     
     # Map device name từ web sang ESP32 command
@@ -594,4 +599,5 @@ def export_csv():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
 
