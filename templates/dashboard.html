@@ -35,25 +35,14 @@
             padding-bottom: 0;
         }
 
+        /* Đảm bảo chart canvas không phình to */
         .chart-container canvas {
             width: 100% !important;
             height: 300px !important;
             max-height: 300px !important;
         }
 
-        /* HIỆU ỨNG ĐẶC BIỆT CHO CẢNH BÁO */
-        .alarm-active {
-            animation: alarmPulse 1s infinite;
-            box-shadow: 0 0 20px rgba(220, 53, 69, 0.5) !important;
-        }
-        
-        @keyframes alarmPulse {
-            0% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.3); }
-            50% { box-shadow: 0 0 25px rgba(220, 53, 69, 0.7); }
-            100% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.3); }
-        }
-
-        /* HIỆU ỨNG CỬA */
+        /* Hiệu ứng cửa */
         .door-open {
             color: #28a745 !important;
             animation: doorOpen 0.5s ease;
@@ -74,12 +63,12 @@
             100% { transform: rotateY(0deg); }
         }
 
-        /* ANIMATION CHO QUẠT */
+        /* Animation cho quạt */
         .fa-fan.fa-spin {
             animation: fa-spin 1.5s infinite linear;
         }
 
-        /* ANIMATION CHO CHUÔNG CẢNH BÁO */
+        /* Animation cho chuông cảnh báo */
         @keyframes bell-shake {
             0% { transform: rotate(0deg); }
             25% { transform: rotate(-15deg); }
@@ -91,7 +80,7 @@
             animation: bell-shake 0.5s infinite;
         }
 
-        /* CHART TOGGLE BUTTON */
+        /* Chart toggle button */
         .form-switch .form-check-input {
             width: 50px;
             height: 26px;
@@ -107,7 +96,7 @@
             box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
         }
 
-        /* RESPONSIVE CHO MOBILE */
+        /* Responsive cho mobile */
         @media (max-width: 992px) {
             .chart-container {
                 height: 260px !important;
@@ -144,26 +133,26 @@
             }
         }
 
-        /* ĐẢM BẢO CHARTS SECTION KHÔNG BỊ PHÌNH */
+        /* Đảm bảo charts section không bị phình */
         .charts-section {
             overflow: hidden;
             padding-bottom: 10px;
         }
 
-        /* CHART LABELS NHỎ GỌN */
+        /* Chart labels nhỏ gọn */
         #chartLabel {
             font-weight: 600;
             color: #4361ee;
         }
         
-        /* MAIN CONTAINER */
+        /* Main Container */
         .main-container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
         
-        /* HEADER VỚI NAVIGATION */
+        /* Header với Navigation */
         .dashboard-header {
             background: white;
             border-radius: 15px;
@@ -200,7 +189,7 @@
             margin: 0;
         }
         
-        /* NAVIGATION MENU */
+        /* Navigation Menu */
         .nav-menu {
             display: flex;
             gap: 10px;
@@ -248,7 +237,7 @@
             border: none;
         }
         
-        /* USER INFO */
+        /* User Info */
         .user-info {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -293,7 +282,7 @@
             margin: 3px 0 0 0;
         }
         
-        /* TIME DISPLAY */
+        /* Time Display */
         .time-display {
             text-align: center;
             padding: 10px 15px;
@@ -315,7 +304,7 @@
             margin: 0;
         }
         
-        /* SENSOR CARDS GRID */
+        /* Sensor Cards Grid */
         .sensor-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -384,7 +373,7 @@
             margin-top: 10px;
         }
         
-        /* CHARTS SECTION */
+        /* Charts Section */
         .charts-section {
             background: white;
             border-radius: 15px;
@@ -407,7 +396,7 @@
             margin: 0;
         }
         
-        /* CONTROL PANEL */
+        /* Control Panel */
         .control-panel {
             background: white;
             border-radius: 15px;
@@ -493,15 +482,6 @@
             cursor: not-allowed;
         }
         
-        /* ĐẶC BIỆT: NÚT CẢNH BÁO LUÔN BẬT */
-        .alarm-btn {
-            border: 2px solid transparent;
-        }
-        
-        .alarm-btn:hover:not(:disabled) {
-            border-color: var(--danger) !important;
-        }
-        
         .btn-on {
             background: linear-gradient(135deg, var(--success) 0%, #20c997 100%);
             color: white;
@@ -543,7 +523,7 @@
             color: #6c757d;
         }
 
-        /* AUTO MODE CARD */
+        /* Auto Mode Card */
         .auto-mode-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -569,7 +549,7 @@
             margin-top: 0;
         }
         
-        /* EVALUATION SECTION */
+        /* Evaluation Section */
         .evaluation-section {
             background: white;
             border-radius: 15px;
@@ -656,7 +636,7 @@
             font-weight: 600;
         }
         
-        /* FOOTER */
+        /* Footer */
         .dashboard-footer {
             text-align: center;
             padding: 20px;
@@ -682,7 +662,7 @@
             color: var(--secondary);
         }
         
-        /* RESPONSIVE */
+        /* Responsive */
         @media (max-width: 1200px) {
             .sensor-grid {
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -732,7 +712,7 @@
             }
         }
         
-        /* ANIMATIONS */
+        /* Animations */
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -752,7 +732,7 @@
             animation: fadeIn 0.5s ease-out;
         }
         
-        /* CUSTOM SCROLLBAR */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -845,12 +825,12 @@
         <!-- Alert Container -->
         <div id="alert-container" class="mb-3"></div>
 
-        <!-- Auto Mode Notice - CẬP NHẬT -->
+        <!-- Auto Mode Notice -->
         <div id="control-notice" class="alert alert-warning d-flex align-items-center mb-3">
             <i class="fas fa-robot me-2 fs-4"></i>
             <div>
                 <strong>Chế độ tự động đang bật</strong>
-                <div class="small">Hệ thống tự động điều chỉnh: Quạt, Đèn, Cửa sổ. Nút Cảnh báo luôn điều khiển được.</div>
+                <div class="small">Hệ thống sẽ tự động điều chỉnh thiết bị dựa trên ngưỡng cài đặt</div>
             </div>
         </div>
 
@@ -873,7 +853,7 @@
                     </span>
                 </div>
                 <div class="mt-2 small text-muted">
-                    Cập nhật: <span id="last-update">{{ data.timestamp if data.timestamp else '--:--:--' }}</span>
+                    Cập nhật: <span id="last-update">--:--:--</span>
                 </div>
             </div>
 
@@ -1005,21 +985,18 @@
                         <div class="device-info">
                             <h5>🌀 Quạt làm mát</h5>
                             <p>Điều chỉnh nhiệt độ phòng</p>
-                            <small class="text-muted">Tự động khi nhiệt độ > {{ settings.temp_max }}°C</small>
                         </div>
                     </div>
                     
                     <div class="control-buttons">
                         <button class="control-btn btn-on" 
                                 data-device="quat" 
-                                data-action="BẬT"
-                                data-auto-control="true">
+                                data-action="BẬT">
                             <i class="fas fa-play me-1"></i> BẬT
                         </button>
                         <button class="control-btn btn-off active" 
                                 data-device="quat" 
-                                data-action="TẮT"
-                                data-auto-control="true">
+                                data-action="TẮT">
                             <i class="fas fa-stop me-1"></i> TẮT
                         </button>
                     </div>
@@ -1035,27 +1012,24 @@
                 <div class="device-card">
                     <div class="device-header">
                         <div class="device-icon-wrapper">
-                            <i class="fas fa-lightbulb" id="den-icon"></i>
+                            <i class="fas fa-lighTrung bìnhulb" id="den-icon"></i>
                         </div>
                         <div class="device-info">
                             <h5>💡 Đèn chiếu sáng</h5>
                             <p>Điều chỉnh ánh sáng lớp học</p>
-                            <small class="text-muted">Tự động khi ánh sáng < {{ settings.light_min }} lux</small>
                         </div>
                     </div>
                     
                     <div class="control-buttons">
                         <button class="control-btn btn-on active" 
                                 data-device="den" 
-                                data-action="BẬT"
-                                data-auto-control="true">
-                            <i class="fas fa-lightbulb me-1"></i> BẬT
+                                data-action="BẬT">
+                            <i class="fas fa-lighTrung bìnhulb me-1"></i> BẬT
                         </button>
                         <button class="control-btn btn-off" 
                                 data-device="den" 
-                                data-action="TẮT"
-                                data-auto-control="true">
-                            <i class="fas fa-lightbulb me-1"></i> TẮT
+                                data-action="TẮT">
+                            <i class="fas fa-lighTrung bìnhulb me-1"></i> TẮT
                         </button>
                     </div>
                     
@@ -1075,21 +1049,18 @@
                         <div class="device-info">
                             <h5>🚪 Cửa sổ</h5>
                             <p>Thông thoáng không khí</p>
-                            <small class="text-muted">Tự động khi chất lượng KK > {{ settings.air_max }} PPM</small>
                         </div>
                     </div>
                     
                     <div class="control-buttons">
                         <button class="control-btn btn-on" 
                                 data-device="cua_so" 
-                                data-action="MỞ"
-                                data-auto-control="true">
+                                data-action="MỞ">
                             <i class="fas fa-door-open me-1"></i> MỞ
                         </button>
                         <button class="control-btn btn-off active" 
                                 data-device="cua_so" 
-                                data-action="ĐÓNG"
-                                data-auto-control="true">
+                                data-action="ĐÓNG">
                             <i class="fas fa-door-closed me-1"></i> ĐÓNG
                         </button>
                     </div>
@@ -1101,8 +1072,8 @@
                     </div>
                 </div>
 
-                <!-- Cảnh báo - THIẾT BỊ ĐẶC BIỆT -->
-                <div class="device-card" id="alarm-card">
+                <!-- Cảnh báo -->
+                <div class="device-card">
                     <div class="device-header">
                         <div class="device-icon-wrapper">
                             <i class="fas fa-bell" id="canh_bao-icon"></i>
@@ -1110,21 +1081,18 @@
                         <div class="device-info">
                             <h5>⚠️ Hệ thống cảnh báo</h5>
                             <p>Báo động khi có vấn đề</p>
-                            <small class="text-danger fw-bold">⚠️ LUÔN ĐIỀU KHIỂN THỦ CÔNG</small>
                         </div>
                     </div>
                     
                     <div class="control-buttons">
-                        <button class="control-btn btn-on alarm-btn" 
+                        <button class="control-btn btn-on" 
                                 data-device="canh_bao" 
-                                data-action="BẬT"
-                                data-auto-control="false">
+                                data-action="BẬT">
                             <i class="fas fa-bell me-1"></i> BẬT
                         </button>
-                        <button class="control-btn btn-off active alarm-btn" 
+                        <button class="control-btn btn-off active" 
                                 data-device="canh_bao" 
-                                data-action="TẮT"
-                                data-auto-control="false">
+                                data-action="TẮT">
                             <i class="fas fa-bell-slash me-1"></i> TẮT
                         </button>
                     </div>
@@ -1142,7 +1110,7 @@
                     <i class="fas fa-robot auto-mode-icon"></i>
                     <div class="flex-grow-1">
                         <h4 class="mb-1">🤖 Chế độ tự động thông minh</h4>
-                        <p class="mb-0 small opacity-90">Hệ thống tự động điều khiển 3 thiết bị: Quạt, Đèn, Cửa sổ. Cảnh báo luôn điều khiển thủ công.</p>
+                        <p class="mb-0 small opacity-90">Hệ thống tự động điều khiển thiết bị dựa trên ngưỡng cài đặt</p>
                     </div>
                     <div class="form-check form-switch form-switch-xl">
                         <input class="form-check-input" type="checkbox" id="autoModeToggle2" 
@@ -1155,28 +1123,24 @@
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">🌡️ Nhiệt độ</div>
                                 <div class="fw-bold">{{ settings.temp_min }}°C - {{ settings.temp_max }}°C</div>
-                                <small class="opacity-75">Quạt: >{{ settings.temp_max }}°C</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">☀️ Ánh sáng</div>
                                 <div class="fw-bold">{{ settings.light_min }}+ lux</div>
-                                <small class="opacity-75">Đèn: <{{ settings.light_min }} lux</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">💨 Chất lượng KK</div>
                                 <div class="fw-bold">{{ settings.air_max }} PPM</div>
-                                <small class="opacity-75">Cửa: >{{ settings.air_max }} PPM</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">🔊 Độ ồn</div>
                                 <div class="fw-bold">{{ settings.noise_max }} dB</div>
-                                <small class="opacity-75">Cảnh báo: thủ công</small>
                             </div>
                         </div>
                     </div>
@@ -1243,7 +1207,7 @@
             </p>
             <p class="small text-muted mb-3">
                 <i class="fas fa-sync-alt"></i> Dữ liệu cập nhật mỗi 5 giây | 
-                <i class="fas fa-shield-alt"></i> Phiên bản 3.0 - ĐỒNG BỘ HOÀN TOÀN | 
+                <i class="fas fa-shield-alt"></i> Phiên bản 3.0 | 
                 <i class="fas fa-heart text-danger"></i> Dự án Khoa học Kỹ thuật - THCS
             </p>
             <div class="footer-links">
@@ -1261,11 +1225,11 @@
     <script>
         // Khởi tạo khi trang load xong
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Dashboard initialized - Phiên bản ĐỒNG BỘ');
+            console.log('🚀 Dashboard initialized');
             
             // Sync cả hai toggle auto mode
-            const autoToggle1 = document.getElementById('autoModeToggle');
-            const autoToggle2 = document.getElementById('autoModeToggle2');
+            const autoToggle1 = document.getElemenTrung bìnhyId('autoModeToggle');
+            const autoToggle2 = document.getElemenTrung bìnhyId('autoModeToggle2');
             
             if (autoToggle1 && autoToggle2) {
                 autoToggle1.addEventListener('change', function() {
@@ -1278,7 +1242,7 @@
             }
             
             // Update score circle class
-            const scoreElement = document.getElementById('score-value');
+            const scoreElement = document.getElemenTrung bìnhyId('score-value');
             if (scoreElement) {
                 const scoreClass = '{{ evaluation.overall_class }}';
                 if (scoreClass === 'success') {
@@ -1302,14 +1266,9 @@
                     this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.12)';
                 });
             });
-            
-            // Kiểm tra và thêm hiệu ứng cho cảnh báo nếu đang bật
-            const alarmStatus = '{{ data.canh_bao }}';
-            const alarmCard = document.getElementById('alarm-card');
-            if (alarmCard && alarmStatus === 'BẬT') {
-                alarmCard.classList.add('alarm-active');
-            }
         });
     </script>
 </body>
 </html>
+
+
