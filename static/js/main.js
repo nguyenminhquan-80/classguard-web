@@ -342,28 +342,104 @@ function initEventListeners() {
 // ========== DASHBOARD UPDATE FUNCTIONS ==========
 async function updateDashboard() {
     try {
-        console.log('🔄 Updating dashboard data...');
+        console.log('🔄 Đang cập nhật dashboard...');
         const response = await fetch('/get_sensor_data');
         const data = await response.json();
         
-        if (data.success && data.sensors) {
+        if (data.sensors) {
             updateSensorDisplays(data.sensors);
             updateCharts(data);
             updateEvaluation(data.evaluation);
             updateDeviceStatus(data.sensors);
-            updateSystemStatus(data);
             
-            // Cập nhật chế độ tự động
+            // ĐỒNG BỘ CHẾ ĐỘ TỰ ĐỘNG
             if (data.settings) {
                 isAutoMode = data.settings.auto_mode;
                 updateAutoModeUI(isAutoMode);
+                
+                // CẬP NHẬT NÚT ĐIỀU KHIỂN
+                updateControlButtonsState(!isAutoMode);
             }
-        } else {
-            console.error('❌ Invalid response from server:', data);
         }
     } catch (error) {
-        console.error('❌ Error updating dashboard:', error);
-        showToast('⚠️ Cảnh báo', 'Không thể kết nối đến server. Đang sử dụng dữ liệu demo.', 'warning');
+        console.error('❌ Lỗi cập nhật dashboard:', error);
+    }
+}
+
+// CẢI TIẾN PHẦN CONTROL DEVICE
+async function controlDevice(device, action) {
+    console.log(`🎮 Điều khiển: ${device} -> ${action}`);
+    
+    // KIỂM TRA CHẾ ĐỘ TỰ ĐỘNG
+    if (isAutoMode && device !== 'canh_bao') {  // Cảnh báo luôn được điều khiển
+        showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/control', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                device: device,
+                action: action
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('✅ Thành công', result.message, 'success');
+            
+            // Cập nhật ngay lập tức
+            setTimeout(updateDashboard, 300);
+            
+            // GỬI LỆNH ĐẾN ESP32
+            sendCommandToESP32(device, action);
+        } else {
+            showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
+        }
+    } catch (error) {
+        console.error('❌ Lỗi điều khiển:', error);
+        showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
+    }
+}
+
+// HÀM MỚI: GỬI LỆNH ĐẾN ESP32
+async function sendCommandToESP32(device, action) {
+    try {
+        const commandMap = {
+            'quat': { 'BẬT': 'FAN_ON', 'TẮT': 'FAN_OFF' },
+            'den': { 'BẬT': 'LIGHT_ON', 'TẮT': 'LIGHT_OFF' },
+            'cua_so': { 'MỞ': 'WINDOW_OPEN', 'ĐÓNG': 'WINDOW_CLOSE' },
+            'canh_bao': { 'BẬT': 'ALARM_ON', 'TẮT': 'ALARM_OFF' }
+        };
+        
+        if (device in commandMap && action in commandMap[device]) {
+            const command = commandMap[device][action];
+            const value = '1';
+            
+            const response = await fetch('/api/esp32/command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    device_id: 'ESP32-S3-CLASSGUARD',
+                    command: command,
+                    value: value
+                })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                console.log(`✅ Đã gửi lệnh đến ESP32: ${command}`);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Lỗi gửi lệnh ESP32:', error);
     }
 }
 
@@ -963,3 +1039,4 @@ setTimeout(() => {
     if (lineChart) lineChart.resize();
     if (barChart) barChart.resize();
 }, 1000);
+
