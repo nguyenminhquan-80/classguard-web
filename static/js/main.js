@@ -1,6 +1,6 @@
-// CLASSGUARD - Main JavaScript (ĐỒNG BỘ HOÀN TOÀN)
+// CLASSGUARD - Main JavaScript (Final Fix)
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Khởi tạo hệ thống CLASSGUARD - Phiên bản ĐỒNG BỘ...');
+    console.log('🚀 Initializing CLASSGUARD system...');
     
     // Đặt kích thước cố định cho chart containers trước
     fixChartContainers();
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cập nhật thời gian
     setInterval(updateRealTime, 1000);
     
-    console.log('✅ CLASSGUARD đã khởi tạo thành công - ĐỒNG BỘ HOÀN TOÀN');
+    console.log('✅ CLASSGUARD initialized successfully');
 });
 
 // Biến toàn cục
@@ -29,7 +29,7 @@ let barChart = null;
 let isAutoMode = true;
 
 function fixChartContainers() {
-    console.log('📐 Đang thiết lập kích thước chart containers...');
+    console.log('📐 Fixing chart containers...');
     
     // Đặt kích thước cố định tuyệt đối
     const lineContainer = document.getElementById('lineChartContainer');
@@ -66,7 +66,7 @@ function fixChartContainers() {
 }
 
 function initCharts() {
-    console.log('📊 Đang khởi tạo biểu đồ tối ưu...');
+    console.log('📊 Initializing optimized charts...');
     
     const ctxLine = document.getElementById('lineChart');
     const ctxBar = document.getElementById('barChart');
@@ -200,7 +200,7 @@ function initCharts() {
                 }
             }
         });
-        console.log('✅ Biểu đồ đường đã khởi tạo với 5 đường dữ liệu');
+        console.log('✅ Line chart initialized with 5 lines');
     }
     
     if (ctxBar) {
@@ -289,35 +289,21 @@ function initCharts() {
                 }
             }
         });
-        console.log('✅ Biểu đồ cột đã khởi tạo');
+        console.log('✅ Bar chart initialized');
     }
 }
 
 function initEventListeners() {
-    console.log('🔄 Đang thiết lập event listeners...');
+    console.log('🔄 Setting up event listeners...');
     
-    // Nút điều khiển thiết bị - XỬ LÝ RIÊNG CHO CẢNH BÁO
+    // Nút điều khiển thiết bị
     document.querySelectorAll('.control-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const device = this.dataset.device;
             const action = this.dataset.action;
-            const isAutoControl = this.dataset.autoControl === 'true';
-            
-            console.log(`🎮 Nhấn nút điều khiển: ${device} -> ${action} (auto-control: ${isAutoControl})`);
+            console.log(`🎮 Control clicked: ${device} -> ${action}`);
             
             if (device && action) {
-                // Cảnh báo luôn được điều khiển
-                if (device === 'canh_bao') {
-                    controlDevice(device, action);
-                    return;
-                }
-                
-                // Các thiết bị khác: kiểm tra chế độ tự động
-                if (isAutoMode && isAutoControl) {
-                    showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
-                    return;
-                }
-                
                 controlDevice(device, action);
             }
         });
@@ -327,18 +313,18 @@ function initEventListeners() {
     const chartToggle = document.getElementById('chartToggle');
     if (chartToggle) {
         chartToggle.addEventListener('change', function() {
-            console.log('📈 Chuyển đổi biểu đồ:', this.checked ? 'Cột' : 'Đường');
+            console.log('📈 Chart toggle changed:', this.checked);
             updateChartVisibility(this.checked);
         });
     }
     
-    // Chế độ tự động (cả 2 toggle) - ĐỒNG BỘ
+    // Chế độ tự động (cả 2 toggle)
     const autoModeToggle = document.getElementById('autoModeToggle');
     const autoModeToggle2 = document.getElementById('autoModeToggle2');
     
     if (autoModeToggle) {
         autoModeToggle.addEventListener('change', function() {
-            console.log('🤖 Thay đổi chế độ tự động:', this.checked ? 'BẬT' : 'TẮT');
+            console.log('🤖 Auto mode changed:', this.checked);
             updateAutoMode(this.checked);
             if (autoModeToggle2) autoModeToggle2.checked = this.checked;
         });
@@ -346,24 +332,19 @@ function initEventListeners() {
     
     if (autoModeToggle2) {
         autoModeToggle2.addEventListener('change', function() {
-            console.log('🤖 Thay đổi chế độ tự động (2):', this.checked ? 'BẬT' : 'TẮT');
+            console.log('🤖 Auto mode (2) changed:', this.checked);
             updateAutoMode(this.checked);
             if (autoModeToggle) autoModeToggle.checked = this.checked;
         });
     }
     
-    console.log('✅ Event listeners đã thiết lập');
+    console.log('✅ Event listeners set up');
 }
 
 async function updateDashboard() {
     try {
-        console.log('🔄 Đang cập nhật dashboard...');
+        console.log('🔄 Updating dashboard data...');
         const response = await fetch('/get_sensor_data');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
         const data = await response.json();
         
         if (data.sensors) {
@@ -376,16 +357,10 @@ async function updateDashboard() {
             if (data.settings) {
                 isAutoMode = data.settings.auto_mode;
                 updateAutoModeUI(isAutoMode);
-                
-                // Cập nhật ngưỡng hiển thị
-                updateThresholdDisplays(data.settings);
             }
         }
-        
-        console.log('✅ Dashboard đã cập nhật');
     } catch (error) {
-        console.error('❌ Lỗi khi cập nhật dashboard:', error);
-        showToast('❌ Lỗi kết nối', 'Không thể kết nối đến server', 'danger');
+        console.error('❌ Error updating dashboard:', error);
     }
 }
 
@@ -446,17 +421,6 @@ function updateSensorColor(type, value) {
     element.classList.add(colorClass);
 }
 
-function updateThresholdDisplays(settings) {
-    // Cập nhật ngưỡng trong control panel nếu có
-    const thresholdElements = document.querySelectorAll('.threshold-display');
-    thresholdElements.forEach(element => {
-        const param = element.dataset.param;
-        if (settings[param] !== undefined) {
-            element.textContent = settings[param];
-        }
-    });
-}
-
 function updateCharts(data) {
     if (!data.history) return;
     
@@ -472,6 +436,7 @@ function updateCharts(data) {
         const displayTimes = history.time.slice(start);
         const displayTemp = history.nhiet_do.slice(start);
         const displayHum = history.do_am.slice(start);
+        // THÊM 3 DỮ LIỆU MỚI CHO 3 ĐƯỜNG
         const displayLight = history.anh_sang ? history.anh_sang.slice(start) : Array(displayTimes.length).fill(0);
         const displayAir = history.chat_luong_kk ? history.chat_luong_kk.slice(start) : Array(displayTimes.length).fill(0);
         const displayNoise = history.do_on ? history.do_on.slice(start) : Array(displayTimes.length).fill(0);
@@ -568,7 +533,7 @@ function updateDeviceStatus(sensors) {
         const status = sensors[device];
         const isOn = status === 'BẬT' || status === 'MỞ';
         
-        // Cập nhật icon với hiệu ứng đặc biệt
+        // Cập nhật icon với hiệu ứng đặc biệt cho cửa
         const iconElement = document.getElementById(`${device}-icon`);
         if (iconElement) {
             // Xóa tất cả class hiệu ứng cũ
@@ -581,18 +546,8 @@ function updateDeviceStatus(sensors) {
                 iconElement.style.filter = isOn ? 'brightness(1.3)' : 'brightness(0.7)';
             } else if (device === 'canh_bao') {
                 iconElement.className = isOn ? 'fas fa-bell fa-shake text-danger fs-4' : 'fas fa-bell text-secondary fs-4';
-                
-                // Thêm/xóa hiệu ứng cảnh báo cho card
-                const alarmCard = document.getElementById('alarm-card');
-                if (alarmCard) {
-                    if (isOn) {
-                        alarmCard.classList.add('alarm-active');
-                    } else {
-                        alarmCard.classList.remove('alarm-active');
-                    }
-                }
             } else if (device === 'cua_so') {
-                // HIỆU ỨNG CỬA
+                // HIỆU ỨNG CỬA - SỬA ICON FA-DOOR
                 if (isOn) {
                     // Cửa MỞ
                     iconElement.className = 'fas fa-door-open text-success fs-4 door-open';
@@ -607,7 +562,7 @@ function updateDeviceStatus(sensors) {
             }
         }
         
-        // Cập nhật nút điều khiển - XỬ LÝ RIÊNG CHO CẢNH BÁO
+        // Cập nhật nút điều khiển
         const onBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'MỞ' : 'BẬT'}"]`);
         const offBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'ĐÓNG' : 'TẮT'}"]`);
         
@@ -623,33 +578,6 @@ function updateDeviceStatus(sensors) {
                 offBtn.classList.add('btn-danger', 'shadow', 'active');
                 onBtn.classList.add('btn-outline-success');
             }
-            
-            // Xử lý riêng cho cảnh báo (luôn bật)
-            if (device === 'canh_bao') {
-                onBtn.disabled = false;
-                offBtn.disabled = false;
-                onBtn.style.opacity = '1';
-                offBtn.style.opacity = '1';
-                onBtn.style.cursor = 'pointer';
-                offBtn.style.cursor = 'pointer';
-            } else {
-                // Các thiết bị khác: vô hiệu hóa khi chế độ tự động bật
-                if (isAutoMode) {
-                    onBtn.disabled = true;
-                    offBtn.disabled = true;
-                    onBtn.style.opacity = '0.6';
-                    offBtn.style.opacity = '0.6';
-                    onBtn.style.cursor = 'not-allowed';
-                    offBtn.style.cursor = 'not-allowed';
-                } else {
-                    onBtn.disabled = false;
-                    offBtn.disabled = false;
-                    onBtn.style.opacity = '1';
-                    offBtn.style.opacity = '1';
-                    onBtn.style.cursor = 'pointer';
-                    offBtn.style.cursor = 'pointer';
-                }
-            }
         }
         
         // Cập nhật trạng thái text
@@ -662,7 +590,13 @@ function updateDeviceStatus(sensors) {
 }
 
 async function controlDevice(device, action) {
-    console.log(`🎮 Gửi lệnh điều khiển: ${device} -> ${action}`);
+    console.log(`🎮 Sending control: ${device} -> ${action}`);
+    
+    // Kiểm tra chế độ tự động
+    if (isAutoMode) {
+        showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
+        return;
+    }
     
     try {
         const response = await fetch('/control', {
@@ -686,13 +620,13 @@ async function controlDevice(device, action) {
             showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
         }
     } catch (error) {
-        console.error('❌ Lỗi điều khiển:', error);
+        console.error('❌ Control error:', error);
         showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
     }
 }
 
 async function updateAutoMode(enabled) {
-    console.log(`🤖 Cập nhật chế độ tự động: ${enabled ? 'BẬT' : 'TẮT'}`);
+    console.log(`🤖 Updating auto mode to: ${enabled}`);
     
     try {
         const response = await fetch('/update_settings', {
@@ -712,7 +646,7 @@ async function updateAutoMode(enabled) {
             updateAutoModeUI(enabled);
             showToast('✅ Thành công', `Chế độ tự động đã ${enabled ? 'bật' : 'tắt'}`, 'success');
             
-            // Cập nhật trạng thái nút điều khiển (trừ cảnh báo)
+            // Cập nhật trạng thái nút điều khiển
             updateControlButtonsState(!enabled);
         } else {
             // Rollback toggle
@@ -723,7 +657,7 @@ async function updateAutoMode(enabled) {
             showToast('❌ Lỗi', result.error || 'Không thể cập nhật chế độ tự động', 'danger');
         }
     } catch (error) {
-        console.error('❌ Lỗi cập nhật chế độ tự động:', error);
+        console.error('❌ Auto mode update error:', error);
         const toggle1 = document.getElementById('autoModeToggle');
         const toggle2 = document.getElementById('autoModeToggle2');
         if (toggle1) toggle1.checked = !enabled;
@@ -740,36 +674,13 @@ function updateAutoModeUI(enabled) {
         statusElement.className = `badge ${enabled ? 'bg-success' : 'bg-secondary'} p-2`;
     }
     
-    // Cập nhật thông báo control notice
-    const controlNotice = document.getElementById('control-notice');
-    if (controlNotice) {
-        if (enabled) {
-            controlNotice.innerHTML = `
-                <i class="fas fa-robot text-warning me-2 fs-4"></i>
-                <div>
-                    <strong>Chế độ tự động đang bật</strong>
-                    <div class="small">Hệ thống tự động điều chỉnh: Quạt, Đèn, Cửa sổ. Nút Cảnh báo luôn điều khiển được.</div>
-                </div>
-            `;
-            controlNotice.className = 'alert alert-warning d-flex align-items-center mb-3';
-        } else {
-            controlNotice.innerHTML = `
-                <i class="fas fa-check-circle text-success me-2 fs-4"></i>
-                <div>
-                    <strong>Chế độ thủ công đang bật</strong>
-                    <div class="small">Bạn có thể điều khiển tất cả thiết bị thủ công</div>
-                </div>
-            `;
-            controlNotice.className = 'alert alert-success d-flex align-items-center mb-3';
-        }
-    }
-    
-    // Cập nhật trạng thái nút điều khiển (trừ cảnh báo)
+    // Cập nhật trạng thái nút điều khiển
     updateControlButtonsState(!enabled);
 }
 
 function updateControlButtonsState(enabled) {
-    const controlButtons = document.querySelectorAll('.control-btn[data-auto-control="true"]');
+    const controlButtons = document.querySelectorAll('.control-btn');
+    const controlNotice = document.getElementById('control-notice');
     
     controlButtons.forEach(btn => {
         if (enabled) {
@@ -778,18 +689,33 @@ function updateControlButtonsState(enabled) {
             btn.style.cursor = 'pointer';
         } else {
             btn.disabled = true;
-            btn.style.opacity = '0.6';
+            btn.style.opacity = '0.5';
             btn.style.cursor = 'not-allowed';
         }
     });
     
-    // Nút cảnh báo LUÔN được bật
-    const alarmButtons = document.querySelectorAll('.control-btn[data-device="canh_bao"]');
-    alarmButtons.forEach(btn => {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.style.cursor = 'pointer';
-    });
+    // Hiển thị thông báo
+    if (controlNotice) {
+        if (enabled) {
+            controlNotice.innerHTML = `
+                <i class="fas fa-check-circle text-success me-2 fs-4"></i>
+                <div>
+                    <strong>Chế độ thủ công đang bật</strong>
+                    <div class="small">Bạn có thể điều khiển thiết bị thủ công</div>
+                </div>
+            `;
+            controlNotice.className = 'alert alert-success d-flex align-items-center mb-3';
+        } else {
+            controlNotice.innerHTML = `
+                <i class="fas fa-robot text-warning me-2 fs-4"></i>
+                <div>
+                    <strong>Chế độ tự động đang bật</strong>
+                    <div class="small">Hệ thống tự động điều chỉnh thiết bị dựa trên ngưỡng cài đặt</div>
+                </div>
+            `;
+            controlNotice.className = 'alert alert-warning d-flex align-items-center mb-3';
+        }
+    }
 }
 
 function updateChartVisibility(isBarChart) {
@@ -852,7 +778,7 @@ function showToast(title, message, type) {
     });
 }
 
-// Thêm CSS inline cho hiệu ứng bổ sung
+// Thêm CSS inline cho hiệu ứng cửa
 const style = document.createElement('style');
 style.textContent = `
     /* FIX CHART CONTAINERS - QUAN TRỌNG! */
@@ -897,19 +823,6 @@ style.textContent = `
         100% { transform: rotateY(0deg) scale(1); }
     }
     
-    /* Hiệu ứng cảnh báo */
-    .alarm-active {
-        animation: alarmPulse 1s infinite !important;
-        box-shadow: 0 0 20px rgba(220, 53, 69, 0.5) !important;
-        border-color: #dc3545 !important;
-    }
-    
-    @keyframes alarmPulse {
-        0% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.3); }
-        50% { box-shadow: 0 0 25px rgba(220, 53, 69, 0.7); }
-        100% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.3); }
-    }
-    
     /* Hiệu ứng cho các icon */
     .fa-fan.fa-spin {
         animation: fa-spin 1.5s infinite linear !important;
@@ -952,17 +865,6 @@ style.textContent = `
         background-color: #4361ee;
         border-color: #4361ee;
     }
-    
-    /* Nút cảnh báo đặc biệt */
-    .alarm-btn {
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .alarm-btn:hover {
-        transform: scale(1.05) !important;
-        transition: all 0.2s ease !important;
-    }
 `;
 document.head.appendChild(style);
 
@@ -977,8 +879,3 @@ setTimeout(() => {
     if (lineChart) lineChart.resize();
     if (barChart) barChart.resize();
 }, 1000);
-
-// Log phiên bản
-console.log('📱 CLASSGUARD Web Interface v3.0 - ĐỒNG BỘ HOÀN TOÀN');
-console.log('⚡ Tốc độ giao tiếp: <1 giây');
-console.log('🔔 Cảnh báo: Điều khiển thủ công riêng biệt');
