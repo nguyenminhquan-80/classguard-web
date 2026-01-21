@@ -1,8 +1,31 @@
-// CLASSGUARD - Main JavaScript (Final Fix)
+// CLASSGUARD - Main JavaScript (Final Complete Version)
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Initializing CLASSGUARD system...');
+    console.log('🚀 CLASSGUARD System Initializing...');
     
-    // Đặt kích thước cố định cho chart containers trước
+    // Khởi tạo biến toàn cục
+    let lineChart = null;
+    let barChart = null;
+    let isAutoMode = true;
+    let userRole = '';
+    let isEsp32Online = true;
+    
+    // Lấy thông tin người dùng từ template
+    const userRoleElement = document.querySelector('[data-user-role]');
+    if (userRoleElement) {
+        userRole = userRoleElement.dataset.userRole || '';
+    } else {
+        // Fallback: lấy từ thẻ badge role nếu có
+        const roleBadge = document.querySelector('.badge[class*="bg-"]');
+        if (roleBadge) {
+            userRole = roleBadge.textContent.includes('Quản trị') ? 'admin' : 
+                      roleBadge.textContent.includes('Giáo viên') ? 'teacher' : 
+                      roleBadge.textContent.includes('Học sinh') ? 'student' : 'viewer';
+        }
+    }
+    
+    console.log(`👤 User role detected: ${userRole}`);
+    
+    // Đặt kích thước cố định cho chart containers
     fixChartContainers();
     
     // Khởi tạo biểu đồ
@@ -17,21 +40,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cập nhật mỗi 5 giây
     setInterval(updateDashboard, 5000);
     
-    // Cập nhật thời gian
+    // Cập nhật thời gian thực
     setInterval(updateRealTime, 1000);
     
     console.log('✅ CLASSGUARD initialized successfully');
 });
 
-// Biến toàn cục
-let lineChart = null;
-let barChart = null;
-let isAutoMode = true;
-
+// ========== CHART FUNCTIONS ==========
 function fixChartContainers() {
     console.log('📐 Fixing chart containers...');
     
-    // Đặt kích thước cố định tuyệt đối
     const lineContainer = document.getElementById('lineChartContainer');
     const barContainer = document.getElementById('barChartContainer');
     
@@ -49,10 +67,9 @@ function fixChartContainers() {
         barContainer.style.maxHeight = '300px';
         barContainer.style.position = 'relative';
         barContainer.style.overflow = 'hidden';
-        barContainer.style.display = 'none'; // Ẩn ban đầu
+        barContainer.style.display = 'none';
     }
     
-    // Đặt kích thước cho canvas
     setTimeout(() => {
         const canvases = document.querySelectorAll('#lineChart, #barChart');
         canvases.forEach(canvas => {
@@ -71,12 +88,11 @@ function initCharts() {
     const ctxLine = document.getElementById('lineChart');
     const ctxBar = document.getElementById('barChart');
     
-    // Destroy existing charts if any
+    // Destroy existing charts
     if (lineChart) lineChart.destroy();
     if (barChart) barChart.destroy();
     
     if (ctxLine) {
-        // Đặt kích thước canvas
         ctxLine.style.width = '100%';
         ctxLine.style.height = '300px';
         
@@ -151,9 +167,7 @@ function initCharts() {
                         labels: {
                             padding: 15,
                             usePointStyle: true,
-                            font: {
-                                size: 11
-                            }
+                            font: { size: 11 }
                         }
                     },
                     tooltip: {
@@ -167,44 +181,30 @@ function initCharts() {
                 scales: {
                     y: {
                         beginAtZero: false,
-                        grid: {
-                            color: 'rgba(0,0,0,0.05)'
-                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' },
                         ticks: {
-                            font: {
-                                size: 10
-                            },
+                            font: { size: 10 },
                             padding: 5,
-                            callback: function(value) {
-                                return value.toFixed(1);
-                            }
+                            callback: function(value) { return value.toFixed(1); }
                         }
                     },
                     x: {
-                        grid: {
-                            color: 'rgba(0,0,0,0.05)'
-                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' },
                         ticks: {
-                            font: {
-                                size: 10
-                            },
+                            font: { size: 10 },
                             maxRotation: 0,
                             autoSkip: true,
                             maxTicksLimit: 6
                         }
                     }
                 },
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                }
+                interaction: { intersect: false, mode: 'index' }
             }
         });
         console.log('✅ Line chart initialized with 5 lines');
     }
     
     if (ctxBar) {
-        // Đặt kích thước canvas
         ctxBar.style.width = '100%';
         ctxBar.style.height = '300px';
         
@@ -240,9 +240,7 @@ function initCharts() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -265,26 +263,12 @@ function initCharts() {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0,0,0,0.05)'
-                        },
-                        ticks: {
-                            font: {
-                                size: 10
-                            },
-                            padding: 5
-                        }
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { size: 10 }, padding: 5 }
                     },
                     x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
-                        }
+                        grid: { display: false },
+                        ticks: { font: { size: 14, weight: 'bold' } }
                     }
                 }
             }
@@ -293,6 +277,7 @@ function initCharts() {
     }
 }
 
+// ========== EVENT LISTENERS ==========
 function initEventListeners() {
     console.log('🔄 Setting up event listeners...');
     
@@ -338,29 +323,47 @@ function initEventListeners() {
         });
     }
     
+    // Thêm hiệu ứng hover cho sensor cards
+    document.querySelectorAll('.sensor-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+            this.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.12)';
+        });
+    });
+    
     console.log('✅ Event listeners set up');
 }
 
+// ========== DASHBOARD UPDATE FUNCTIONS ==========
 async function updateDashboard() {
     try {
         console.log('🔄 Updating dashboard data...');
         const response = await fetch('/get_sensor_data');
         const data = await response.json();
         
-        if (data.sensors) {
+        if (data.success && data.sensors) {
             updateSensorDisplays(data.sensors);
             updateCharts(data);
             updateEvaluation(data.evaluation);
             updateDeviceStatus(data.sensors);
+            updateSystemStatus(data);
             
             // Cập nhật chế độ tự động
             if (data.settings) {
                 isAutoMode = data.settings.auto_mode;
                 updateAutoModeUI(isAutoMode);
             }
+        } else {
+            console.error('❌ Invalid response from server:', data);
         }
     } catch (error) {
         console.error('❌ Error updating dashboard:', error);
+        showToast('⚠️ Cảnh báo', 'Không thể kết nối đến server. Đang sử dụng dữ liệu demo.', 'warning');
     }
 }
 
@@ -436,7 +439,6 @@ function updateCharts(data) {
         const displayTimes = history.time.slice(start);
         const displayTemp = history.nhiet_do.slice(start);
         const displayHum = history.do_am.slice(start);
-        // THÊM 3 DỮ LIỆU MỚI CHO 3 ĐƯỜNG
         const displayLight = history.anh_sang ? history.anh_sang.slice(start) : Array(displayTimes.length).fill(0);
         const displayAir = history.chat_luong_kk ? history.chat_luong_kk.slice(start) : Array(displayTimes.length).fill(0);
         const displayNoise = history.do_on ? history.do_on.slice(start) : Array(displayTimes.length).fill(0);
@@ -450,9 +452,9 @@ function updateCharts(data) {
         lineChart.data.labels = formattedTimes;
         lineChart.data.datasets[0].data = displayTemp;
         lineChart.data.datasets[1].data = displayHum;
-        lineChart.data.datasets[2].data = displayLight;   // Ánh sáng
-        lineChart.data.datasets[3].data = displayAir;     // Chất lượng KK
-        lineChart.data.datasets[4].data = displayNoise;   // Độ ồn
+        lineChart.data.datasets[2].data = displayLight;
+        lineChart.data.datasets[3].data = displayAir;
+        lineChart.data.datasets[4].data = displayNoise;
         lineChart.update('none');
     }
     
@@ -547,14 +549,11 @@ function updateDeviceStatus(sensors) {
             } else if (device === 'canh_bao') {
                 iconElement.className = isOn ? 'fas fa-bell fa-shake text-danger fs-4' : 'fas fa-bell text-secondary fs-4';
             } else if (device === 'cua_so') {
-                // HIỆU ỨNG CỬA - SỬA ICON FA-DOOR
                 if (isOn) {
-                    // Cửa MỞ
                     iconElement.className = 'fas fa-door-open text-success fs-4 door-open';
                     iconElement.style.color = '#28a745';
                     iconElement.style.transform = 'scale(1.1)';
                 } else {
-                    // Cửa ĐÓNG
                     iconElement.className = 'fas fa-door-closed text-danger fs-4 door-closed';
                     iconElement.style.color = '#dc3545';
                     iconElement.style.transform = 'scale(1)';
@@ -589,12 +588,52 @@ function updateDeviceStatus(sensors) {
     });
 }
 
+function updateSystemStatus(data) {
+    // Cập nhật trạng thái ESP32
+    const deviceStatus = data.sensors?.device_status || 'online';
+    isEsp32Online = deviceStatus === 'online';
+    
+    // Cập nhật badge trạng thái
+    const statusBadge = document.getElementById('device-status-badge');
+    if (statusBadge) {
+        statusBadge.textContent = isEsp32Online ? 'ESP32 ĐANG ONLINE' : 'ESP32 OFFLINE';
+        statusBadge.className = `badge ${isEsp32Online ? 'bg-success' : 'bg-danger'} p-2`;
+    }
+    
+    // Hiển thị thông báo nếu offline
+    if (!isEsp32Online) {
+        const alertContainer = document.getElementById('alert-container');
+        if (alertContainer) {
+            alertContainer.innerHTML = `
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>ESP32 đang offline!</strong> Hệ thống đang sử dụng dữ liệu demo.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+    }
+}
+
+// ========== DEVICE CONTROL FUNCTIONS ==========
 async function controlDevice(device, action) {
     console.log(`🎮 Sending control: ${device} -> ${action}`);
     
     // Kiểm tra chế độ tự động
     if (isAutoMode) {
         showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
+        return;
+    }
+    
+    // Kiểm tra quyền người dùng
+    if (userRole !== 'admin' && userRole !== 'teacher') {
+        showToast('❌ Từ chối', 'Bạn không có quyền điều khiển thiết bị!', 'danger');
+        return;
+    }
+    
+    // Kiểm tra kết nối ESP32
+    if (!isEsp32Online) {
+        showToast('⚠️ Cảnh báo', 'ESP32 đang offline. Không thể gửi lệnh điều khiển.', 'warning');
         return;
     }
     
@@ -617,7 +656,12 @@ async function controlDevice(device, action) {
             // Cập nhật ngay lập tức
             setTimeout(updateDashboard, 300);
         } else {
-            showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
+            // Kiểm tra nếu lỗi do chế độ tự động
+            if (result.auto_mode) {
+                showToast('⚠️ Cảnh báo', result.error || 'Hệ thống đang ở chế độ tự động', 'warning');
+            } else {
+                showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
+            }
         }
     } catch (error) {
         console.error('❌ Control error:', error);
@@ -625,8 +669,22 @@ async function controlDevice(device, action) {
     }
 }
 
+// ========== AUTO MODE FUNCTIONS ==========
 async function updateAutoMode(enabled) {
     console.log(`🤖 Updating auto mode to: ${enabled}`);
+    
+    // Chỉ admin mới được thay đổi chế độ tự động
+    if (userRole !== 'admin') {
+        showToast('❌ Từ chối', 'Chỉ quản trị viên được thay đổi chế độ tự động!', 'danger');
+        
+        // Rollback toggle
+        const toggle1 = document.getElementById('autoModeToggle');
+        const toggle2 = document.getElementById('autoModeToggle2');
+        if (toggle1) toggle1.checked = !enabled;
+        if (toggle2) toggle2.checked = !enabled;
+        
+        return;
+    }
     
     try {
         const response = await fetch('/update_settings', {
@@ -718,6 +776,7 @@ function updateControlButtonsState(enabled) {
     }
 }
 
+// ========== UTILITY FUNCTIONS ==========
 function updateChartVisibility(isBarChart) {
     const lineContainer = document.getElementById('lineChartContainer');
     const barContainer = document.getElementById('barChartContainer');
@@ -778,7 +837,7 @@ function showToast(title, message, type) {
     });
 }
 
-// Thêm CSS inline cho hiệu ứng cửa
+// Thêm CSS inline cho hiệu ứng cửa và fix charts
 const style = document.createElement('style');
 style.textContent = `
     /* FIX CHART CONTAINERS - QUAN TRỌNG! */
@@ -864,6 +923,31 @@ style.textContent = `
     .form-switch .form-check-input:checked {
         background-color: #4361ee;
         border-color: #4361ee;
+    }
+    
+    /* Style cho evaluation items */
+    .eval-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 12px 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    
+    .eval-label {
+        font-weight: 600;
+        color: #343a40;
+    }
+    
+    .eval-value {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        min-width: 100px;
+        text-align: center;
     }
 `;
 document.head.appendChild(style);
