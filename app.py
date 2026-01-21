@@ -687,7 +687,8 @@ def update_settings():
     
     try:
         data = request.json
-        
+        import time
+        time.sleep(0.5)
         # Cập nhật từng cài đặt
         updated = []
         for key in ['auto_mode', 'temp_min', 'temp_max', 'light_min', 'noise_max', 'air_max']:
@@ -710,7 +711,8 @@ def update_settings():
         return jsonify({
             'success': True, 
             'message': '✅ Đã cập nhật cài đặt!',
-            'settings': system_settings
+            'settings': system_settings,  # TRẢ VỀ DỮ LIỆU MỚI
+            'auto_mode': system_settings['auto_mode']  # TRẢ VỀ AUTO_MODE MỚI
         })
     except Exception as e:
         return jsonify({'error': f'❌ Dữ liệu không hợp lệ: {str(e)}'}), 400
@@ -1098,3 +1100,4 @@ if __name__ == '__main__':
     print("=" * 60)
     
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
+
