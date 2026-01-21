@@ -17,12 +17,14 @@ def init_db():
     conn = sqlite3.connect('classguard.db')
     c = conn.cursor()
     
-    c.execute('''CREATE TABLE IF NOT EXISTS users
+   c.execute('''CREATE TABLE IF NOT EXISTS sensor_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  username TEXT UNIQUE,
-                  password TEXT,
-                  role TEXT,
-                  name TEXT)''')
+                  timestamp DATETIME DEFAULT (datetime('now', 'localtime')),
+                  temperature REAL,
+                  humidity REAL,
+                  light INTEGER,
+                  air_quality INTEGER,
+                  noise INTEGER)''')
     
     c.execute('''CREATE TABLE IF NOT EXISTS sensor_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,9 +75,12 @@ def init_db():
                  VALUES (1, 20.0, 28.0, 300.0, 800, 70, 1, 1)''')
     
     # Thêm dữ liệu mẫu cho biểu đồ
-    base_time = datetime.now() - timedelta(minutes=14)
+   base_time = datetime.now() - timedelta(minutes=14)
     for i in range(15):
         record_time = base_time + timedelta(minutes=i)
+        # ĐẢM BẢO ĐỊNH DẠNG CHUẨN: YYYY-MM-DD HH:MM:SS
+        formatted_time = record_time.strftime('%Y-%m-%d %H:%M:%S')
+        
         temp = 25 + random.uniform(-2, 2)
         humidity = 60 + random.uniform(-10, 10)
         light = 300 + random.randint(-50, 100)
@@ -85,10 +90,11 @@ def init_db():
         c.execute('''INSERT INTO sensor_history 
                      (timestamp, temperature, humidity, light, air_quality, noise)
                      VALUES (?, ?, ?, ?, ?, ?)''',
-                 (record_time, temp, humidity, light, air, noise))
+                 (formatted_time, temp, humidity, light, air, noise))
     
     conn.commit()
     conn.close()
+    print("✅ Database đã được khởi tạo với định dạng datetime chuẩn")
 
 # Khởi tạo database
 init_db()
@@ -159,9 +165,9 @@ load_system_settings()
 # Biến để theo dõi thời gian cập nhật
 last_history_update = 0
 
-# ========== HÀM KHỞI TẠO LỊCH SỬ ==========
+# ========== CẬP NHẬT HÀM KHỞI TẠO LỊCH SỬ ==========
 def initialize_history():
-    """Khởi tạo dữ liệu lịch sử từ database"""
+    """Khởi tạo dữ liệu lịch sử từ database - AN TOÀN"""
     global history, last_history_update
     
     with data_lock:
@@ -182,18 +188,52 @@ def initialize_history():
         
         # Thêm dữ liệu mới (theo thứ tự thời gian tăng dần)
         for record in reversed(records):
-            time_str = datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S').strftime("%H:%M:%S")
-            history['time'].append(time_str)
-            history['nhiet_do'].append(float(record[1]))
-            history['do_am'].append(float(record[2]))
-            history['anh_sang'].append(int(record[3]))
-            history['chat_luong_kk'].append(int(record[4]))
-            history['do_on'].append(int(record[5]))
+            try:
+                # Sử dụng hàm parse an toàn
+                dt = safe_parse_datetime(record[0])
+                time_str = dt.strftime("%H:%M:%S")
+                
+                history['time'].append(time_str)
+                history['nhiet_do'].append(float(record[1]))
+                history['do_am'].append(float(record[2]))
+                history['anh_sang'].append(int(record[3]))
+                history['chat_luong_kk'].append(int(record[4]))
+                history['do_on'].append(int(record[5]))
+            except Exception as e:
+                print(f"❌ Lỗi xử lý bản ghi: {record[0]} - {e}")
+                continue
         
         last_history_update = time.time()
+        print(f"✅ Đã khởi tạo history với {len(history['time'])} bản ghi")
 
 # Khởi tạo history
 initialize_history()
+
+# ========== CẬP NHẬT HÀM XỬ LÝ DATETIME ==========
+def safe_parse_datetime(dt_str):
+    """Parse datetime an toàn với nhiều định dạng"""
+    if not dt_str:
+        return datetime.now()
+    
+    # Thử các định dạng phổ biến
+    formats = [
+        '%Y-%m-%d %H:%M:%S',      # 2024-01-01 12:30:45
+        '%Y-%m-%d %H:%M:%S.%f',   # 2024-01-01 12:30:45.123456
+        '%Y-%m-%dT%H:%M:%S',      # 2024-01-01T12:30:45
+        '%Y-%m-%dT%H:%M:%S.%f',   # 2024-01-01T12:30:45.123456
+        '%d/%m/%Y %H:%M:%S',      # 01/01/2024 12:30:45
+        '%H:%M:%S %d/%m/%Y',      # 12:30:45 01/01/2024
+    ]
+    
+    for fmt in formats:
+        try:
+            return datetime.strptime(dt_str, fmt)
+        except ValueError:
+            continue
+    
+    # Nếu không định dạng nào khớp, trả về thời gian hiện tại
+    print(f"⚠️ Không thể parse datetime: {dt_str}")
+    return datetime.now()
 
 # ========== ROUTES CHÍNH ==========
 @app.route('/')
@@ -398,6 +438,15 @@ def data_page():
     for i, record in enumerate(records):
         timestamp, temp, humidity, light, air, noise = record
         
+        try:
+            # Sử dụng hàm parse an toàn
+            dt = safe_parse_datetime(timestamp)
+            thoi_gian = dt.strftime("%H:%M")
+            ngay = dt.strftime("%d/%m/%Y")
+        except:
+            thoi_gian = "??:??"
+            ngay = "??/??/????"
+        
         score = 0
         if 20 <= temp <= 28: score += 1
         if 40 <= humidity <= 70: score += 1
@@ -417,8 +466,8 @@ def data_page():
         
         data_list.append({
             'stt': i + 1,
-            'thoi_gian': datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S').strftime("%H:%M"),
-            'ngay': datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S').strftime("%d/%m/%Y"),
+            'thoi_gian': thoi_gian,
+            'ngay': ngay,
             'nhiet_do': round(temp, 1),
             'do_am': round(humidity, 1),
             'anh_sang': light,
@@ -430,18 +479,6 @@ def data_page():
     
     return render_template('data.html',
                          data=data_list,
-                         role=session['role'])
-
-@app.route('/settings')
-def settings_page():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-    
-    if session['role'] != 'admin':
-        return redirect(url_for('dashboard'))
-    
-    return render_template('settings.html',
-                         settings=system_settings,
                          role=session['role'])
 
 @app.route('/export_csv')
@@ -486,12 +523,13 @@ def export_csv():
     )
 
 # ========== API CHO ESP32 ==========
+# ========== CẬP NHẬT API NHẬN DỮ LIỆU ESP32 ==========
 @app.route('/api/esp32/data', methods=['POST'])
 def receive_esp32_data():
-    """API nhận dữ liệu từ ESP32 - TỐI ƯU TỐC ĐỘ <1s"""
+    """API nhận dữ liệu từ ESP32 - FIX DATETIME FORMAT"""
     try:
         data = request.json
-        print(f"📥 Nhận dữ liệu từ ESP32: {json.dumps(data, indent=2)}")
+        print(f"📥 Nhận dữ liệu từ ESP32")
         
         with data_lock:
             # Cập nhật dữ liệu cảm biến
@@ -514,15 +552,22 @@ def receive_esp32_data():
             sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
             sensor_data['device_status'] = 'online'
         
-        # Lưu vào database
+        # Lưu vào database với định dạng chuẩn
         conn = sqlite3.connect('classguard.db')
         c = conn.cursor()
+           # SỬA: Sử dụng datetime chuẩn
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
         c.execute('''INSERT INTO sensor_history 
-                     (temperature, humidity, light, air_quality, noise)
-                     VALUES (?, ?, ?, ?, ?)''',
-                 (sensor_data['nhiet_do'], sensor_data['do_am'], 
-                  sensor_data['anh_sang'], sensor_data['chat_luong_kk'],
+                     (timestamp, temperature, humidity, light, air_quality, noise)
+                     VALUES (?, ?, ?, ?, ?, ?)''',
+                 (current_time, 
+                  sensor_data['nhiet_do'], 
+                  sensor_data['do_am'], 
+                  sensor_data['anh_sang'], 
+                  sensor_data['chat_luong_kk'],
                   sensor_data['do_on']))
+        
         conn.commit()
         conn.close()
         
@@ -573,6 +618,8 @@ def receive_esp32_data():
         
     except Exception as e:
         print(f"❌ Lỗi nhận dữ liệu ESP32: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e), 'success': False}), 400
 
 @app.route('/api/esp32/control', methods=['GET'])
@@ -888,8 +935,9 @@ def auto_control_logic(data):
     # Độ ồn - KHÔNG tự động điều khiển cảnh báo
     # Cảnh báo chỉ được bật/tắt thủ công từ web
 
+# ========== CẬP NHẬT HÀM UPDATE_HISTORY_FROM_DB ==========
 def update_history_from_db():
-    """Cập nhật history từ database"""
+    """Cập nhật history từ database - AN TOÀN"""
     global last_history_update
     
     with data_lock:
@@ -908,13 +956,20 @@ def update_history_from_db():
         
         # Thêm dữ liệu mới (theo thứ tự thời gian tăng dần)
         for record in reversed(records):
-            time_str = datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S').strftime("%H:%M:%S")
-            history['time'].append(time_str)
-            history['nhiet_do'].append(float(record[1]))
-            history['do_am'].append(float(record[2]))
-            history['anh_sang'].append(int(record[3]))
-            history['chat_luong_kk'].append(int(record[4]))
-            history['do_on'].append(int(record[5]))
+            try:
+                # Sử dụng hàm parse an toàn
+                dt = safe_parse_datetime(record[0])
+                time_str = dt.strftime("%H:%M:%S")
+                
+                history['time'].append(time_str)
+                history['nhiet_do'].append(float(record[1]))
+                history['do_am'].append(float(record[2]))
+                history['anh_sang'].append(int(record[3]))
+                history['chat_luong_kk'].append(int(record[4]))
+                history['do_on'].append(int(record[5]))
+            except Exception as e:
+                print(f"❌ Lỗi xử lý bản ghi: {record[0]} - {e}")
+                continue
         
         last_history_update = time.time()
 
