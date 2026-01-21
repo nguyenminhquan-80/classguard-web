@@ -34,7 +34,7 @@ class SystemManager:
             'light_relay': False,
             'window': False,
             'alarm': False,
-            'auto_mode': False,  # MẶC ĐỊNH TẮT
+            'auto_mode': False,
             'audio_enabled': True,
             'last_update': datetime.now().strftime("%H:%M:%S"),
             'connected': False
@@ -65,7 +65,7 @@ class SystemManager:
             'audio_enabled': True
         }
         
-        # Lịch sử dữ liệu
+        # Lịch sử dữ liệu - ĐẢM BẢO 5 THÔNG SỐ
         self.history = {
             'time': deque(maxlen=15),
             'nhiet_do': deque(maxlen=15),
@@ -79,11 +79,11 @@ class SystemManager:
         self.command_queue = []
         self.command_id = 1
         
-        # Khởi tạo dữ liệu demo
+        # Khởi tạo dữ liệu demo cho 5 thông số
         self.init_demo_data()
     
     def init_demo_data(self):
-        """Khởi tạo dữ liệu demo ban đầu"""
+        """Khởi tạo dữ liệu demo ban đầu cho 5 thông số"""
         now = datetime.now()
         for i in range(15):
             time_str = (now - timedelta(minutes=i)).strftime("%H:%M:%S")
@@ -93,14 +93,15 @@ class SystemManager:
             self.history['anh_sang'].appendleft(round(200 + random.random() * 300))
             self.history['chat_luong_kk'].appendleft(round(200 + random.random() * 600))
             self.history['do_on'].appendleft(round(30 + random.random() * 50))
+        print("✅ Đã khởi tạo dữ liệu demo cho 5 thông số")
     
     def sync_from_esp32(self, data):
-        """Đồng bộ dữ liệu từ ESP32"""
+        """Đồng bộ dữ liệu từ ESP32 - CẬP NHẬT ĐẦY ĐỦ 5 THÔNG SỐ"""
         if not data:
             return False
         
         try:
-            # Cập nhật dữ liệu cảm biến
+            # Cập nhật dữ liệu cảm biến từ ESP32
             self.esp32_data.update({
                 'temperature': float(data.get('temperature', self.esp32_data['temperature'])),
                 'humidity': float(data.get('humidity', self.esp32_data['humidity'])),
@@ -117,7 +118,7 @@ class SystemManager:
                 'connected': True
             })
             
-            # Cập nhật dữ liệu hiển thị
+            # Cập nhật dữ liệu hiển thị trên web
             self.sensor_data.update({
                 'nhiet_do': self.esp32_data['temperature'],
                 'do_am': self.esp32_data['humidity'],
@@ -131,19 +132,30 @@ class SystemManager:
                 'timestamp': self.esp32_data['last_update']
             })
             
-            # Cập nhật lịch sử
-            self.history['time'].append(self.esp32_data['last_update'])
+            # Cập nhật lịch sử cho 5 thông số
+            current_time = datetime.now().strftime("%H:%M:%S")
+            self.history['time'].append(current_time)
             self.history['nhiet_do'].append(self.esp32_data['temperature'])
             self.history['do_am'].append(self.esp32_data['humidity'])
             self.history['anh_sang'].append(self.esp32_data['light'])
             self.history['chat_luong_kk'].append(self.esp32_data['air_quality'])
             self.history['do_on'].append(self.esp32_data['noise'])
             
+            # Log để debug
+            print(f"📊 Đã cập nhật lịch sử 5 thông số:")
+            print(f"  🌡️  Nhiệt độ: {self.esp32_data['temperature']:.1f}°C")
+            print(f"  💧 Độ ẩm: {self.esp32_data['humidity']:.1f}%")
+            print(f"  ☀️  Ánh sáng: {self.esp32_data['light']:.0f} lux")
+            print(f"  💨 Chất lượng KK: {self.esp32_data['air_quality']} ppm")
+            print(f"  🔊 Độ ồn: {self.esp32_data['noise']} dB")
+            
             return True
             
         except Exception as e:
-            print(f"Lỗi đồng bộ ESP32: {e}")
+            print(f"❌ Lỗi đồng bộ ESP32: {e}")
             return False
+    
+    # ... phần còn lại giữ nguyên ...
     
     def add_command(self, command, value='', sender='Web'):
         """Thêm lệnh cho ESP32"""
@@ -582,3 +594,4 @@ def export_csv():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
