@@ -4,82 +4,20 @@ from datetime import datetime, timedelta
 import json
 import csv
 import io
-import sqlite3
-from threading import Lock
-import time
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'classguard_final_v3_2024'
 app.secret_key = 'classguard_final_v3_2024'
 
-# ========== CẤU HÌNH DATABASE ==========
-def init_db():
-    conn = sqlite3.connect('classguard.db')
-    c = conn.cursor()
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  username TEXT UNIQUE,
-                  password TEXT,
-                  role TEXT,
-                  name TEXT)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS sensor_history
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  temperature REAL,
-                  humidity REAL,
-                  light INTEGER,
-                  air_quality INTEGER,
-                  noise INTEGER)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS pending_commands
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  device_id TEXT,
-                  command TEXT,
-                  value TEXT,
-                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  executed INTEGER DEFAULT 0)''')
-    
-    # Thêm tài khoản mẫu
-    users_data = [
-        ('admin', 'admin123', 'admin', 'Quản trị viên'),
-        ('giaovien', 'giaovien123', 'teacher', 'Giáo viên'),
-        ('hocsinh', 'hocsinh123', 'student', 'Học sinh'),
-        ('xem', 'xem123', 'viewer', 'Khách xem')
-    ]
-    
-    for user in users_data:
-        try:
-            c.execute("INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)", user)
-        except:
-            pass
-    
-    # Thêm dữ liệu mẫu cho biểu đồ
-    base_time = datetime.now() - timedelta(minutes=14)
-    for i in range(15):
-        record_time = base_time + timedelta(minutes=i)
-        temp = 25 + random.uniform(-2, 2)
-        humidity = 60 + random.uniform(-10, 10)
-        light = 300 + random.randint(-50, 100)
-        air = 400 + random.randint(-100, 200)
-        noise = 45 + random.randint(-10, 20)
-        
-        c.execute('''INSERT INTO sensor_history 
-                     (timestamp, temperature, humidity, light, air_quality, noise)
-                     VALUES (?, ?, ?, ?, ?, ?)''',
-                 (record_time, temp, humidity, light, air, noise))
-    
-    conn.commit()
-    conn.close()
+# ========== TÀI KHOẢN ==========
+USERS = {
+    'admin': {'password': 'admin123', 'role': 'admin', 'name': 'Quản trị viên'},
+    'giaovien': {'password': 'giaovien123', 'role': 'teacher', 'name': 'Giáo viên'},
+    'hocsinh': {'password': 'hocsinh123', 'role': 'student', 'name': 'Học sinh'},
+    'xem': {'password': 'xem123', 'role': 'viewer', 'name': 'Khách xem'}
+}
 
-# Khởi tạo database
-init_db()
-
-# Lock cho thread-safe
-data_lock = Lock()
-
-# ========== BIẾN TOÀN CỤC ==========
+# ========== DỮ LIỆU ==========
 sensor_data = {
     'nhiet_do': 26.5,
     'do_am': 65.0,
@@ -90,11 +28,10 @@ sensor_data = {
     'den': 'BẬT',
     'cua_so': 'ĐÓNG',
     'canh_bao': 'TẮT',
-    'timestamp': '',
-    'device_status': 'online'
+    'timestamp': ''
 }
 
-# Lịch sử dữ liệu cho biểu đồ - KHỞI TẠO RỖNG
+# Lịch sử dữ liệu cho biểu đồ
 history = {
     'time': [],
     'nhiet_do': [],
@@ -104,7 +41,7 @@ history = {
     'do_on': []
 }
 
-# Cài đặt hệ thống
+# Cài đặt
 system_settings = {
     'auto_mode': True,
     'temp_min': 20,
@@ -114,46 +51,7 @@ system_settings = {
     'air_max': 800
 }
 
-# Biến để theo dõi thời gian cập nhật
-last_history_update = 0
-
-# ========== HÀM KHỞI TẠO LỊCH SỬ ==========
-def initialize_history():
-    """Khởi tạo dữ liệu lịch sử từ database"""
-    global history, last_history_update
-    
-    with data_lock:
-        conn = sqlite3.connect('classguard.db')
-        c = conn.cursor()
-        
-        # Lấy 15 bản ghi gần nhất
-        c.execute('''SELECT timestamp, temperature, humidity, light, air_quality, noise 
-                     FROM sensor_history 
-                     ORDER BY timestamp DESC 
-                     LIMIT 15''')
-        records = c.fetchall()
-        conn.close()
-        
-        # Xóa dữ liệu cũ
-        for key in history:
-            history[key] = []
-        
-        # Thêm dữ liệu mới (theo thứ tự thời gian tăng dần)
-        for record in reversed(records):
-            time_str = datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S').strftime("%H:%M:%S")
-            history['time'].append(time_str)
-            history['nhiet_do'].append(float(record[1]))
-            history['do_am'].append(float(record[2]))
-            history['anh_sang'].append(int(record[3]))
-            history['chat_luong_kk'].append(int(record[4]))
-            history['do_on'].append(int(record[5]))
-        
-        last_history_update = time.time()
-
-# Khởi tạo history
-initialize_history()
-
-# ========== ROUTES CHÍNH ==========
+# ========== ROUTES ==========
 @app.route('/')
 def home():
     return redirect(url_for('login'))
@@ -164,16 +62,10 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
         
-        conn = sqlite3.connect('classguard.db')
-        c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
-        user = c.fetchone()
-        conn.close()
-        
-        if user:
+        if username in USERS and USERS[username]['password'] == password:
             session['username'] = username
-            session['role'] = user[3]
-            session['name'] = user[4]
+            session['role'] = USERS[username]['role']
+            session['name'] = USERS[username]['name']
             session['login_time'] = datetime.now().strftime("%H:%M:%S %d/%m/%Y")
             return redirect(url_for('dashboard'))
         else:
@@ -191,15 +83,8 @@ def dashboard():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    # Cập nhật dữ liệu demo nếu cần
-    if sensor_data['device_status'] != 'online':
-        update_demo_data()
-    
+    update_demo_data()
     evaluation = evaluate_environment()
-    
-    # Cập nhật history nếu đã lâu
-    if time.time() - last_history_update > 5:  # 5 giây
-        update_history_from_db()
     
     return render_template('dashboard.html',
                          data=sensor_data,
@@ -208,50 +93,31 @@ def dashboard():
                          username=session['username'],
                          name=session['name'],
                          role=session['role'],
-                         login_time=session.get('login_time', ''),
-                         history_labels=json.dumps(history['time']),
-                         temp_data=json.dumps(history['nhiet_do']),
-                         hum_data=json.dumps(history['do_am']),
-                         light_data=json.dumps(history['anh_sang']),
-                         air_data=json.dumps(history['chat_luong_kk']),
-                         noise_data=json.dumps(history['do_on']))
+                         login_time=session.get('login_time', ''))
 
 @app.route('/get_sensor_data')
 def get_sensor_data():
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # Cập nhật dữ liệu demo nếu cần
-    if sensor_data['device_status'] != 'online':
-        update_demo_data()
-    
+    update_demo_data()
     evaluation = evaluate_environment()
     
-    # Cập nhật history từ database
-    update_history_from_db()
-    
     return jsonify({
-        'success': True,
         'sensors': sensor_data,
         'evaluation': evaluation,
         'history': history,
-        'settings': system_settings,
-        'charts': {
-            'labels': history['time'],
-            'datasets': {
-                'temperature': history['nhiet_do'],
-                'humidity': history['do_am'],
-                'light': history['anh_sang'],
-                'air_quality': history['chat_luong_kk'],
-                'noise': history['do_on']
-            }
-        }
+        'settings': system_settings
     })
 
 @app.route('/control', methods=['POST'])
 def control():
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
+    
+    # Kiểm tra chế độ tự động - nếu đang bật thì không cho điều khiển thủ công
+    if system_settings['auto_mode']:
+        return jsonify({'error': '❌ Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.'}), 403
     
     if session['role'] not in ['admin', 'teacher']:
         return jsonify({'error': '❌ Không có quyền điều khiển!'}), 403
@@ -260,69 +126,51 @@ def control():
     device = data.get('device')
     action = data.get('action')
     
-    if not device or action not in ['BẬT', 'TẮT', 'MỞ', 'ĐÓNG']:
-        return jsonify({'error': 'Thiếu thông tin'}), 400
+    if device and action in ['BẬT', 'TẮT', 'MỞ', 'ĐÓNG']:
+        sensor_data[device] = action
+        return jsonify({
+            'success': True,
+            'message': f'✅ Đã {action.lower()} {device}',
+            'status': action
+        })
     
-    # Cập nhật trạng thái
-    sensor_data[device] = action
-    
-    # Tạo lệnh cho ESP32
-    command_map = {
-        'quat': {'BẬT': 'FAN_ON', 'TẮT': 'FAN_OFF'},
-        'den': {'BẬT': 'LIGHT_ON', 'TẮT': 'LIGHT_OFF'},
-        'cua_so': {'MỞ': 'WINDOW_OPEN', 'ĐÓNG': 'WINDOW_CLOSE'},
-        'canh_bao': {'BẬT': 'ALARM_ON', 'TẮT': 'ALARM_OFF'}
-    }
-    
-    if device in command_map and action in command_map[device]:
-        esp_command = command_map[device][action]
-        save_pending_command('ESP32-S3-CLASSGUARD', esp_command, '1')
-    
-    return jsonify({
-        'success': True,
-        'message': f'✅ Đã {action.lower()} {device}',
-        'status': action
-    })
+    return jsonify({'error': 'Thiếu thông tin'}), 400
 
 @app.route('/update_settings', methods=['POST'])
 def update_settings():
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    if session['role'] not in ['admin', 'teacher']:
-        return jsonify({'error': '❌ Không có quyền cập nhật cài đặt!'}), 403
+    if session['role'] != 'admin':
+        return jsonify({'error': 'Không có quyền!'}), 403
     
     try:
-        data = request.json
-        system_settings['auto_mode'] = data.get('auto_mode', system_settings['auto_mode'])
-        system_settings['temp_min'] = float(data.get('temp_min', system_settings['temp_min']))
-        system_settings['temp_max'] = float(data.get('temp_max', system_settings['temp_max']))
-        system_settings['light_min'] = float(data.get('light_min', system_settings['light_min']))
-        system_settings['noise_max'] = float(data.get('noise_max', system_settings['noise_max']))
-        system_settings['air_max'] = float(data.get('air_max', system_settings['air_max']))
+        system_settings['auto_mode'] = request.json.get('auto_mode', system_settings['auto_mode'])
+        system_settings['temp_min'] = float(request.json.get('temp_min', system_settings['temp_min']))
+        system_settings['temp_max'] = float(request.json.get('temp_max', system_settings['temp_max']))
+        system_settings['light_min'] = float(request.json.get('light_min', system_settings['light_min']))
+        system_settings['noise_max'] = float(request.json.get('noise_max', system_settings['noise_max']))
+        system_settings['air_max'] = float(request.json.get('air_max', system_settings['air_max']))
         
         return jsonify({'success': True, 'message': '✅ Đã cập nhật cài đặt!'})
     except:
         return jsonify({'error': '❌ Dữ liệu không hợp lệ!'}), 400
 
-# ========== CÁC TRANG KHÁC ==========
 @app.route('/data')
 def data_page():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    conn = sqlite3.connect('classguard.db')
-    c = conn.cursor()
-    c.execute('''SELECT timestamp, temperature, humidity, light, air_quality, noise 
-                 FROM sensor_history 
-                 ORDER BY timestamp DESC 
-                 LIMIT 30''')
-    records = c.fetchall()
-    conn.close()
-    
     data_list = []
-    for i, record in enumerate(records):
-        timestamp, temp, humidity, light, air, noise = record
+    base_time = datetime.now()
+    
+    for i in range(30):
+        record_time = base_time - timedelta(minutes=i*5)
+        temp = round(24 + random.random() * 4, 1)
+        humidity = round(55 + random.random() * 20, 1)
+        light = round(250 + random.random() * 250)
+        air = round(300 + random.random() * 500)
+        noise = round(35 + random.random() * 40)
         
         score = 0
         if 20 <= temp <= 28: score += 1
@@ -343,10 +191,10 @@ def data_page():
         
         data_list.append({
             'stt': i + 1,
-            'thoi_gian': datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S').strftime("%H:%M"),
-            'ngay': datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S').strftime("%d/%m/%Y"),
-            'nhiet_do': round(temp, 1),
-            'do_am': round(humidity, 1),
+            'thoi_gian': record_time.strftime("%H:%M"),
+            'ngay': record_time.strftime("%d/%m/%Y"),
+            'nhiet_do': temp,
+            'do_am': humidity,
             'anh_sang': light,
             'chat_luong_kk': air,
             'do_on': noise,
@@ -358,7 +206,7 @@ def data_page():
                          data=data_list,
                          role=session['role'])
 
-@app.route('/settings')
+@app.route('/settings', methods=['GET', 'POST'])
 def settings_page():
     if 'username' not in session:
         return redirect(url_for('login'))
@@ -411,129 +259,7 @@ def export_csv():
         headers={"Content-disposition": f"attachment; filename=classguard_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
     )
 
-# ========== API CHO ESP32 ==========
-@app.route('/api/esp32/data', methods=['POST'])
-def receive_esp32_data():
-    """API nhận dữ liệu từ ESP32"""
-    try:
-        data = request.json
-        print(f"📥 Nhận dữ liệu từ ESP32: {json.dumps(data, indent=2)}")
-        
-        with data_lock:
-            # Cập nhật dữ liệu cảm biến
-            sensor_data['nhiet_do'] = float(data.get('temperature', sensor_data['nhiet_do']))
-            sensor_data['do_am'] = float(data.get('humidity', sensor_data['do_am']))
-            sensor_data['anh_sang'] = int(data.get('light', sensor_data['anh_sang']))
-            sensor_data['chat_luong_kk'] = int(data.get('air_quality', sensor_data['chat_luong_kk']))
-            sensor_data['do_on'] = int(data.get('noise', sensor_data['do_on']))
-            
-            # Cập nhật trạng thái thiết bị
-            if 'fan' in data:
-                sensor_data['quat'] = 'BẬT' if data['fan'] == 1 else 'TẮT'
-            if 'light_relay' in data:
-                sensor_data['den'] = 'BẬT' if data['light_relay'] == 1 else 'TẮT'
-            if 'alarm' in data:
-                sensor_data['canh_bao'] = 'BẬT' if data['alarm'] == 1 else 'TẮT'
-            if 'window' in data:
-                sensor_data['cua_so'] = 'MỞ' if data['window'] == 1 else 'ĐÓNG'
-                
-            sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
-            sensor_data['device_status'] = 'online'
-        
-        # Lưu vào database
-        conn = sqlite3.connect('classguard.db')
-        c = conn.cursor()
-        c.execute('''INSERT INTO sensor_history 
-                     (temperature, humidity, light, air_quality, noise)
-                     VALUES (?, ?, ?, ?, ?)''',
-                 (sensor_data['nhiet_do'], sensor_data['do_am'], 
-                  sensor_data['anh_sang'], sensor_data['chat_luong_kk'],
-                  sensor_data['do_on']))
-        conn.commit()
-        conn.close()
-        
-        # Cập nhật lịch sử
-        update_history_from_db()
-        
-        # Kiểm tra cảnh báo
-        alerts = check_esp32_alerts(data)
-        
-        # Điều khiển tự động
-        if system_settings['auto_mode']:
-            auto_control_logic(data)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Đã nhận dữ liệu từ ESP32',
-            'alerts': alerts,
-            'thresholds': system_settings,
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        })
-        
-    except Exception as e:
-        print(f"❌ Lỗi nhận dữ liệu ESP32: {str(e)}")
-        return jsonify({'error': str(e), 'success': False}), 400
-
-@app.route('/api/esp32/control', methods=['GET'])
-def get_esp32_control():
-    """ESP32 lấy lệnh điều khiển từ web"""
-    device_id = request.args.get('device_id', 'ESP32-S3-CLASSGUARD')
-    
-    conn = sqlite3.connect('classguard.db')
-    c = conn.cursor()
-    c.execute('''SELECT id, command, value 
-                 FROM pending_commands 
-                 WHERE device_id = ? AND executed = 0 
-                 ORDER BY created_at ASC 
-                 LIMIT 1''', (device_id,))
-    pending = c.fetchone()
-    
-    if pending:
-        command_id, command, value = pending
-        c.execute("UPDATE pending_commands SET executed = 1 WHERE id = ?", (command_id,))
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            'command': command,
-            'value': value,
-            'command_id': command_id
-        })
-    
-    conn.close()
-    return jsonify({}), 204
-
-@app.route('/api/esp32/ack', methods=['POST'])
-def esp32_command_ack():
-    """ESP32 xác nhận đã thực hiện lệnh"""
-    try:
-        data = request.json
-        command_id = data.get('command_id')
-        
-        conn = sqlite3.connect('classguard.db')
-        c = conn.cursor()
-        c.execute("DELETE FROM pending_commands WHERE id = ?", (command_id,))
-        conn.commit()
-        conn.close()
-        
-        print(f"✅ ESP32 đã xác nhận lệnh: {command_id}")
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
-
-@app.route('/api/esp32/status', methods=['GET'])
-def esp32_status():
-    """Kiểm tra kết nối API"""
-    return jsonify({
-        'status': 'online',
-        'server': 'classguard-web.onrender.com',
-        'project': 'CLASSGUARD THCS',
-        'version': '2.0',
-        'auto_mode': system_settings['auto_mode'],
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    })
-
-# ========== HÀM HỖ TRỢ ==========
+# ========== HÀM PHỤ TRỢ ==========
 def evaluate_environment():
     evaluations = []
     scores = []
@@ -632,9 +358,7 @@ def evaluate_environment():
 
 def update_demo_data():
     """Cập nhật dữ liệu demo"""
-    if sensor_data['device_status'] == 'online':
-        return
-    
+    # Thêm biến động ngẫu nhiên
     sensor_data['nhiet_do'] = round(24 + random.random() * 4, 1)
     sensor_data['do_am'] = round(50 + random.random() * 20, 1)
     sensor_data['anh_sang'] = round(200 + random.random() * 300)
@@ -642,142 +366,55 @@ def update_demo_data():
     sensor_data['do_on'] = round(30 + random.random() * 50)
     sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
     
+    # Tự động điều khiển nếu chế độ tự động bật
     if system_settings['auto_mode']:
-        auto_control_logic(sensor_data)
+        auto_control()
     
-    # Lưu demo vào database
-    conn = sqlite3.connect('classguard.db')
-    c = conn.cursor()
-    c.execute('''INSERT INTO sensor_history 
-                 (temperature, humidity, light, air_quality, noise)
-                 VALUES (?, ?, ?, ?, ?)''',
-             (sensor_data['nhiet_do'], sensor_data['do_am'], 
-              sensor_data['anh_sang'], sensor_data['chat_luong_kk'],
-              sensor_data['do_on']))
-    conn.commit()
-    conn.close()
-    
-    update_history_from_db()
+    # Cập nhật history
+    update_history()
 
-def auto_control_logic(data):
-    """Logic điều khiển tự động"""
-    temp = data.get('nhiet_do', sensor_data['nhiet_do'])
-    light = data.get('anh_sang', sensor_data['anh_sang'])
-    air = data.get('chat_luong_kk', sensor_data['chat_luong_kk'])
-    noise = data.get('do_on', sensor_data['do_on'])
-    
+def auto_control():
+    """Tự động điều khiển thiết bị"""
     # Nhiệt độ
-    if temp > system_settings['temp_max']:
+    if sensor_data['nhiet_do'] > system_settings['temp_max']:
         sensor_data['quat'] = 'BẬT'
-        save_pending_command('ESP32-S3-CLASSGUARD', 'FAN_ON', '1')
-    elif temp < system_settings['temp_min']:
+    elif sensor_data['nhiet_do'] < system_settings['temp_min']:
         sensor_data['quat'] = 'TẮT'
-        save_pending_command('ESP32-S3-CLASSGUARD', 'FAN_OFF', '0')
     
     # Ánh sáng
-    if light < system_settings['light_min']:
+    if sensor_data['anh_sang'] < system_settings['light_min']:
         sensor_data['den'] = 'BẬT'
-        save_pending_command('ESP32-S3-CLASSGUARD', 'LIGHT_ON', '1')
     else:
         sensor_data['den'] = 'TẮT'
-        save_pending_command('ESP32-S3-CLASSGUARD', 'LIGHT_OFF', '0')
     
     # Chất lượng không khí
-    if air > system_settings['air_max']:
+    if sensor_data['chat_luong_kk'] > system_settings['air_max']:
         sensor_data['cua_so'] = 'MỞ'
-        save_pending_command('ESP32-S3-CLASSGUARD', 'WINDOW_OPEN', '1')
     else:
         sensor_data['cua_so'] = 'ĐÓNG'
-        save_pending_command('ESP32-S3-CLASSGUARD', 'WINDOW_CLOSE', '0')
-        
+    
     # Độ ồn
-    if noise > system_settings['noise_max']:
+    if sensor_data['do_on'] > system_settings['noise_max']:
         sensor_data['canh_bao'] = 'BẬT'
-        save_pending_command('ESP32-S3-CLASSGUARD', 'ALARM_ON', '1')
     else:
         sensor_data['canh_bao'] = 'TẮT'
-        save_pending_command('ESP32-S3-CLASSGUARD', 'ALARM_OFF', '0')
 
-def update_history_from_db():
-    """Cập nhật history từ database"""
-    global last_history_update
+def update_history():
+    """Cập nhật lịch sử cho biểu đồ"""
+    now = datetime.now()
     
-    with data_lock:
-        conn = sqlite3.connect('classguard.db')
-        c = conn.cursor()
-        c.execute('''SELECT timestamp, temperature, humidity, light, air_quality, noise 
-                     FROM sensor_history 
-                     ORDER BY timestamp DESC 
-                     LIMIT 15''')
-        records = c.fetchall()
-        conn.close()
-        
-        # Xóa dữ liệu cũ
+    # Giữ tối đa 15 điểm
+    if len(history['time']) >= 15:
         for key in history:
-            history[key] = []
-        
-        # Thêm dữ liệu mới (theo thứ tự thời gian tăng dần)
-        for record in reversed(records):
-            time_str = datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S').strftime("%H:%M:%S")
-            history['time'].append(time_str)
-            history['nhiet_do'].append(float(record[1]))
-            history['do_am'].append(float(record[2]))
-            history['anh_sang'].append(int(record[3]))
-            history['chat_luong_kk'].append(int(record[4]))
-            history['do_on'].append(int(record[5]))
-        
-        last_history_update = time.time()
+            if history[key]:
+                history[key].pop(0)
+    
+    history['time'].append(now.strftime("%H:%M:%S"))
+    history['nhiet_do'].append(sensor_data['nhiet_do'])
+    history['do_am'].append(sensor_data['do_am'])
+    history['anh_sang'].append(sensor_data['anh_sang'])
+    history['chat_luong_kk'].append(sensor_data['chat_luong_kk'])
+    history['do_on'].append(sensor_data['do_on'])
 
-def check_esp32_alerts(data):
-    """Kiểm tra cảnh báo từ dữ liệu ESP32"""
-    alerts = []
-    
-    temp = data.get('temperature', 25)
-    air = data.get('air_quality', 400)
-    noise = data.get('noise', 45)
-    light = data.get('light', 300)
-    
-    if temp > 30:
-        alerts.append({'type': 'danger', 'message': '⚠️ Nhiệt độ quá cao (>30°C)'})
-    elif temp > 28:
-        alerts.append({'type': 'warning', 'message': '🌡️ Nhiệt độ hơi cao (>28°C)'})
-    
-    if air > 1000:
-        alerts.append({'type': 'danger', 'message': '⚠️ Chất lượng không khí kém (>1000 PPM)'})
-    elif air > 800:
-        alerts.append({'type': 'warning', 'message': '💨 Chất lượng không khí trung bình (>800 PPM)'})
-    
-    if noise > 80:
-        alerts.append({'type': 'danger', 'message': '⚠️ Độ ồn quá cao (>80 dB)'})
-    elif noise > 70:
-        alerts.append({'type': 'warning', 'message': '🔊 Độ ồn hơi cao (>70 dB)'})
-    
-    if light < 200:
-        alerts.append({'type': 'danger', 'message': '⚠️ Ánh sáng quá yếu (<200 lux)'})
-    elif light < 300:
-        alerts.append({'type': 'warning', 'message': '☀️ Ánh sáng hơi yếu (<300 lux)'})
-    
-    return alerts
-
-def save_pending_command(device_id, command, value):
-    """Lưu lệnh chờ vào database"""
-    try:
-        conn = sqlite3.connect('classguard.db')
-        c = conn.cursor()
-        c.execute('''INSERT INTO pending_commands (device_id, command, value)
-                     VALUES (?, ?, ?)''', (device_id, command, value))
-        conn.commit()
-        conn.close()
-        print(f"💾 Đã lưu lệnh: {command}={value} cho {device_id}")
-    except Exception as e:
-        print(f"❌ Lỗi lưu lệnh: {e}")
-
-# ========== RUN SERVER ==========
 if __name__ == '__main__':
-    print("=" * 50)
-    print("🚀 CLASSGUARD Web Server")
-    print("📊 Biểu đồ đã được FIX hoàn toàn!")
-    print("🌐 URL: http://localhost:5000")
-    print("📡 API: http://localhost:5000/api/esp32/data")
-    print("=" * 50)
     app.run(debug=True, host='0.0.0.0', port=5000)
