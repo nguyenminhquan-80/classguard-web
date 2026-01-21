@@ -1,12 +1,15 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Response
+from flask_cors import CORS
 import random
-from datetime import datetime, timedelta
 import json
 import csv
 import io
 import sqlite3
-from threading import Lock
 import time
+import threading
+from threading import Lock
+from datetime import datetime, timedelta
+import atexit
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'classguard_final_v3_2024'
@@ -1063,3 +1066,4 @@ if __name__ == '__main__':
     print("⚙️ API Thresholds: http://localhost:5000/api/esp32/thresholds")
     print("=" * 50)
     app.run(debug=True, host='0.0.0.0', port=5000)
+
