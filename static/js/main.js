@@ -1,32 +1,20 @@
-// CLASSGUARD - Main JavaScript (Final Complete Version)
+// CLASSGUARD - Main JavaScript (Phiên bản 4.0)
+// Đồng bộ hoàn toàn với Dashboard và ESP32
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 CLASSGUARD System Initializing...');
+    console.log('🚀 Khởi tạo CLASSGUARD hệ thống...');
     
-    // Khởi tạo biến toàn cục
-    let lineChart = null;
-    let barChart = null;
-    let isAutoMode = true;
-    let userRole = '';
-    let isEsp32Online = true;
-    
-    // Lấy thông tin người dùng từ template
-    const userRoleElement = document.querySelector('[data-user-role]');
-    if (userRoleElement) {
-        userRole = userRoleElement.dataset.userRole || '';
-    } else {
-        // Fallback: lấy từ thẻ badge role nếu có
-        const roleBadge = document.querySelector('.badge[class*="bg-"]');
-        if (roleBadge) {
-            userRole = roleBadge.textContent.includes('Quản trị') ? 'admin' : 
-                      roleBadge.textContent.includes('Giáo viên') ? 'teacher' : 
-                      roleBadge.textContent.includes('Học sinh') ? 'student' : 'viewer';
-        }
-    }
-    
-    console.log(`👤 User role detected: ${userRole}`);
-    
-    // Đặt kích thước cố định cho chart containers
-    fixChartContainers();
+    // ========== BIẾN TOÀN CỤC ==========
+    window.classguard = {
+        isAutoMode: true,
+        lineChart: null,
+        barChart: null,
+        lastUpdateTime: Date.now(),
+        syncInterval: null,
+        updateInterval: null,
+        chartsInitialized: false,
+        esp32Connected: false
+    };
     
     // Khởi tạo biểu đồ
     setTimeout(initCharts, 100);
@@ -34,69 +22,39 @@ document.addEventListener('DOMContentLoaded', function() {
     // Khởi tạo event listeners
     initEventListeners();
     
-    // Cập nhật dữ liệu ngay lần đầu
+    // Đồng bộ dữ liệu ngay lần đầu
     setTimeout(updateDashboard, 500);
     
-    // Cập nhật mỗi 5 giây
-    setInterval(updateDashboard, 5000);
+    // Bắt đầu đồng bộ
+    startSync();
     
-    // Cập nhật thời gian thực
+    // Cập nhật thời gian
     setInterval(updateRealTime, 1000);
     
-    console.log('✅ CLASSGUARD initialized successfully');
+    console.log('✅ CLASSGUARD đã khởi tạo thành công');
 });
 
-// ========== CHART FUNCTIONS ==========
-function fixChartContainers() {
-    console.log('📐 Fixing chart containers...');
-    
-    const lineContainer = document.getElementById('lineChartContainer');
-    const barContainer = document.getElementById('barChartContainer');
-    
-    if (lineContainer) {
-        lineContainer.style.height = '300px';
-        lineContainer.style.minHeight = '300px';
-        lineContainer.style.maxHeight = '300px';
-        lineContainer.style.position = 'relative';
-        lineContainer.style.overflow = 'hidden';
-    }
-    
-    if (barContainer) {
-        barContainer.style.height = '300px';
-        barContainer.style.minHeight = '300px';
-        barContainer.style.maxHeight = '300px';
-        barContainer.style.position = 'relative';
-        barContainer.style.overflow = 'hidden';
-        barContainer.style.display = 'none';
-    }
-    
-    setTimeout(() => {
-        const canvases = document.querySelectorAll('#lineChart, #barChart');
-        canvases.forEach(canvas => {
-            if (canvas) {
-                canvas.style.width = '100% !important';
-                canvas.style.height = '300px !important';
-                canvas.style.maxHeight = '300px !important';
-            }
-        });
-    }, 200);
-}
-
+// ========== KHỞI TẠO BIỂU ĐỒ ==========
 function initCharts() {
-    console.log('📊 Initializing optimized charts...');
+    console.log('📊 Đang khởi tạo biểu đồ...');
     
     const ctxLine = document.getElementById('lineChart');
     const ctxBar = document.getElementById('barChart');
     
-    // Destroy existing charts
-    if (lineChart) lineChart.destroy();
-    if (barChart) barChart.destroy();
+    // Destroy existing charts if any
+    if (window.classguard.lineChart) {
+        window.classguard.lineChart.destroy();
+    }
+    if (window.classguard.barChart) {
+        window.classguard.barChart.destroy();
+    }
     
+    // Đặt kích thước canvas
     if (ctxLine) {
         ctxLine.style.width = '100%';
         ctxLine.style.height = '300px';
         
-        lineChart = new Chart(ctxLine.getContext('2d'), {
+        window.classguard.lineChart = new Chart(ctxLine.getContext('2d'), {
             type: 'line',
             data: {
                 labels: [],
@@ -167,7 +125,9 @@ function initCharts() {
                         labels: {
                             padding: 15,
                             usePointStyle: true,
-                            font: { size: 11 }
+                            font: {
+                                size: 11
+                            }
                         }
                     },
                     tooltip: {
@@ -181,34 +141,47 @@ function initCharts() {
                 scales: {
                     y: {
                         beginAtZero: false,
-                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
                         ticks: {
-                            font: { size: 10 },
+                            font: {
+                                size: 10
+                            },
                             padding: 5,
-                            callback: function(value) { return value.toFixed(1); }
+                            callback: function(value) {
+                                return value.toFixed(1);
+                            }
                         }
                     },
                     x: {
-                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
                         ticks: {
-                            font: { size: 10 },
+                            font: {
+                                size: 10
+                            },
                             maxRotation: 0,
                             autoSkip: true,
                             maxTicksLimit: 6
                         }
                     }
                 },
-                interaction: { intersect: false, mode: 'index' }
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
             }
         });
-        console.log('✅ Line chart initialized with 5 lines');
+        console.log('✅ Biểu đồ đường đã khởi tạo');
     }
     
     if (ctxBar) {
         ctxBar.style.width = '100%';
         ctxBar.style.height = '300px';
         
-        barChart = new Chart(ctxBar.getContext('2d'), {
+        window.classguard.barChart = new Chart(ctxBar.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['🌡️', '💧', '☀️', '💨', '🔊'],
@@ -240,7 +213,9 @@ function initCharts() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false },
+                    legend: {
+                        display: false
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -263,30 +238,46 @@ function initCharts() {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.05)' },
-                        ticks: { font: { size: 10 }, padding: 5 }
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 10
+                            },
+                            padding: 5
+                        }
                     },
                     x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 14, weight: 'bold' } }
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
                     }
                 }
             }
         });
-        console.log('✅ Bar chart initialized');
+        console.log('✅ Biểu đồ cột đã khởi tạo');
     }
+    
+    window.classguard.chartsInitialized = true;
 }
 
-// ========== EVENT LISTENERS ==========
+// ========== KHỞI TẠO SỰ KIỆN ==========
 function initEventListeners() {
-    console.log('🔄 Setting up event listeners...');
+    console.log('🔄 Đang thiết lập sự kiện...');
     
     // Nút điều khiển thiết bị
     document.querySelectorAll('.control-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const device = this.dataset.device;
             const action = this.dataset.action;
-            console.log(`🎮 Control clicked: ${device} -> ${action}`);
+            console.log(`🎮 Nhấn điều khiển: ${device} -> ${action}`);
             
             if (device && action) {
                 controlDevice(device, action);
@@ -298,7 +289,7 @@ function initEventListeners() {
     const chartToggle = document.getElementById('chartToggle');
     if (chartToggle) {
         chartToggle.addEventListener('change', function() {
-            console.log('📈 Chart toggle changed:', this.checked);
+            console.log('📈 Chuyển đổi biểu đồ:', this.checked);
             updateChartVisibility(this.checked);
         });
     }
@@ -309,7 +300,7 @@ function initEventListeners() {
     
     if (autoModeToggle) {
         autoModeToggle.addEventListener('change', function() {
-            console.log('🤖 Auto mode changed:', this.checked);
+            console.log('🤖 Thay đổi chế độ tự động:', this.checked);
             updateAutoMode(this.checked);
             if (autoModeToggle2) autoModeToggle2.checked = this.checked;
         });
@@ -317,7 +308,7 @@ function initEventListeners() {
     
     if (autoModeToggle2) {
         autoModeToggle2.addEventListener('change', function() {
-            console.log('🤖 Auto mode (2) changed:', this.checked);
+            console.log('🤖 Thay đổi chế độ tự động (2):', this.checked);
             updateAutoMode(this.checked);
             if (autoModeToggle) autoModeToggle.checked = this.checked;
         });
@@ -336,29 +327,78 @@ function initEventListeners() {
         });
     });
     
-    console.log('✅ Event listeners set up');
+    console.log('✅ Sự kiện đã thiết lập');
 }
 
-// ========== DASHBOARD UPDATE FUNCTIONS ==========
+// ========== BẮT ĐẦU ĐỒNG BỘ ==========
+function startSync() {
+    // Dừng interval cũ nếu có
+    if (window.classguard.syncInterval) {
+        clearInterval(window.classguard.syncInterval);
+    }
+    if (window.classguard.updateInterval) {
+        clearInterval(window.classguard.updateInterval);
+    }
+    
+    // Đồng bộ dữ liệu nhanh (800ms)
+    window.classguard.syncInterval = setInterval(syncDashboard, 800);
+    
+    // Cập nhật dashboard đầy đủ (2 giây)
+    window.classguard.updateInterval = setInterval(updateDashboard, 2000);
+    
+    console.log('🔄 Đã bắt đầu đồng bộ dữ liệu');
+}
+
+// ========== ĐỒNG BỘ DASHBOARD (NHANH) ==========
+async function syncDashboard() {
+    try {
+        const response = await fetch('/get_sensor_data');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.sensors) {
+            // Cập nhật hiển thị sensor
+            updateSensorDisplays(data.sensors);
+            
+            // Cập nhật trạng thái thiết bị
+            updateDeviceStatus(data.sensors);
+            
+            // Cập nhật thời gian
+            window.classguard.lastUpdateTime = Date.now();
+            updateElement('last-update-time', data.sensors.timestamp || '--:--:--');
+            
+            // Cập nhật trạng thái kết nối
+            if (data.cache) {
+                updateConnectionStatus(data.cache);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Lỗi đồng bộ:', error);
+        updateConnectionStatus({ status: 'error' });
+    }
+}
+
+// ========== CẬP NHẬT DASHBOARD (ĐẦY ĐỦ) ==========
 async function updateDashboard() {
     try {
-        console.log('🔄 Đang cập nhật dashboard...');
         const response = await fetch('/get_sensor_data');
         const data = await response.json();
         
         if (data.sensors) {
-            updateSensorDisplays(data.sensors);
+            // Cập nhật biểu đồ
             updateCharts(data);
-            updateEvaluation(data.evaluation);
-            updateDeviceStatus(data.sensors);
             
-            // ĐỒNG BỘ CHẾ ĐỘ TỰ ĐỘNG
+            // Cập nhật đánh giá
+            updateEvaluation(data.evaluation);
+            
+            // Cập nhật cài đặt
             if (data.settings) {
-                isAutoMode = data.settings.auto_mode;
-                updateAutoModeUI(isAutoMode);
-                
-                // CẬP NHẬT NÚT ĐIỀU KHIỂN
-                updateControlButtonsState(!isAutoMode);
+                window.classguard.isAutoMode = data.settings.auto_mode;
+                updateAutoModeUI(window.classguard.isAutoMode);
+                updateControlButtonsState(!window.classguard.isAutoMode);
             }
         }
     } catch (error) {
@@ -366,98 +406,29 @@ async function updateDashboard() {
     }
 }
 
-// CẢI TIẾN PHẦN CONTROL DEVICE
-async function controlDevice(device, action) {
-    console.log(`🎮 Điều khiển: ${device} -> ${action}`);
-    
-    // KIỂM TRA CHẾ ĐỘ TỰ ĐỘNG
-    if (isAutoMode && device !== 'canh_bao') {  // Cảnh báo luôn được điều khiển
-        showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
-        return;
-    }
-    
-    try {
-        const response = await fetch('/control', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                device: device,
-                action: action
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showToast('✅ Thành công', result.message, 'success');
-            
-            // Cập nhật ngay lập tức
-            setTimeout(updateDashboard, 300);
-            
-            // GỬI LỆNH ĐẾN ESP32
-            sendCommandToESP32(device, action);
-        } else {
-            showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
-        }
-    } catch (error) {
-        console.error('❌ Lỗi điều khiển:', error);
-        showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
-    }
-}
-
-// HÀM MỚI: GỬI LỆNH ĐẾN ESP32
-async function sendCommandToESP32(device, action) {
-    try {
-        const commandMap = {
-            'quat': { 'BẬT': 'FAN_ON', 'TẮT': 'FAN_OFF' },
-            'den': { 'BẬT': 'LIGHT_ON', 'TẮT': 'LIGHT_OFF' },
-            'cua_so': { 'MỞ': 'WINDOW_OPEN', 'ĐÓNG': 'WINDOW_CLOSE' },
-            'canh_bao': { 'BẬT': 'ALARM_ON', 'TẮT': 'ALARM_OFF' }
-        };
-        
-        if (device in commandMap && action in commandMap[device]) {
-            const command = commandMap[device][action];
-            const value = '1';
-            
-            const response = await fetch('/api/esp32/command', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    device_id: 'ESP32-S3-CLASSGUARD',
-                    command: command,
-                    value: value
-                })
-            });
-            
-            const result = await response.json();
-            if (result.success) {
-                console.log(`✅ Đã gửi lệnh đến ESP32: ${command}`);
-            }
-        }
-    } catch (error) {
-        console.error('❌ Lỗi gửi lệnh ESP32:', error);
-    }
-}
-
+// ========== CẬP NHẬT HIỂN THỊ SENSOR ==========
 function updateSensorDisplays(sensors) {
     // Cập nhật giá trị
-    updateElement('temp-value', sensors.nhiet_do.toFixed(1));
-    updateElement('hum-value', sensors.do_am.toFixed(1));
-    updateElement('light-value', Math.round(sensors.anh_sang));
-    updateElement('air-value', Math.round(sensors.chat_luong_kk));
-    updateElement('noise-value', Math.round(sensors.do_on));
-    updateElement('last-update', sensors.timestamp || '--:--:--');
+    updateElement('temp-value', formatNumber(sensors.nhiet_do, 1));
+    updateElement('hum-value', formatNumber(sensors.do_am, 1));
+    updateElement('light-value', formatNumber(sensors.anh_sang, 0));
+    updateElement('air-value', formatNumber(sensors.chat_luong_kk, 0));
+    updateElement('noise-value', formatNumber(sensors.do_on, 0));
     
-    // Cập nhật màu sắc
+    // Cập nhật màu sắc và trạng thái
     updateSensorColor('temp', sensors.nhiet_do);
     updateSensorColor('hum', sensors.do_am);
     updateSensorColor('light', sensors.anh_sang);
     updateSensorColor('air', sensors.chat_luong_kk);
     updateSensorColor('noise', sensors.do_on);
+}
+
+function formatNumber(value, decimals) {
+    if (decimals === 0) {
+        return Math.round(value).toString();
+    } else {
+        return parseFloat(value).toFixed(decimals);
+    }
 }
 
 function updateElement(id, value) {
@@ -500,16 +471,17 @@ function updateSensorColor(type, value) {
     element.classList.add(colorClass);
 }
 
+// ========== CẬP NHẬT BIỂU ĐỒ ==========
 function updateCharts(data) {
     if (!data.history) return;
     
     const history = data.history;
     const sensors = data.sensors;
     
-    // Biểu đồ đường (5 thông số)
-    if (lineChart && history.time && history.nhiet_do && history.do_am) {
-        // Giữ tối đa 6 điểm cho gọn
-        const maxPoints = 6;
+    // Biểu đồ đường
+    if (window.classguard.lineChart && history.time && history.nhiet_do) {
+        // Giữ tối đa 8 điểm cho gọn
+        const maxPoints = 8;
         const start = Math.max(0, history.time.length - maxPoints);
         
         const displayTimes = history.time.slice(start);
@@ -525,28 +497,29 @@ function updateCharts(data) {
             return `${hours}:${minutes}`;
         });
         
-        lineChart.data.labels = formattedTimes;
-        lineChart.data.datasets[0].data = displayTemp;
-        lineChart.data.datasets[1].data = displayHum;
-        lineChart.data.datasets[2].data = displayLight;
-        lineChart.data.datasets[3].data = displayAir;
-        lineChart.data.datasets[4].data = displayNoise;
-        lineChart.update('none');
+        window.classguard.lineChart.data.labels = formattedTimes;
+        window.classguard.lineChart.data.datasets[0].data = displayTemp;
+        window.classguard.lineChart.data.datasets[1].data = displayHum;
+        window.classguard.lineChart.data.datasets[2].data = displayLight;
+        window.classguard.lineChart.data.datasets[3].data = displayAir;
+        window.classguard.lineChart.data.datasets[4].data = displayNoise;
+        window.classguard.lineChart.update('none');
     }
     
-    // Biểu đồ cột (5 thông số)
-    if (barChart) {
-        barChart.data.datasets[0].data = [
+    // Biểu đồ cột
+    if (window.classguard.barChart && sensors) {
+        window.classguard.barChart.data.datasets[0].data = [
             sensors.nhiet_do,
             sensors.do_am,
             sensors.anh_sang,
             sensors.chat_luong_kk,
             sensors.do_on
         ];
-        barChart.update('none');
+        window.classguard.barChart.update('none');
     }
 }
 
+// ========== CẬP NHẬT ĐÁNH GIÁ ==========
 function updateEvaluation(evaluation) {
     if (!evaluation) return;
     
@@ -604,6 +577,7 @@ function updateEvaluation(evaluation) {
     }
 }
 
+// ========== CẬP NHẬT TRẠNG THÁI THIẾT BỊ ==========
 function updateDeviceStatus(sensors) {
     const devices = ['quat', 'den', 'cua_so', 'canh_bao'];
     
@@ -611,7 +585,7 @@ function updateDeviceStatus(sensors) {
         const status = sensors[device];
         const isOn = status === 'BẬT' || status === 'MỞ';
         
-        // Cập nhật icon với hiệu ứng đặc biệt cho cửa
+        // Cập nhật icon với hiệu ứng
         const iconElement = document.getElementById(`${device}-icon`);
         if (iconElement) {
             // Xóa tất cả class hiệu ứng cũ
@@ -626,10 +600,12 @@ function updateDeviceStatus(sensors) {
                 iconElement.className = isOn ? 'fas fa-bell fa-shake text-danger fs-4' : 'fas fa-bell text-secondary fs-4';
             } else if (device === 'cua_so') {
                 if (isOn) {
+                    // Cửa MỞ
                     iconElement.className = 'fas fa-door-open text-success fs-4 door-open';
                     iconElement.style.color = '#28a745';
                     iconElement.style.transform = 'scale(1.1)';
                 } else {
+                    // Cửa ĐÓNG
                     iconElement.className = 'fas fa-door-closed text-danger fs-4 door-closed';
                     iconElement.style.color = '#dc3545';
                     iconElement.style.transform = 'scale(1)';
@@ -664,52 +640,14 @@ function updateDeviceStatus(sensors) {
     });
 }
 
-function updateSystemStatus(data) {
-    // Cập nhật trạng thái ESP32
-    const deviceStatus = data.sensors?.device_status || 'online';
-    isEsp32Online = deviceStatus === 'online';
-    
-    // Cập nhật badge trạng thái
-    const statusBadge = document.getElementById('device-status-badge');
-    if (statusBadge) {
-        statusBadge.textContent = isEsp32Online ? 'ESP32 ĐANG ONLINE' : 'ESP32 OFFLINE';
-        statusBadge.className = `badge ${isEsp32Online ? 'bg-success' : 'bg-danger'} p-2`;
-    }
-    
-    // Hiển thị thông báo nếu offline
-    if (!isEsp32Online) {
-        const alertContainer = document.getElementById('alert-container');
-        if (alertContainer) {
-            alertContainer.innerHTML = `
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>ESP32 đang offline!</strong> Hệ thống đang sử dụng dữ liệu demo.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-        }
-    }
-}
-
-// ========== DEVICE CONTROL FUNCTIONS ==========
+// ========== ĐIỀU KHIỂN THIẾT BỊ ==========
 async function controlDevice(device, action) {
-    console.log(`🎮 Sending control: ${device} -> ${action}`);
+    console.log(`🎮 Gửi điều khiển: ${device} -> ${action}`);
     
-    // Kiểm tra chế độ tự động
-    if (isAutoMode) {
+    // KIỂM TRA CHẾ ĐỘ TỰ ĐỘNG
+    // Cảnh báo luôn được điều khiển
+    if (device !== 'canh_bao' && window.classguard.isAutoMode) {
         showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
-        return;
-    }
-    
-    // Kiểm tra quyền người dùng
-    if (userRole !== 'admin' && userRole !== 'teacher') {
-        showToast('❌ Từ chối', 'Bạn không có quyền điều khiển thiết bị!', 'danger');
-        return;
-    }
-    
-    // Kiểm tra kết nối ESP32
-    if (!isEsp32Online) {
-        showToast('⚠️ Cảnh báo', 'ESP32 đang offline. Không thể gửi lệnh điều khiển.', 'warning');
         return;
     }
     
@@ -729,38 +667,61 @@ async function controlDevice(device, action) {
         
         if (result.success) {
             showToast('✅ Thành công', result.message, 'success');
+            
             // Cập nhật ngay lập tức
-            setTimeout(updateDashboard, 300);
+            setTimeout(syncDashboard, 300);
+            
+            // Gửi lệnh đến ESP32
+            sendCommandToESP32(device, action);
         } else {
-            // Kiểm tra nếu lỗi do chế độ tự động
-            if (result.auto_mode) {
-                showToast('⚠️ Cảnh báo', result.error || 'Hệ thống đang ở chế độ tự động', 'warning');
-            } else {
-                showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
-            }
+            showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
         }
     } catch (error) {
-        console.error('❌ Control error:', error);
+        console.error('❌ Lỗi điều khiển:', error);
         showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
     }
 }
 
-// ========== AUTO MODE FUNCTIONS ==========
-async function updateAutoMode(enabled) {
-    console.log(`🤖 Updating auto mode to: ${enabled}`);
-    
-    // Chỉ admin mới được thay đổi chế độ tự động
-    if (userRole !== 'admin') {
-        showToast('❌ Từ chối', 'Chỉ quản trị viên được thay đổi chế độ tự động!', 'danger');
+// ========== GỬI LỆNH ĐẾN ESP32 ==========
+async function sendCommandToESP32(device, action) {
+    try {
+        const commandMap = {
+            'quat': { 'BẬT': 'FAN_ON', 'TẮT': 'FAN_OFF' },
+            'den': { 'BẬT': 'LIGHT_ON', 'TẮT': 'LIGHT_OFF' },
+            'cua_so': { 'MỞ': 'WINDOW_OPEN', 'ĐÓNG': 'WINDOW_CLOSE' },
+            'canh_bao': { 'BẬT': 'ALARM_ON', 'TẮT': 'ALARM_OFF' }
+        };
         
-        // Rollback toggle
-        const toggle1 = document.getElementById('autoModeToggle');
-        const toggle2 = document.getElementById('autoModeToggle2');
-        if (toggle1) toggle1.checked = !enabled;
-        if (toggle2) toggle2.checked = !enabled;
-        
-        return;
+        if (device in commandMap && action in commandMap[device]) {
+            const command = commandMap[device][action];
+            
+            const response = await fetch('/api/esp32/command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    device_id: 'ESP32-S3-CLASSGUARD',
+                    command: command,
+                    value: '1'
+                })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                console.log(`✅ Đã gửi lệnh đến ESP32: ${command}`);
+            } else {
+                console.error(`❌ Lỗi gửi lệnh ESP32: ${result.error}`);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Lỗi kết nối đến ESP32:', error);
     }
+}
+
+// ========== CẬP NHẬT CHẾ ĐỘ TỰ ĐỘNG ==========
+async function updateAutoMode(enabled) {
+    console.log(`🤖 Cập nhật chế độ tự động: ${enabled}`);
     
     try {
         const response = await fetch('/update_settings', {
@@ -776,26 +737,29 @@ async function updateAutoMode(enabled) {
         const result = await response.json();
         
         if (result.success) {
-            isAutoMode = enabled;
+            window.classguard.isAutoMode = enabled;
             updateAutoModeUI(enabled);
-            showToast('✅ Thành công', `Chế độ tự động đã ${enabled ? 'bật' : 'tắt'}`, 'success');
-            
-            // Cập nhật trạng thái nút điều khiển
             updateControlButtonsState(!enabled);
+            
+            showToast('✅ Thành công', `Chế độ tự động đã ${enabled ? 'bật' : 'tắt'}`, 'success');
         } else {
             // Rollback toggle
             const toggle1 = document.getElementById('autoModeToggle');
             const toggle2 = document.getElementById('autoModeToggle2');
             if (toggle1) toggle1.checked = !enabled;
             if (toggle2) toggle2.checked = !enabled;
+            
             showToast('❌ Lỗi', result.error || 'Không thể cập nhật chế độ tự động', 'danger');
         }
     } catch (error) {
-        console.error('❌ Auto mode update error:', error);
+        console.error('❌ Lỗi cập nhật chế độ tự động:', error);
+        
+        // Rollback toggle
         const toggle1 = document.getElementById('autoModeToggle');
         const toggle2 = document.getElementById('autoModeToggle2');
         if (toggle1) toggle1.checked = !enabled;
         if (toggle2) toggle2.checked = !enabled;
+        
         showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
     }
 }
@@ -807,52 +771,86 @@ function updateAutoModeUI(enabled) {
         statusElement.textContent = enabled ? 'ĐANG BẬT' : 'ĐANG TẮT';
         statusElement.className = `badge ${enabled ? 'bg-success' : 'bg-secondary'} p-2`;
     }
-    
-    // Cập nhật trạng thái nút điều khiển
-    updateControlButtonsState(!enabled);
 }
 
 function updateControlButtonsState(enabled) {
     const controlButtons = document.querySelectorAll('.control-btn');
-    const controlNotice = document.getElementById('control-notice');
     
     controlButtons.forEach(btn => {
-        if (enabled) {
+        const device = btn.dataset.device;
+        
+        // CẢNH BÁO LUÔN ĐƯỢC ĐIỀU KHIỂN
+        if (device === 'canh_bao') {
             btn.disabled = false;
             btn.style.opacity = '1';
             btn.style.cursor = 'pointer';
         } else {
-            btn.disabled = true;
-            btn.style.opacity = '0.5';
-            btn.style.cursor = 'not-allowed';
+            // Các thiết bị khác phụ thuộc vào chế độ
+            if (enabled) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
         }
     });
+}
+
+// ========== CẬP NHẬT TRẠNG THÁI KẾT NỐI ==========
+function updateConnectionStatus(cache) {
+    if (!cache) return;
     
-    // Hiển thị thông báo
-    if (controlNotice) {
-        if (enabled) {
-            controlNotice.innerHTML = `
-                <i class="fas fa-check-circle text-success me-2 fs-4"></i>
-                <div>
-                    <strong>Chế độ thủ công đang bật</strong>
-                    <div class="small">Bạn có thể điều khiển thiết bị thủ công</div>
-                </div>
-            `;
-            controlNotice.className = 'alert alert-success d-flex align-items-center mb-3';
+    const statusDot = document.querySelector('.status-dot');
+    const syncStatus = document.getElementById('sync-status');
+    const deviceStatus = document.getElementById('device-status');
+    const connectionAlert = document.getElementById('connection-status');
+    
+    if (!statusDot || !syncStatus || !deviceStatus) return;
+    
+    if (cache.status === 'connected') {
+        statusDot.className = 'status-dot status-online';
+        syncStatus.textContent = 'Đang hoạt động';
+        deviceStatus.textContent = 'Đang kết nối ESP32';
+        connectionAlert.className = 'alert alert-info d-flex align-items-center justify-content-between mb-3';
+        window.classguard.esp32Connected = true;
+    } else if (cache.status === 'idle') {
+        statusDot.className = 'status-dot status-idle';
+        syncStatus.textContent = 'Chờ kết nối';
+        deviceStatus.textContent = 'ESP32 không phản hồi';
+        connectionAlert.className = 'alert alert-warning d-flex align-items-center justify-content-between mb-3';
+        window.classguard.esp32Connected = false;
+    } else if (cache.status === 'error') {
+        statusDot.className = 'status-dot status-offline';
+        syncStatus.textContent = 'Lỗi kết nối';
+        deviceStatus.textContent = 'Kiểm tra kết nối';
+        connectionAlert.className = 'alert alert-danger d-flex align-items-center justify-content-between mb-3';
+        window.classguard.esp32Connected = false;
+    } else {
+        statusDot.className = 'status-dot status-offline';
+        syncStatus.textContent = 'Mất kết nối';
+        deviceStatus.textContent = 'Sử dụng dữ liệu demo';
+        connectionAlert.className = 'alert alert-secondary d-flex align-items-center justify-content-between mb-3';
+        window.classguard.esp32Connected = false;
+    }
+    
+    // Cập nhật thời gian
+    if (cache.last_update) {
+        const age = Math.floor((Date.now() / 1000) - cache.last_update);
+        if (age < 5) {
+            syncStatus.textContent = 'Đang hoạt động (vài giây trước)';
+        } else if (age < 60) {
+            syncStatus.textContent = `Đang hoạt động (${age} giây trước)`;
         } else {
-            controlNotice.innerHTML = `
-                <i class="fas fa-robot text-warning me-2 fs-4"></i>
-                <div>
-                    <strong>Chế độ tự động đang bật</strong>
-                    <div class="small">Hệ thống tự động điều chỉnh thiết bị dựa trên ngưỡng cài đặt</div>
-                </div>
-            `;
-            controlNotice.className = 'alert alert-warning d-flex align-items-center mb-3';
+            const minutes = Math.floor(age / 60);
+            syncStatus.textContent = `Đang hoạt động (${minutes} phút trước)`;
         }
     }
 }
 
-// ========== UTILITY FUNCTIONS ==========
+// ========== CHUYỂN ĐỔI BIỂU ĐỒ ==========
 function updateChartVisibility(isBarChart) {
     const lineContainer = document.getElementById('lineChartContainer');
     const barContainer = document.getElementById('barChartContainer');
@@ -871,6 +869,7 @@ function updateChartVisibility(isBarChart) {
     }
 }
 
+// ========== CẬP NHẬT THỜI GIAN ==========
 function updateRealTime() {
     const now = new Date();
     const timeElement = document.getElementById('current-time');
@@ -879,6 +878,7 @@ function updateRealTime() {
     }
 }
 
+// ========== HIỂN THỊ THÔNG BÁO ==========
 function showToast(title, message, type) {
     // Tạo toast element
     const toastId = 'toast-' + Date.now();
@@ -913,10 +913,20 @@ function showToast(title, message, type) {
     });
 }
 
-// Thêm CSS inline cho hiệu ứng cửa và fix charts
+// ========== XỬ LÝ RESIZE WINDOW ==========
+window.addEventListener('resize', function() {
+    if (window.classguard.lineChart) {
+        window.classguard.lineChart.resize();
+    }
+    if (window.classguard.barChart) {
+        window.classguard.barChart.resize();
+    }
+});
+
+// ========== CSS INLINE CHO HIỆU ỨNG ==========
 const style = document.createElement('style');
 style.textContent = `
-    /* FIX CHART CONTAINERS - QUAN TRỌNG! */
+    /* FIX CHART CONTAINERS */
     #lineChartContainer,
     #barChartContainer {
         height: 300px !important;
@@ -1001,42 +1011,91 @@ style.textContent = `
         border-color: #4361ee;
     }
     
-    /* Style cho evaluation items */
-    .eval-item {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 12px 15px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 8px;
+    /* Connection status animations */
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
     }
     
-    .eval-label {
-        font-weight: 600;
-        color: #343a40;
+    .status-online {
+        background-color: #28a745;
+        animation: pulse 2s infinite;
     }
     
-    .eval-value {
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        min-width: 100px;
-        text-align: center;
+    .status-idle {
+        background-color: #ffc107;
+    }
+    
+    .status-offline {
+        background-color: #dc3545;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
     }
 `;
 document.head.appendChild(style);
 
-// Force resize charts on window resize
-window.addEventListener('resize', function() {
-    if (lineChart) lineChart.resize();
-    if (barChart) barChart.resize();
+// ========== CLEANUP KHI UNLOAD ==========
+window.addEventListener('beforeunload', function() {
+    if (window.classguard.syncInterval) {
+        clearInterval(window.classguard.syncInterval);
+    }
+    if (window.classguard.updateInterval) {
+        clearInterval(window.classguard.updateInterval);
+    }
+    console.log('🧹 Đã dọn dẹp intervals');
 });
 
-// Initial resize
-setTimeout(() => {
-    if (lineChart) lineChart.resize();
-    if (barChart) barChart.resize();
-}, 1000);
+// ========== UTILITY FUNCTIONS ==========
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+// ========== KIỂM TRA KẾT NỐI ==========
+async function checkConnection() {
+    try {
+        const response = await fetch('/api/system/info', { timeout: 3000 });
+        const data = await response.json();
+        return data.status === 'running';
+    } catch (error) {
+        return false;
+    }
+}
+
+// ========== TỰ ĐỘNG KIỂM TRA KẾT NỐI ==========
+setInterval(async () => {
+    const isConnected = await checkConnection();
+    if (!isConnected) {
+        console.warn('⚠️ Mất kết nối server');
+        updateConnectionStatus({ status: 'error' });
+    }
+}, 10000);
+
+console.log('📁 main.js đã tải hoàn tất');
