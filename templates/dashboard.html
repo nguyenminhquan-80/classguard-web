@@ -1,22 +1,29 @@
-// CLASSGUARD - Main JavaScript với đồng bộ 2 chiều
+// CLASSGUARD - Main JavaScript (Optimized for ESP32-S3 sync)
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Initializing CLASSGUARD system...');
+    console.log('🚀 CLASSGUARD Dashboard đang khởi động...');
     
-    // Khởi tạo
-    initCharts();
+    // Đặt kích thước cố định cho chart containers
+    fixChartContainers();
+    
+    // Khởi tạo biểu đồ
+    setTimeout(initCharts, 100);
+    
+    // Khởi tạo event listeners
     initEventListeners();
     
-    // Cập nhật lần đầu
-    updateDashboard();
+    // Cập nhật dữ liệu ngay lần đầu
+    setTimeout(updateDashboard, 500);
     
-    // Cập nhật định kỳ: 1.5 giây cho mượt
-    setInterval(updateDashboard, 1500);
+    // Cập nhật mỗi 2 giây
+    setInterval(updateDashboard, 2000);
+    
+    // Cập nhật thời gian mỗi giây
     setInterval(updateRealTime, 1000);
     
     // Kiểm tra ESP32 mỗi 3 giây
     setInterval(checkESP32Status, 3000);
     
-    console.log('✅ CLASSGUARD initialized successfully');
+    console.log('✅ Dashboard đã sẵn sàng');
 });
 
 // Biến toàn cục
@@ -25,34 +32,57 @@ let barChart = null;
 let isAutoMode = false;
 let esp32Connected = false;
 
-// Khởi tạo biểu đồ
+function fixChartContainers() {
+    // Đảm bảo chart containers có kích thước cố định
+    const containers = document.querySelectorAll('.chart-container');
+    containers.forEach(container => {
+        container.style.height = '300px';
+        container.style.minHeight = '300px';
+        container.style.maxHeight = '300px';
+    });
+}
+
 function initCharts() {
+    console.log('📊 Khởi tạo biểu đồ...');
+    
     const ctxLine = document.getElementById('lineChart');
     const ctxBar = document.getElementById('barChart');
     
+    // Destroy existing charts if any
+    if (lineChart) lineChart.destroy();
+    if (barChart) barChart.destroy();
+    
     if (ctxLine) {
+        // Đặt kích thước canvas
+        ctxLine.style.width = '100%';
+        ctxLine.style.height = '300px';
+        
         lineChart = new Chart(ctxLine.getContext('2d'), {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [
                     {
-                        label: 'Nhiệt độ (°C)',
+                        label: '🌡️ Nhiệt độ (°C)',
                         data: [],
                         borderColor: '#dc3545',
                         backgroundColor: 'rgba(220, 53, 69, 0.1)',
                         tension: 0.3,
+                        fill: true,
                         borderWidth: 2,
-                        pointRadius: 3
+                        pointRadius: 3,
+                        pointHoverRadius: 5
                     },
                     {
-                        label: 'Độ ẩm (%)',
+                        label: '💧 Độ ẩm (%)',
                         data: [],
                         borderColor: '#0d6efd',
                         backgroundColor: 'rgba(13, 110, 253, 0.1)',
                         tension: 0.3,
+                        fill: true,
                         borderWidth: 2,
-                        pointRadius: 3
+                        pointRadius: 3,
+                        pointHoverRadius: 5
                     }
                 ]
             },
@@ -63,7 +93,25 @@ function initCharts() {
                     legend: {
                         position: 'top',
                         labels: {
-                            usePointStyle: true
+                            padding: 15,
+                            usePointStyle: true,
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { size: 10 }, padding: 5 }
+                    },
+                    x: {
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { 
+                            font: { size: 10 },
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 6
                         }
                     }
                 }
@@ -72,10 +120,14 @@ function initCharts() {
     }
     
     if (ctxBar) {
+        // Đặt kích thước canvas
+        ctxBar.style.width = '100%';
+        ctxBar.style.height = '300px';
+        
         barChart = new Chart(ctxBar.getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['Nhiệt độ', 'Độ ẩm', 'Ánh sáng', 'KK', 'Độ ồn'],
+                labels: ['🌡️', '💧', '☀️', '💨', '🔊'],
                 datasets: [{
                     label: 'Giá trị',
                     data: [0, 0, 0, 0, 0],
@@ -86,6 +138,13 @@ function initCharts() {
                         'rgba(25, 135, 84, 0.7)',
                         'rgba(111, 66, 193, 0.7)'
                     ],
+                    borderColor: [
+                        '#dc3545',
+                        '#0d6efd',
+                        '#ffc107',
+                        '#198754',
+                        '#6f42c1'
+                    ],
                     borderWidth: 1,
                     borderRadius: 4
                 }]
@@ -94,8 +153,17 @@ function initCharts() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { size: 10 }, padding: 5 }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 14, weight: 'bold' } }
                     }
                 }
             }
@@ -104,7 +172,7 @@ function initCharts() {
 }
 
 function initEventListeners() {
-    console.log('🔄 Setting up event listeners...');
+    console.log('🔄 Thiết lập event listeners...');
     
     // Nút điều khiển thiết bị
     document.querySelectorAll('.control-btn').forEach(btn => {
@@ -112,7 +180,7 @@ function initEventListeners() {
             const device = this.dataset.device;
             const action = this.dataset.action;
             
-            console.log(`🎮 Control clicked: ${device} -> ${action}`);
+            console.log(`🎮 Nhấn nút: ${device} -> ${action}`);
             
             // LUÔN cho phép điều khiển cảnh báo
             if (device === 'canh_bao') {
@@ -135,25 +203,23 @@ function initEventListeners() {
         });
     }
     
-    // Chế độ tự động
-    const autoModeToggle = document.getElementById('autoModeToggle');
-    const autoModeToggle2 = document.getElementById('autoModeToggle2');
+    // Đồng bộ 2 toggle auto mode
+    const autoToggle1 = document.getElementById('autoModeToggle');
+    const autoToggle2 = document.getElementById('autoModeToggle2');
     
-    if (autoModeToggle) {
-        autoModeToggle.addEventListener('change', function() {
+    if (autoToggle1 && autoToggle2) {
+        autoToggle1.addEventListener('change', function() {
             updateAutoMode(this.checked);
-            if (autoModeToggle2) autoModeToggle2.checked = this.checked;
+            autoToggle2.checked = this.checked;
+        });
+        
+        autoToggle2.addEventListener('change', function() {
+            updateAutoMode(this.checked);
+            autoToggle1.checked = this.checked;
         });
     }
     
-    if (autoModeToggle2) {
-        autoModeToggle2.addEventListener('change', function() {
-            updateAutoMode(this.checked);
-            if (autoModeToggle) autoModeToggle.checked = this.checked;
-        });
-    }
-    
-    console.log('✅ Event listeners set up');
+    console.log('✅ Event listeners đã sẵn sàng');
 }
 
 async function updateDashboard() {
@@ -178,7 +244,7 @@ async function updateDashboard() {
             updateESP32StatusUI(esp32Connected, data.esp32_last_update);
         }
     } catch (error) {
-        console.error('❌ Error updating dashboard:', error);
+        console.error('❌ Lỗi cập nhật dashboard:', error);
     }
 }
 
@@ -189,25 +255,13 @@ async function checkESP32Status() {
         
         esp32Connected = status.connected || false;
         updateESP32StatusUI(esp32Connected, status.last_update);
-        
-        if (!esp32Connected) {
-            // Nếu mất kết nối, hiển thị cảnh báo nhẹ
-            const esp32Status = document.getElementById('esp32-status');
-            if (esp32Status) {
-                esp32Status.innerHTML = `
-                    <i class="fas fa-wifi-slash text-danger"></i>
-                    <span class="ms-2">Mất kết nối ESP32</span>
-                `;
-            }
-        }
     } catch (error) {
-        console.error('❌ Error checking ESP32:', error);
+        console.error('❌ Lỗi kiểm tra ESP32:', error);
     }
 }
 
 function updateESP32StatusUI(connected, lastUpdate) {
     const esp32Status = document.getElementById('esp32-status');
-    const footer = document.querySelector('.dashboard-footer');
     
     if (esp32Status) {
         if (connected) {
@@ -216,32 +270,25 @@ function updateESP32StatusUI(connected, lastUpdate) {
                 <span class="ms-2">ESP32: Đã kết nối</span>
                 <small class="ms-2 text-muted">${lastUpdate || ''}</small>
             `;
+            esp32Status.className = 'badge bg-success p-2';
         } else {
             esp32Status.innerHTML = `
                 <i class="fas fa-wifi-slash text-danger"></i>
                 <span class="ms-2">ESP32: Mất kết nối</span>
             `;
+            esp32Status.className = 'badge bg-danger p-2';
         }
     }
     
     // Cập nhật footer
-    if (footer) {
-        const statusText = connected ? '✅ ESP32: Đang kết nối' : '⚠️ ESP32: Mất kết nối';
-        const existingStatus = footer.querySelector('.esp32-connection-status');
-        
-        if (existingStatus) {
-            existingStatus.textContent = statusText;
-        } else {
-            const statusDiv = document.createElement('div');
-            statusDiv.className = 'esp32-connection-status small mt-2';
-            statusDiv.innerHTML = `<i class="fas fa-microchip"></i> ${statusText}`;
-            footer.appendChild(statusDiv);
-        }
+    const footerStatus = document.querySelector('.esp32-footer-status');
+    if (footerStatus) {
+        footerStatus.textContent = connected ? '✅ ESP32: Đang kết nối' : '⚠️ ESP32: Mất kết nối';
     }
 }
 
 function updateSensorDisplays(sensors) {
-    // Cập nhật giá trị
+    // Cập nhật giá trị cảm biến
     updateElement('temp-value', sensors.nhiet_do.toFixed(1));
     updateElement('hum-value', sensors.do_am.toFixed(1));
     updateElement('light-value', Math.round(sensors.anh_sang));
@@ -249,7 +296,7 @@ function updateSensorDisplays(sensors) {
     updateElement('noise-value', Math.round(sensors.do_on));
     updateElement('last-update', sensors.timestamp || '--:--:--');
     
-    // Cập nhật màu sắc
+    // Cập nhật màu sắc thẻ cảm biến
     updateSensorColor('temp', sensors.nhiet_do);
     updateSensorColor('hum', sensors.do_am);
     updateSensorColor('light', sensors.anh_sang);
@@ -292,7 +339,7 @@ function updateSensorColor(type, value) {
         else colorClass = 'border-success';
     }
     
-    // Loại bỏ các lớp border cũ và thêm lớp mới
+    // Cập nhật lớp border
     element.classList.remove('border-success', 'border-warning', 'border-danger');
     element.classList.add(colorClass);
 }
@@ -304,11 +351,11 @@ function updateCharts(data) {
     
     // Biểu đồ đường
     if (lineChart && history.time && history.nhiet_do) {
-        const maxPoints = 8; // Hiển thị 8 điểm
+        const maxPoints = 8;
         const start = Math.max(0, history.time.length - maxPoints);
         
         const displayTimes = history.time.slice(start).map(time => {
-            const [hours, minutes, seconds] = time.split(':');
+            const [hours, minutes] = time.split(':');
             return `${hours}:${minutes}`;
         });
         
@@ -381,6 +428,27 @@ function updateDeviceStatus(sensors) {
         const status = sensors[device];
         const isOn = status === 'BẬT' || status === 'MỞ';
         
+        // Cập nhật icon với hiệu ứng
+        const iconElement = document.getElementById(`${device}-icon`);
+        if (iconElement) {
+            // Xóa class cũ
+            iconElement.classList.remove('fa-spin', 'fa-shake', 'door-open', 'door-closed');
+            
+            if (device === 'quat') {
+                iconElement.className = isOn ? 'fas fa-fan fa-spin text-success fs-4' : 'fas fa-fan text-secondary fs-4';
+            } else if (device === 'den') {
+                iconElement.className = isOn ? 'fas fa-lightbulb text-warning fs-4' : 'fas fa-lightbulb text-secondary fs-4';
+            } else if (device === 'canh_bao') {
+                iconElement.className = isOn ? 'fas fa-bell fa-shake text-danger fs-4' : 'fas fa-bell text-secondary fs-4';
+            } else if (device === 'cua_so') {
+                if (isOn) {
+                    iconElement.className = 'fas fa-door-open text-success fs-4 door-open';
+                } else {
+                    iconElement.className = 'fas fa-door-closed text-danger fs-4 door-closed';
+                }
+            }
+        }
+        
         // Cập nhật nút điều khiển
         const onBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'MỞ' : 'BẬT'}"]`);
         const offBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'ĐÓNG' : 'TẮT'}"]`);
@@ -402,38 +470,17 @@ function updateDeviceStatus(sensors) {
         if (statusElement) {
             statusElement.className = `status-badge status-${isOn ? 'on' : 'off'}`;
         }
-        
-        // Cập nhật icon với hiệu ứng
-        updateDeviceIcon(device, isOn);
     });
 }
 
-function updateDeviceIcon(device, isOn) {
-    const iconElement = document.getElementById(`${device}-icon`);
-    if (!iconElement) return;
-    
-    // Xóa tất cả class hiệu ứng cũ
-    iconElement.classList.remove('fa-spin', 'fa-shake', 'text-success', 'text-danger', 'text-warning');
-    
-    if (device === 'quat') {
-        iconElement.className = isOn ? 'fas fa-fan fa-spin text-success fs-4' : 'fas fa-fan text-secondary fs-4';
-    } else if (device === 'den') {
-        iconElement.className = isOn ? 'fas fa-lightbulb text-warning fs-4' : 'fas fa-lightbulb text-secondary fs-4';
-    } else if (device === 'canh_bao') {
-        iconElement.className = isOn ? 'fas fa-bell fa-shake text-danger fs-4' : 'fas fa-bell text-secondary fs-4';
-    } else if (device === 'cua_so') {
-        if (isOn) {
-            iconElement.className = 'fas fa-door-open text-success fs-4';
-            iconElement.style.transform = 'scale(1.1)';
-        } else {
-            iconElement.className = 'fas fa-door-closed text-danger fs-4';
-            iconElement.style.transform = 'scale(1)';
-        }
-    }
-}
-
 async function controlDevice(device, action) {
-    console.log(`🎮 Sending control: ${device} -> ${action}`);
+    console.log(`🎮 Gửi lệnh điều khiển: ${device} -> ${action}`);
+    
+    // Kiểm tra chế độ tự động (trừ cảnh báo)
+    if (isAutoMode && device !== 'canh_bao') {
+        showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
+        return;
+    }
     
     try {
         const response = await fetch('/control', {
@@ -451,54 +498,19 @@ async function controlDevice(device, action) {
         
         if (result.success) {
             showToast('✅ Thành công', result.message, 'success');
-            
-            // Cập nhật ngay lập tức (optimistic update)
-            updateDeviceStatusLocally(device, action === 'BẬT' || action === 'MỞ');
-            
-            // Đồng bộ lại sau 500ms
-            setTimeout(updateDashboard, 500);
+            // Cập nhật ngay lập tức
+            setTimeout(updateDashboard, 300);
         } else {
             showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
         }
     } catch (error) {
-        console.error('❌ Control error:', error);
+        console.error('❌ Lỗi điều khiển:', error);
         showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
     }
 }
 
-function updateDeviceStatusLocally(device, isOn) {
-    const statusMap = {
-        'quat': { on: 'BẬT', off: 'TẮT' },
-        'den': { on: 'BẬT', off: 'TẮT' },
-        'cua_so': { on: 'MỞ', off: 'ĐÓNG' },
-        'canh_bao': { on: 'BẬT', off: 'TẮT' }
-    };
-    
-    if (statusMap[device]) {
-        const status = isOn ? statusMap[device].on : statusMap[device].off;
-        
-        // Cập nhật nút
-        const onBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'MỞ' : 'BẬT'}"]`);
-        const offBtn = document.querySelector(`[data-device="${device}"][data-action="${device === 'cua_so' ? 'ĐÓNG' : 'TẮT'}"]`);
-        
-        if (onBtn && offBtn) {
-            onBtn.classList.remove('active');
-            offBtn.classList.remove('active');
-            
-            if (isOn) {
-                onBtn.classList.add('active');
-            } else {
-                offBtn.classList.add('active');
-            }
-        }
-        
-        // Cập nhật trạng thái text
-        updateElement(`${device}-status`, status);
-    }
-}
-
 async function updateAutoMode(enabled) {
-    console.log(`🤖 Updating auto mode to: ${enabled}`);
+    console.log(`🤖 Cập nhật chế độ tự động: ${enabled}`);
     
     try {
         const response = await fetch('/update_settings', {
@@ -526,7 +538,7 @@ async function updateAutoMode(enabled) {
             showToast('❌ Lỗi', result.error || 'Không thể cập nhật', 'danger');
         }
     } catch (error) {
-        console.error('❌ Auto mode update error:', error);
+        console.error('❌ Lỗi cập nhật auto mode:', error);
         const toggle1 = document.getElementById('autoModeToggle');
         const toggle2 = document.getElementById('autoModeToggle2');
         if (toggle1) toggle1.checked = !enabled;
@@ -628,31 +640,8 @@ function showToast(title, message, type) {
     });
 }
 
-// Thêm CSS cho ESP32 status
-const style = document.createElement('style');
-style.textContent = `
-    #esp32-status {
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        z-index: 1000;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 8px 15px;
-        border-radius: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-    
-    .pulse {
-        animation: pulse 2s infinite;
-    }
-`;
-document.head.appendChild(style);
+// Force resize charts on window resize
+window.addEventListener('resize', function() {
+    if (lineChart) lineChart.resize();
+    if (barChart) barChart.resize();
+});
