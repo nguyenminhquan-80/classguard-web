@@ -35,14 +35,25 @@
             padding-bottom: 0;
         }
 
-        /* Đảm bảo chart canvas không phình to */
         .chart-container canvas {
             width: 100% !important;
             height: 300px !important;
             max-height: 300px !important;
         }
 
-        /* Hiệu ứng cửa */
+        /* HIỆU ỨNG ĐẶC BIỆT CHO CẢNH BÁO */
+        .alarm-active {
+            animation: alarmPulse 1s infinite;
+            box-shadow: 0 0 20px rgba(220, 53, 69, 0.5) !important;
+        }
+        
+        @keyframes alarmPulse {
+            0% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(220, 53, 69, 0.7); }
+            100% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.3); }
+        }
+
+        /* HIỆU ỨNG CỬA */
         .door-open {
             color: #28a745 !important;
             animation: doorOpen 0.5s ease;
@@ -63,12 +74,12 @@
             100% { transform: rotateY(0deg); }
         }
 
-        /* Animation cho quạt */
+        /* ANIMATION CHO QUẠT */
         .fa-fan.fa-spin {
             animation: fa-spin 1.5s infinite linear;
         }
 
-        /* Animation cho chuông cảnh báo */
+        /* ANIMATION CHO CHUÔNG CẢNH BÁO */
         @keyframes bell-shake {
             0% { transform: rotate(0deg); }
             25% { transform: rotate(-15deg); }
@@ -80,7 +91,7 @@
             animation: bell-shake 0.5s infinite;
         }
 
-        /* Chart toggle button */
+        /* CHART TOGGLE BUTTON */
         .form-switch .form-check-input {
             width: 50px;
             height: 26px;
@@ -96,7 +107,7 @@
             box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
         }
 
-        /* Responsive cho mobile */
+        /* RESPONSIVE CHO MOBILE */
         @media (max-width: 992px) {
             .chart-container {
                 height: 260px !important;
@@ -133,26 +144,26 @@
             }
         }
 
-        /* Đảm bảo charts section không bị phình */
+        /* ĐẢM BẢO CHARTS SECTION KHÔNG BỊ PHÌNH */
         .charts-section {
             overflow: hidden;
             padding-bottom: 10px;
         }
 
-        /* Chart labels nhỏ gọn */
+        /* CHART LABELS NHỎ GỌN */
         #chartLabel {
             font-weight: 600;
             color: #4361ee;
         }
         
-        /* Main Container */
+        /* MAIN CONTAINER */
         .main-container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
         
-        /* Header với Navigation */
+        /* HEADER VỚI NAVIGATION */
         .dashboard-header {
             background: white;
             border-radius: 15px;
@@ -189,7 +200,7 @@
             margin: 0;
         }
         
-        /* Navigation Menu */
+        /* NAVIGATION MENU */
         .nav-menu {
             display: flex;
             gap: 10px;
@@ -237,7 +248,7 @@
             border: none;
         }
         
-        /* User Info */
+        /* USER INFO */
         .user-info {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -282,7 +293,7 @@
             margin: 3px 0 0 0;
         }
         
-        /* Time Display */
+        /* TIME DISPLAY */
         .time-display {
             text-align: center;
             padding: 10px 15px;
@@ -304,7 +315,7 @@
             margin: 0;
         }
         
-        /* Sensor Cards Grid */
+        /* SENSOR CARDS GRID */
         .sensor-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -373,7 +384,7 @@
             margin-top: 10px;
         }
         
-        /* Charts Section */
+        /* CHARTS SECTION */
         .charts-section {
             background: white;
             border-radius: 15px;
@@ -396,7 +407,7 @@
             margin: 0;
         }
         
-        /* Control Panel */
+        /* CONTROL PANEL */
         .control-panel {
             background: white;
             border-radius: 15px;
@@ -482,6 +493,15 @@
             cursor: not-allowed;
         }
         
+        /* ĐẶC BIỆT: NÚT CẢNH BÁO LUÔN BẬT */
+        .alarm-btn {
+            border: 2px solid transparent;
+        }
+        
+        .alarm-btn:hover:not(:disabled) {
+            border-color: var(--danger) !important;
+        }
+        
         .btn-on {
             background: linear-gradient(135deg, var(--success) 0%, #20c997 100%);
             color: white;
@@ -523,7 +543,7 @@
             color: #6c757d;
         }
 
-        /* Auto Mode Card */
+        /* AUTO MODE CARD */
         .auto-mode-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -549,7 +569,7 @@
             margin-top: 0;
         }
         
-        /* Evaluation Section */
+        /* EVALUATION SECTION */
         .evaluation-section {
             background: white;
             border-radius: 15px;
@@ -636,7 +656,7 @@
             font-weight: 600;
         }
         
-        /* Footer */
+        /* FOOTER */
         .dashboard-footer {
             text-align: center;
             padding: 20px;
@@ -662,7 +682,7 @@
             color: var(--secondary);
         }
         
-        /* Responsive */
+        /* RESPONSIVE */
         @media (max-width: 1200px) {
             .sensor-grid {
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -712,7 +732,7 @@
             }
         }
         
-        /* Animations */
+        /* ANIMATIONS */
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -732,7 +752,7 @@
             animation: fadeIn 0.5s ease-out;
         }
         
-        /* Custom Scrollbar */
+        /* CUSTOM SCROLLBAR */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -749,39 +769,6 @@
         
         ::-webkit-scrollbar-thumb:hover {
             background: var(--secondary);
-        }
-        
-        /* Toast Notification */
-        .toast-container {
-            z-index: 9999;
-        }
-        
-        /* Connection Status */
-        .connection-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.85rem;
-        }
-        
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        
-        .status-online {
-            background-color: #28a745;
-            animation: pulse 2s infinite;
-        }
-        
-        .status-offline {
-            background-color: #dc3545;
-        }
-        
-        .status-idle {
-            background-color: #ffc107;
         }
     </style>
 </head>
@@ -858,29 +845,12 @@
         <!-- Alert Container -->
         <div id="alert-container" class="mb-3"></div>
 
-        <!-- Connection Status -->
-        <div class="alert alert-info d-flex align-items-center justify-content-between mb-3" id="connection-status">
-            <div class="d-flex align-items-center">
-                <div class="status-dot status-online me-2"></div>
-                <div>
-                    <strong>Kết nối hệ thống</strong>
-                    <div class="small" id="connection-details">
-                        <span id="device-status">{{ 'Đang kết nối ESP32' if data.device_status == 'online' else 'Sử dụng dữ liệu demo' }}</span>
-                        <span id="last-update-detail"> • Cập nhật: <span id="last-update-time">{{ data.timestamp if data.timestamp else '--:--:--' }}</span></span>
-                    </div>
-                </div>
-            </div>
-            <div class="connection-status">
-                <span id="cache-status">Đồng bộ: <span id="sync-status">Khởi tạo...</span></span>
-            </div>
-        </div>
-
-        <!-- Auto Mode Notice -->
+        <!-- Auto Mode Notice - CẬP NHẬT -->
         <div id="control-notice" class="alert alert-warning d-flex align-items-center mb-3">
             <i class="fas fa-robot me-2 fs-4"></i>
             <div>
                 <strong>Chế độ tự động đang bật</strong>
-                <div class="small">Hệ thống tự động điều chỉnh thiết bị (trừ cảnh báo)</div>
+                <div class="small">Hệ thống tự động điều chỉnh: Quạt, Đèn, Cửa sổ. Nút Cảnh báo luôn điều khiển được.</div>
             </div>
         </div>
 
@@ -903,7 +873,7 @@
                     </span>
                 </div>
                 <div class="mt-2 small text-muted">
-                    Ngưỡng: {{ settings.temp_min|round(1) }}°C - {{ settings.temp_max|round(1) }}°C
+                    Cập nhật: <span id="last-update">{{ data.timestamp if data.timestamp else '--:--:--' }}</span>
                 </div>
             </div>
 
@@ -923,9 +893,6 @@
                         {{ 'Khô' if data.do_am < 40 else 'Ẩm' if data.do_am > 70 else 'Tốt' }}
                     </span>
                 </div>
-                <div class="mt-2 small text-muted">
-                    Lý tưởng: 40% - 70%
-                </div>
             </div>
 
             <!-- Ánh sáng -->
@@ -943,9 +910,6 @@
                     <span class="sensor-status bg-{{ 'danger' if data.anh_sang < 200 else 'warning' if data.anh_sang < 300 else 'success' }} text-white">
                         {{ 'Tối' if data.anh_sang < 200 else 'Vừa' if data.anh_sang < 300 else 'Sáng' }}
                     </span>
-                </div>
-                <div class="mt-2 small text-muted">
-                    Tối thiểu: {{ settings.light_min|round }} lux
                 </div>
             </div>
 
@@ -965,9 +929,6 @@
                         {{ 'Ô nhiễm' if data.chat_luong_kk > 800 else 'Trung bình' if data.chat_luong_kk > 400 else 'Tốt' }}
                     </span>
                 </div>
-                <div class="mt-2 small text-muted">
-                    Tối đa: {{ settings.air_max }} PPM
-                </div>
             </div>
 
             <!-- Độ ồn -->
@@ -985,9 +946,6 @@
                     <span class="sensor-status bg-{{ 'danger' if data.do_on > 70 else 'warning' if data.do_on > 50 else 'success' }} text-white">
                         {{ 'Ồn' if data.do_on > 70 else 'Bình thường' if data.do_on > 50 else 'Yên tĩnh' }}
                     </span>
-                </div>
-                <div class="mt-2 small text-muted">
-                    Tối đa: {{ settings.noise_max }} dB
                 </div>
             </div>
         </div>
@@ -1047,20 +1005,21 @@
                         <div class="device-info">
                             <h5>🌀 Quạt làm mát</h5>
                             <p>Điều chỉnh nhiệt độ phòng</p>
+                            <small class="text-muted">Tự động khi nhiệt độ > {{ settings.temp_max }}°C</small>
                         </div>
                     </div>
                     
                     <div class="control-buttons">
-                        <button class="control-btn btn-on {{ 'active' if data.quat == 'BẬT' else '' }}" 
+                        <button class="control-btn btn-on" 
                                 data-device="quat" 
                                 data-action="BẬT"
-                                id="quat-on-btn">
+                                data-auto-control="true">
                             <i class="fas fa-play me-1"></i> BẬT
                         </button>
-                        <button class="control-btn btn-off {{ 'active' if data.quat == 'TẮT' else '' }}" 
+                        <button class="control-btn btn-off active" 
                                 data-device="quat" 
                                 data-action="TẮT"
-                                id="quat-off-btn">
+                                data-auto-control="true">
                             <i class="fas fa-stop me-1"></i> TẮT
                         </button>
                     </div>
@@ -1081,20 +1040,21 @@
                         <div class="device-info">
                             <h5>💡 Đèn chiếu sáng</h5>
                             <p>Điều chỉnh ánh sáng lớp học</p>
+                            <small class="text-muted">Tự động khi ánh sáng < {{ settings.light_min }} lux</small>
                         </div>
                     </div>
                     
                     <div class="control-buttons">
-                        <button class="control-btn btn-on {{ 'active' if data.den == 'BẬT' else '' }}" 
+                        <button class="control-btn btn-on active" 
                                 data-device="den" 
                                 data-action="BẬT"
-                                id="den-on-btn">
+                                data-auto-control="true">
                             <i class="fas fa-lightbulb me-1"></i> BẬT
                         </button>
-                        <button class="control-btn btn-off {{ 'active' if data.den == 'TẮT' else '' }}" 
+                        <button class="control-btn btn-off" 
                                 data-device="den" 
                                 data-action="TẮT"
-                                id="den-off-btn">
+                                data-auto-control="true">
                             <i class="fas fa-lightbulb me-1"></i> TẮT
                         </button>
                     </div>
@@ -1115,20 +1075,21 @@
                         <div class="device-info">
                             <h5>🚪 Cửa sổ</h5>
                             <p>Thông thoáng không khí</p>
+                            <small class="text-muted">Tự động khi chất lượng KK > {{ settings.air_max }} PPM</small>
                         </div>
                     </div>
                     
                     <div class="control-buttons">
-                        <button class="control-btn btn-on {{ 'active' if data.cua_so == 'MỞ' else '' }}" 
+                        <button class="control-btn btn-on" 
                                 data-device="cua_so" 
                                 data-action="MỞ"
-                                id="cua_so-on-btn">
+                                data-auto-control="true">
                             <i class="fas fa-door-open me-1"></i> MỞ
                         </button>
-                        <button class="control-btn btn-off {{ 'active' if data.cua_so == 'ĐÓNG' else '' }}" 
+                        <button class="control-btn btn-off active" 
                                 data-device="cua_so" 
                                 data-action="ĐÓNG"
-                                id="cua_so-off-btn">
+                                data-auto-control="true">
                             <i class="fas fa-door-closed me-1"></i> ĐÓNG
                         </button>
                     </div>
@@ -1140,8 +1101,8 @@
                     </div>
                 </div>
 
-                <!-- Cảnh báo -->
-                <div class="device-card">
+                <!-- Cảnh báo - THIẾT BỊ ĐẶC BIỆT -->
+                <div class="device-card" id="alarm-card">
                     <div class="device-header">
                         <div class="device-icon-wrapper">
                             <i class="fas fa-bell" id="canh_bao-icon"></i>
@@ -1149,20 +1110,21 @@
                         <div class="device-info">
                             <h5>⚠️ Hệ thống cảnh báo</h5>
                             <p>Báo động khi có vấn đề</p>
+                            <small class="text-danger fw-bold">⚠️ LUÔN ĐIỀU KHIỂN THỦ CÔNG</small>
                         </div>
                     </div>
                     
                     <div class="control-buttons">
-                        <button class="control-btn btn-on {{ 'active' if data.canh_bao == 'BẬT' else '' }}" 
+                        <button class="control-btn btn-on alarm-btn" 
                                 data-device="canh_bao" 
                                 data-action="BẬT"
-                                id="canh_bao-on-btn">
+                                data-auto-control="false">
                             <i class="fas fa-bell me-1"></i> BẬT
                         </button>
-                        <button class="control-btn btn-off {{ 'active' if data.canh_bao == 'TẮT' else '' }}" 
+                        <button class="control-btn btn-off active alarm-btn" 
                                 data-device="canh_bao" 
                                 data-action="TẮT"
-                                id="canh_bao-off-btn">
+                                data-auto-control="false">
                             <i class="fas fa-bell-slash me-1"></i> TẮT
                         </button>
                     </div>
@@ -1171,9 +1133,6 @@
                         <span class="status-badge status-{{ 'on' if data.canh_bao == 'BẬT' else 'off' }}" id="canh_bao-status">
                             {{ data.canh_bao }}
                         </span>
-                        <div class="mt-1 small text-muted">
-                            <i class="fas fa-info-circle"></i> Luôn điều khiển được
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1183,7 +1142,7 @@
                     <i class="fas fa-robot auto-mode-icon"></i>
                     <div class="flex-grow-1">
                         <h4 class="mb-1">🤖 Chế độ tự động thông minh</h4>
-                        <p class="mb-0 small opacity-90">Hệ thống tự động điều khiển thiết bị dựa trên ngưỡng cài đặt</p>
+                        <p class="mb-0 small opacity-90">Hệ thống tự động điều khiển 3 thiết bị: Quạt, Đèn, Cửa sổ. Cảnh báo luôn điều khiển thủ công.</p>
                     </div>
                     <div class="form-check form-switch form-switch-xl">
                         <input class="form-check-input" type="checkbox" id="autoModeToggle2" 
@@ -1196,29 +1155,30 @@
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">🌡️ Nhiệt độ</div>
                                 <div class="fw-bold">{{ settings.temp_min }}°C - {{ settings.temp_max }}°C</div>
+                                <small class="opacity-75">Quạt: >{{ settings.temp_max }}°C</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">☀️ Ánh sáng</div>
                                 <div class="fw-bold">{{ settings.light_min }}+ lux</div>
+                                <small class="opacity-75">Đèn: <{{ settings.light_min }} lux</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">💨 Chất lượng KK</div>
                                 <div class="fw-bold">{{ settings.air_max }} PPM</div>
+                                <small class="opacity-75">Cửa: >{{ settings.air_max }} PPM</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">🔊 Độ ồn</div>
                                 <div class="fw-bold">{{ settings.noise_max }} dB</div>
+                                <small class="opacity-75">Cảnh báo: thủ công</small>
                             </div>
                         </div>
-                    </div>
-                    <div class="mt-3 small opacity-80">
-                        <i class="fas fa-info-circle me-1"></i> Cảnh báo luôn điều khiển được bất kể chế độ
                     </div>
                 </div>
             </div>
@@ -1282,8 +1242,8 @@
                 <strong>CLASSGUARD</strong> - Hệ thống giám sát môi trường lớp học thông minh - Mã dự án: 19016
             </p>
             <p class="small text-muted mb-3">
-                <i class="fas fa-sync-alt"></i> Dữ liệu cập nhật mỗi 800ms | 
-                <i class="fas fa-shield-alt"></i> Phiên bản 4.0 | 
+                <i class="fas fa-sync-alt"></i> Dữ liệu cập nhật mỗi 5 giây | 
+                <i class="fas fa-shield-alt"></i> Phiên bản 3.0 - ĐỒNG BỘ HOÀN TOÀN | 
                 <i class="fas fa-heart text-danger"></i> Dự án Khoa học Kỹ thuật - THCS
             </p>
             <div class="footer-links">
@@ -1298,420 +1258,26 @@
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    
-    <!-- Dashboard JavaScript -->
     <script>
-        // ========== BIẾN TOÀN CỤC ==========
-        let isAutoMode = {{ 'true' if settings.auto_mode else 'false' }};
-        let syncInterval = null;
-        let updateInterval = null;
-        let lastUpdateTime = Date.now();
-        
-        // ========== KHỞI TẠO DASHBOARD ==========
-        function initDashboard() {
-            console.log('🚀 Khởi tạo CLASSGUARD Dashboard...');
-            
-            // Khởi tạo biểu đồ
-            setTimeout(initCharts, 100);
-            
-            // Đồng bộ mỗi 800ms
-            syncInterval = setInterval(syncDashboard, 800);
-            
-            // Cập nhật dữ liệu mỗi 1 giây
-            updateInterval = setInterval(updateDashboard, 1000);
-            
-            // Cập nhật thời gian
-            setInterval(updateRealTime, 1000);
-            
-            // Khởi tạo event listeners
-            initEventListeners();
-            
-            // Cập nhật UI ban đầu
-            updateAutoModeUI(isAutoMode);
-            updateControlButtonsState(!isAutoMode);
-            
-            // Hiển thị trạng thái kết nối
-            updateConnectionStatus();
-            
-            console.log('✅ Dashboard đã khởi tạo');
-        }
-        
-        // ========== ĐỒNG BỘ DASHBOARD ==========
-        async function syncDashboard() {
-            try {
-                const response = await fetch('/get_sensor_data');
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Cập nhật dữ liệu cảm biến
-                    updateSensorDisplays(data.sensors);
-                    
-                    // Cập nhật biểu đồ
-                    updateCharts(data);
-                    
-                    // Cập nhật đánh giá
-                    updateEvaluation(data.evaluation);
-                    
-                    // Cập nhật trạng thái thiết bị
-                    updateDeviceStatus(data.sensors);
-                    
-                    // Cập nhật trạng thái kết nối
-                    updateConnectionDetails(data.cache);
-                    
-                    // Cập nhật thời gian
-                    lastUpdateTime = Date.now();
-                    document.getElementById('last-update-time').textContent = 
-                        data.sensors.timestamp || '--:--:--';
-                }
-            } catch (error) {
-                console.error('❌ Lỗi đồng bộ:', error);
-                updateConnectionStatus('error');
-            }
-        }
-        
-        // ========== CẬP NHẬT DỮ LIỆU ĐẦY ĐỦ ==========
-        async function updateDashboard() {
-            try {
-                const response = await fetch('/get_sensor_data');
-                const data = await response.json();
-                
-                if (data.sensors) {
-                    // Cập nhật cài đặt
-                    if (data.settings) {
-                        isAutoMode = data.settings.auto_mode;
-                        updateAutoModeUI(isAutoMode);
-                        updateControlButtonsState(!isAutoMode);
-                    }
-                    
-                    // Cập nhật lịch sử biểu đồ
-                    if (data.history) {
-                        updateChartHistory(data.history);
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Lỗi cập nhật dashboard:', error);
-            }
-        }
-        
-        // ========== CẬP NHẬT TRẠNG THÁI KẾT NỐI ==========
-        function updateConnectionDetails(cache) {
-            if (!cache) return;
-            
-            const statusDot = document.querySelector('.status-dot');
-            const syncStatus = document.getElementById('sync-status');
-            const deviceStatus = document.getElementById('device-status');
-            
-            if (cache.status === 'connected') {
-                statusDot.className = 'status-dot status-online';
-                syncStatus.textContent = 'Đang hoạt động';
-                deviceStatus.textContent = 'Đang kết nối ESP32';
-            } else if (cache.status === 'idle') {
-                statusDot.className = 'status-dot status-idle';
-                syncStatus.textContent = 'Chờ kết nối';
-                deviceStatus.textContent = 'ESP32 không phản hồi';
-            } else {
-                statusDot.className = 'status-dot status-offline';
-                syncStatus.textContent = 'Mất kết nối';
-                deviceStatus.textContent = 'Sử dụng dữ liệu demo';
-            }
-            
-            // Cập nhật thời gian
-            const age = Math.floor(cache.last_update);
-            const now = Math.floor(Date.now() / 1000);
-            const diff = now - age;
-            
-            if (diff < 5) {
-                syncStatus.textContent = 'Đang hoạt động (vài giây trước)';
-            } else if (diff < 60) {
-                syncStatus.textContent = `Đang hoạt động (${diff} giây trước)`;
-            } else {
-                const minutes = Math.floor(diff / 60);
-                syncStatus.textContent = `Đang hoạt động (${minutes} phút trước)`;
-            }
-        }
-        
-        function updateConnectionStatus(status = 'connected') {
-            const connectionAlert = document.getElementById('connection-status');
-            
-            if (status === 'connected') {
-                connectionAlert.className = 'alert alert-info d-flex align-items-center justify-content-between mb-3';
-            } else if (status === 'error') {
-                connectionAlert.className = 'alert alert-warning d-flex align-items-center justify-content-between mb-3';
-            } else {
-                connectionAlert.className = 'alert alert-danger d-flex align-items-center justify-content-between mb-3';
-            }
-        }
-        
-        // ========== CẬP NHẬT CHẾ ĐỘ TỰ ĐỘNG ==========
-        function updateAutoModeUI(enabled) {
-            const statusElement = document.getElementById('auto-mode-status');
-            const noticeElement = document.getElementById('control-notice');
-            
-            if (statusElement) {
-                statusElement.textContent = enabled ? 'ĐANG BẬT' : 'ĐANG TẮT';
-                statusElement.className = `badge ${enabled ? 'bg-success' : 'bg-secondary'} p-2`;
-            }
-            
-            if (noticeElement) {
-                if (enabled) {
-                    noticeElement.innerHTML = `
-                        <i class="fas fa-robot me-2 fs-4"></i>
-                        <div>
-                            <strong>Chế độ tự động đang bật</strong>
-                            <div class="small">Hệ thống tự động điều chỉnh thiết bị (trừ cảnh báo)</div>
-                        </div>
-                    `;
-                    noticeElement.className = 'alert alert-warning d-flex align-items-center mb-3';
-                } else {
-                    noticeElement.innerHTML = `
-                        <i class="fas fa-check-circle text-success me-2 fs-4"></i>
-                        <div>
-                            <strong>Chế độ thủ công đang bật</strong>
-                            <div class="small">Bạn có thể điều khiển thiết bị thủ công</div>
-                        </div>
-                    `;
-                    noticeElement.className = 'alert alert-success d-flex align-items-center mb-3';
-                }
-            }
-        }
-        
-        // ========== CẬP NHẬT NÚT ĐIỀU KHIỂN ==========
-        function updateControlButtonsState(enabled) {
-            const controlButtons = document.querySelectorAll('.control-btn');
-            
-            controlButtons.forEach(btn => {
-                const device = btn.dataset.device;
-                
-                // CẢNH BÁO LUÔN ĐƯỢC ĐIỀU KHIỂN
-                if (device === 'canh_bao') {
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                    btn.style.cursor = 'pointer';
-                } else {
-                    // Các thiết bị khác phụ thuộc vào chế độ
-                    if (enabled) {
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                        btn.style.cursor = 'pointer';
-                    } else {
-                        btn.disabled = true;
-                        btn.style.opacity = '0.5';
-                        btn.style.cursor = 'not-allowed';
-                    }
-                }
-            });
-        }
-        
-        // ========== GỬI LỆNH ĐẾN ESP32 ==========
-        async function sendCommandToESP32(device, action) {
-            try {
-                const commandMap = {
-                    'quat': { 'BẬT': 'FAN_ON', 'TẮT': 'FAN_OFF' },
-                    'den': { 'BẬT': 'LIGHT_ON', 'TẮT': 'LIGHT_OFF' },
-                    'cua_so': { 'MỞ': 'WINDOW_OPEN', 'ĐÓNG': 'WINDOW_CLOSE' },
-                    'canh_bao': { 'BẬT': 'ALARM_ON', 'TẮT': 'ALARM_OFF' }
-                };
-                
-                if (device in commandMap && action in commandMap[device]) {
-                    const command = commandMap[device][action];
-                    
-                    const response = await fetch('/api/esp32/command', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            device_id: 'ESP32-S3-CLASSGUARD',
-                            command: command,
-                            value: '1'
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        console.log(`✅ Đã gửi lệnh đến ESP32: ${command}`);
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Lỗi gửi lệnh ESP32:', error);
-            }
-        }
-        
-        // ========== XỬ LÝ SỰ KIỆN ==========
-        function initEventListeners() {
-            // Nút điều khiển thiết bị
-            document.querySelectorAll('.control-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const device = this.dataset.device;
-                    const action = this.dataset.action;
-                    
-                    console.log(`🎮 Điều khiển: ${device} -> ${action}`);
-                    
-                    if (device && action) {
-                        // Kiểm tra chế độ tự động (trừ cảnh báo)
-                        if (device !== 'canh_bao' && isAutoMode) {
-                            showToast('⚠️ Cảnh báo', 
-                                'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 
-                                'warning');
-                            return;
-                        }
-                        
-                        // Gửi lệnh đến server
-                        controlDevice(device, action);
-                        
-                        // Gửi lệnh đến ESP32
-                        sendCommandToESP32(device, action);
-                    }
-                });
-            });
-            
-            // Chuyển đổi biểu đồ
-            const chartToggle = document.getElementById('chartToggle');
-            if (chartToggle) {
-                chartToggle.addEventListener('change', function() {
-                    console.log('📈 Chuyển biểu đồ:', this.checked);
-                    updateChartVisibility(this.checked);
-                });
-            }
-            
-            // Chế độ tự động (cả 2 toggle)
-            const autoModeToggle = document.getElementById('autoModeToggle');
-            const autoModeToggle2 = document.getElementById('autoModeToggle2');
-            
-            if (autoModeToggle) {
-                autoModeToggle.addEventListener('change', async function() {
-                    console.log('🤖 Thay đổi chế độ tự động:', this.checked);
-                    await updateAutoMode(this.checked);
-                    if (autoModeToggle2) autoModeToggle2.checked = this.checked;
-                });
-            }
-            
-            if (autoModeToggle2) {
-                autoModeToggle2.addEventListener('change', async function() {
-                    console.log('🤖 Thay đổi chế độ tự động (2):', this.checked);
-                    await updateAutoMode(this.checked);
-                    if (autoModeToggle) autoModeToggle.checked = this.checked;
-                });
-            }
-            
-            // Hiệu ứng hover cho sensor cards
-            document.querySelectorAll('.sensor-card').forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-8px)';
-                    this.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.15)';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(-5px)';
-                    this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.12)';
-                });
-            });
-        }
-        
-        // ========== CẬP NHẬT CHẾ ĐỘ TỰ ĐỘNG ==========
-        async function updateAutoMode(enabled) {
-            console.log(`🤖 Cập nhật chế độ tự động: ${enabled}`);
-            
-            try {
-                const response = await fetch('/update_settings', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        auto_mode: enabled
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    isAutoMode = enabled;
-                    updateAutoModeUI(enabled);
-                    updateControlButtonsState(!enabled);
-                    
-                    // Thông báo
-                    showToast('✅ Thành công', 
-                        `Chế độ tự động đã ${enabled ? 'bật' : 'tắt'}`, 
-                        'success');
-                } else {
-                    // Rollback toggle
-                    const toggle1 = document.getElementById('autoModeToggle');
-                    const toggle2 = document.getElementById('autoModeToggle2');
-                    if (toggle1) toggle1.checked = !enabled;
-                    if (toggle2) toggle2.checked = !enabled;
-                    
-                    showToast('❌ Lỗi', 
-                        result.error || 'Không thể cập nhật chế độ tự động', 
-                        'danger');
-                }
-            } catch (error) {
-                console.error('❌ Lỗi cập nhật chế độ tự động:', error);
-                
-                // Rollback toggle
-                const toggle1 = document.getElementById('autoModeToggle');
-                const toggle2 = document.getElementById('autoModeToggle2');
-                if (toggle1) toggle1.checked = !enabled;
-                if (toggle2) toggle2.checked = !enabled;
-                
-                showToast('❌ Lỗi', 
-                    'Không thể kết nối đến server', 
-                    'danger');
-            }
-        }
-        
-        // ========== HIỂN THỊ TOAST ==========
-        function showToast(title, message, type) {
-            // Tạo toast element
-            const toastId = 'toast-' + Date.now();
-            const toastHtml = `
-                <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            <strong>${title}</strong><br>
-                            <small>${message}</small>
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                    </div>
-                </div>
-            `;
-            
-            // Thêm vào DOM
-            const container = document.createElement('div');
-            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            container.innerHTML = toastHtml;
-            document.body.appendChild(container);
-            
-            // Hiển thị toast
-            const toastElement = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastElement, {
-                delay: 3000
-            });
-            toast.show();
-            
-            // Xóa sau khi ẩn
-            toastElement.addEventListener('hidden.bs.toast', function() {
-                container.remove();
-            });
-        }
-        
-        // ========== CẬP NHẬT THỜI GIAN ==========
-        function updateRealTime() {
-            const now = new Date();
-            const timeElement = document.getElementById('current-time');
-            if (timeElement) {
-                timeElement.textContent = now.toLocaleTimeString('vi-VN');
-            }
-        }
-        
-        // ========== XỬ LÝ KHI TRANG LOAD XONG ==========
+        // Khởi tạo khi trang load xong
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('📱 Dashboard đã tải xong');
+            console.log('🚀 Dashboard initialized - Phiên bản ĐỒNG BỘ');
             
-            // Khởi tạo dashboard
-            initDashboard();
+            // Sync cả hai toggle auto mode
+            const autoToggle1 = document.getElementById('autoModeToggle');
+            const autoToggle2 = document.getElementById('autoModeToggle2');
             
-            // Cập nhật score circle class
+            if (autoToggle1 && autoToggle2) {
+                autoToggle1.addEventListener('change', function() {
+                    autoToggle2.checked = this.checked;
+                });
+                
+                autoToggle2.addEventListener('change', function() {
+                    autoToggle1.checked = this.checked;
+                });
+            }
+            
+            // Update score circle class
             const scoreElement = document.getElementById('score-value');
             if (scoreElement) {
                 const scoreClass = '{{ evaluation.overall_class }}';
@@ -1724,41 +1290,25 @@
                 }
             }
             
-            // Kiểm tra và xử lý responsive
-            handleResponsive();
+            // Thêm hiệu ứng cho các sensor card
+            document.querySelectorAll('.sensor-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px)';
+                    this.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.15)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.12)';
+                });
+            });
             
-            // Thêm sự kiện resize
-            window.addEventListener('resize', handleResponsive);
-        });
-        
-        // ========== XỬ LÝ RESPONSIVE ==========
-        function handleResponsive() {
-            const width = window.innerWidth;
-            const sensorGrid = document.querySelector('.sensor-grid');
-            
-            if (width < 768) {
-                // Mobile: 1 cột
-                if (sensorGrid) {
-                    sensorGrid.style.gridTemplateColumns = '1fr';
-                }
-            } else if (width < 992) {
-                // Tablet: 2 cột
-                if (sensorGrid) {
-                    sensorGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
-                }
-            } else {
-                // Desktop: auto-fit
-                if (sensorGrid) {
-                    sensorGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(220px, 1fr))';
-                }
+            // Kiểm tra và thêm hiệu ứng cho cảnh báo nếu đang bật
+            const alarmStatus = '{{ data.canh_bao }}';
+            const alarmCard = document.getElementById('alarm-card');
+            if (alarmCard && alarmStatus === 'BẬT') {
+                alarmCard.classList.add('alarm-active');
             }
-        }
-        
-        // ========== CLEANUP KHI UNLOAD ==========
-        window.addEventListener('beforeunload', function() {
-            if (syncInterval) clearInterval(syncInterval);
-            if (updateInterval) clearInterval(updateInterval);
-            console.log('🧹 Đã dọn dẹp intervals');
         });
     </script>
 </body>
