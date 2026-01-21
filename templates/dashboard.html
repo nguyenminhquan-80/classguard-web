@@ -906,7 +906,7 @@
                 <div class="sensor-unit">PPM</div>
                 <div class="mt-3">
                     <span class="sensor-status bg-{{ 'danger' if data.chat_luong_kk > 800 else 'warning' if data.chat_luong_kk > 400 else 'success' }} text-white">
-                        {{ 'Ô nhiễm' if data.chat_luong_kk > 800 else 'Trung bình' if data.chat_luong_kk > 400 else 'Tốt' }}
+                        {{ 'Ô nhiễm' if data.chat_luong_kk > 800 else 'TB' if data.chat_luong_kk > 400 else 'Tốt' }}
                     </span>
                 </div>
             </div>
@@ -924,7 +924,7 @@
                 <div class="sensor-unit">dB</div>
                 <div class="mt-3">
                     <span class="sensor-status bg-{{ 'danger' if data.do_on > 70 else 'warning' if data.do_on > 50 else 'success' }} text-white">
-                        {{ 'Ồn' if data.do_on > 70 else 'Bình thường' if data.do_on > 50 else 'Yên tĩnh' }}
+                        {{ 'Ồn' if data.do_on > 70 else 'BT' if data.do_on > 50 else 'Yên tĩnh' }}
                     </span>
                 </div>
             </div>
@@ -1012,7 +1012,7 @@
                 <div class="device-card">
                     <div class="device-header">
                         <div class="device-icon-wrapper">
-                            <i class="fas fa-lighTrung bìnhulb" id="den-icon"></i>
+                            <i class="fas fa-lightbulb" id="den-icon"></i>
                         </div>
                         <div class="device-info">
                             <h5>💡 Đèn chiếu sáng</h5>
@@ -1024,12 +1024,12 @@
                         <button class="control-btn btn-on active" 
                                 data-device="den" 
                                 data-action="BẬT">
-                            <i class="fas fa-lighTrung bìnhulb me-1"></i> BẬT
+                            <i class="fas fa-lightbulb me-1"></i> BẬT
                         </button>
                         <button class="control-btn btn-off" 
                                 data-device="den" 
                                 data-action="TẮT">
-                            <i class="fas fa-lighTrung bìnhulb me-1"></i> TẮT
+                            <i class="fas fa-lightbulb me-1"></i> TẮT
                         </button>
                     </div>
                     
@@ -1228,8 +1228,8 @@
             console.log('🚀 Dashboard initialized');
             
             // Sync cả hai toggle auto mode
-            const autoToggle1 = document.getElemenTrung bìnhyId('autoModeToggle');
-            const autoToggle2 = document.getElemenTrung bìnhyId('autoModeToggle2');
+            const autoToggle1 = document.getElementById('autoModeToggle');
+            const autoToggle2 = document.getElementById('autoModeToggle2');
             
             if (autoToggle1 && autoToggle2) {
                 autoToggle1.addEventListener('change', function() {
@@ -1242,7 +1242,7 @@
             }
             
             // Update score circle class
-            const scoreElement = document.getElemenTrung bìnhyId('score-value');
+            const scoreElement = document.getElementById('score-value');
             if (scoreElement) {
                 const scoreClass = '{{ evaluation.overall_class }}';
                 if (scoreClass === 'success') {
@@ -1270,5 +1270,4 @@
     </script>
 </body>
 </html>
-
 
