@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateInterval: null,
         chartsInitialized: false,
         esp32Connected: false
+        isUpdatingControls: false
     };
     
     // Khởi tạo biểu đồ
@@ -352,6 +353,11 @@ function startSync() {
 // ========== ĐỒNG BỘ DASHBOARD (NHANH) ==========
 async function syncDashboard() {
     try {
+        // NẾU ĐANG UPDATE THÌ BỎ QUA
+        if (window.classguard.isUpdatingControls) {
+            return;
+        }
+        
         const response = await fetch('/get_sensor_data');
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
@@ -373,6 +379,14 @@ async function syncDashboard() {
             // Cập nhật trạng thái kết nối
             if (data.cache) {
                 updateConnectionStatus(data.cache);
+            }
+            
+            // CHỈ CẬP NHẬT AUTO MODE NẾU KHÁC
+            if (data.settings && data.settings.auto_mode !== window.classguard.isAutoMode) {
+                console.log('🔄 Phát hiện thay đổi auto_mode từ server');
+                window.classguard.isAutoMode = data.settings.auto_mode;
+                updateAutoModeUI(window.classguard.isAutoMode);
+                updateControlButtonsState(!window.classguard.isAutoMode);
             }
         }
     } catch (error) {
@@ -737,9 +751,17 @@ async function updateAutoMode(enabled) {
         const result = await response.json();
         
         if (result.success) {
-            window.classguard.isAutoMode = enabled;
-            updateAutoModeUI(enabled);
-            updateControlButtonsState(!enabled);
+            // CẬP NHẬT NGAY LẬP TỨC từ response
+            window.classguard.isAutoMode = result.auto_mode || enabled;
+            
+            // CẬP NHẬT UI NGAY
+            updateAutoModeUI(window.classguard.isAutoMode);
+            updateControlButtonsState(!window.classguard.isAutoMode);
+            
+            // THÊM DELAY trước khi sync lại
+            setTimeout(() => {
+                syncDashboard();
+            }, 300);
             
             showToast('✅ Thành công', `Chế độ tự động đã ${enabled ? 'bật' : 'tắt'}`, 'success');
         } else {
@@ -774,6 +796,11 @@ function updateAutoModeUI(enabled) {
 }
 
 function updateControlButtonsState(enabled) {
+    // KIỂM TRA NẾU ĐANG TRONG QUÁ TRÌNH UPDATE THÌ KHÔNG LÀM GÌ
+    if (window.classguard.isUpdatingControls) {
+        return;
+    }
+    
     const controlButtons = document.querySelectorAll('.control-btn');
     
     controlButtons.forEach(btn => {
@@ -797,6 +824,8 @@ function updateControlButtonsState(enabled) {
             }
         }
     });
+    
+    console.log(`🔄 Cập nhật trạng thái nút: ${enabled ? 'ENABLED' : 'DISABLED'}`);
 }
 
 // ========== CẬP NHẬT TRẠNG THÁI KẾT NỐI ==========
@@ -1099,3 +1128,4 @@ setInterval(async () => {
 }, 10000);
 
 console.log('📁 main.js đã tải hoàn tất');
+
