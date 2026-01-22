@@ -1253,6 +1253,76 @@
             {% endif %}
         </div>
 
+        <div class="control-panel fade-in">
+    <div class="section-header mb-4">
+        <h2 class="section-title">
+            <i class="fas fa-volume-up me-2"></i>Điều khiển âm thanh
+        </h2>
+    </div>
+    
+    <div class="device-grid">
+        <!-- Cảnh báo âm thanh -->
+        <div class="device-card">
+            <div class="device-header">
+                <div class="device-icon-wrapper">
+                    <i class="fas fa-bell" id="audio-alarm-icon"></i>
+                </div>
+                <div class="device-info">
+                    <h5>🔊 Hệ thống âm thanh</h5>
+                    <p>Bật/Tắt cảnh báo âm thanh</p>
+                </div>
+            </div>
+            
+            <div class="control-buttons">
+                <button class="control-btn btn-on" 
+                        data-device="audio_enabled" 
+                        data-action="BẬT">
+                    <i class="fas fa-volume-up me-1"></i> BẬT ÂM THANH
+                </button>
+                <button class="control-btn btn-off active" 
+                        data-device="audio_enabled" 
+                        data-action="TẮT">
+                    <i class="fas fa-volume-mute me-1"></i> TẮT ÂM THANH
+                </button>
+            </div>
+            
+            <div class="device-status">
+                <span class="status-badge status-off" id="audio-alarm-status">
+                    TẮT
+                </span>
+            </div>
+        </div>
+
+        <!-- Phát âm thanh thử -->
+        <div class="device-card">
+            <div class="device-header">
+                <div class="device-icon-wrapper">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                <div class="device-info">
+                    <h5>🎵 Phát âm thanh thử</h5>
+                    <p>Kiểm tra hệ thống âm thanh</p>
+                </div>
+            </div>
+            
+            <div class="control-buttons">
+                <button class="control-btn btn-success" onclick="playTestAudio('01.mp3')">
+                    <i class="fas fa-play me-1"></i> File 01
+                </button>
+                <button class="control-btn btn-warning" onclick="playTestAudio('02.mp3')">
+                    <i class="fas fa-play me-1"></i> File 02
+                </button>
+            </div>
+            
+            <div class="device-status">
+                <span class="status-badge status-off" id="test-audio-status">
+                    SẴN SÀNG
+                </span>
+            </div>
+        </div>
+    </div>
+</div>                    
+                            
         <!-- Evaluation Section -->
         <div class="evaluation-section fade-in">
             <div class="evaluation-header">
@@ -2021,5 +2091,6 @@
 </script>
 </body>
 </html>
+
 
 
