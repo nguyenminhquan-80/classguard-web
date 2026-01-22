@@ -832,15 +832,16 @@
         <!-- Alert Container -->
         <div id="alert-container" class="mb-3"></div>
 
-        <!-- Auto Mode Notice -->
-        <div id="control-notice" class="alert alert-warning d-flex align-items-center mb-3">
-            <i class="fas fa-robot me-2 fs-4"></i>
-            <div>
-                <strong>Chế độ tự động đang bật</strong>
-                <div class="small">Hệ thống sẽ tự động điều chỉnh thiết bị dựa trên ngưỡng cài đặt</div>
-            </div>
+        <!-- Thông báo chế độ -->
+    <div id="control-notice" class="alert {{ 'alert-warning' if settings.auto_mode else 'alert-success' }} d-flex align-items-center mb-3">
+        <i class="fas {{ 'fa-robot' if settings.auto_mode else 'fa-hand-point-up' }} me-2 fs-4"></i>
+        <div>
+            <strong>{{ 'Chế độ tự động đang bật' if settings.auto_mode else 'Chế độ thủ công đang bật' }}</strong>
+            <div class="small">{{ 'Hệ thống tự động điều chỉnh thiết bị. Chỉ có thể điều khiển cảnh báo.' if settings.auto_mode else 'Bạn có thể điều khiển tất cả thiết bị thủ công.' }}</div>
         </div>
-
+    </div>
+    {% endif %}
+</div>
         <!-- Sensor Cards -->
         <div class="sensor-grid fade-in">
             <!-- Nhiệt độ -->
@@ -962,156 +963,169 @@
         </div>
 
         <!-- Control Panel -->
-        <div class="control-panel fade-in">
-            <div class="section-header mb-4">
-                <h2 class="section-title">
-                    <i class="fas fa-gamepad me-2"></i>Điều khiển thiết bị
-                </h2>
-                <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-{{ 'success' if settings.auto_mode else 'secondary' }} p-2" id="auto-mode-status">
-                        {{ 'ĐANG BẬT' if settings.auto_mode else 'ĐANG TẮT' }}
-                    </span>
-                    <div class="form-check form-switch form-switch-xl">
-                        <input class="form-check-input" type="checkbox" id="autoModeToggle" 
-                               {% if settings.auto_mode %}checked{% endif %}>
-                        <label class="form-check-label fw-bold" for="autoModeToggle">
-                            Chế độ tự động
-                        </label>
-                    </div>
+     <!-- Control Panel - Đảm bảo cảnh báo luôn hoạt động -->
+<div class="control-panel fade-in">
+    <div class="section-header mb-4">
+        <h2 class="section-title">
+            <i class="fas fa-gamepad me-2"></i>Điều khiển thiết bị
+        </h2>
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-{{ 'success' if settings.auto_mode else 'secondary' }} p-2" id="auto-mode-status">
+                {{ 'ĐANG BẬT' if settings.auto_mode else 'ĐANG TẮT' }}
+            </span>
+            <div class="form-check form-switch form-switch-xl">
+                <input class="form-check-input" type="checkbox" id="autoModeToggle" 
+                       {% if settings.auto_mode %}checked{% endif %}>
+                <label class="form-check-label fw-bold" for="autoModeToggle">
+                    Chế độ tự động
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    {% if role in ['admin', 'teacher'] %}
+    <div class="device-grid">
+        <!-- Quạt -->
+        <div class="device-card">
+            <div class="device-header">
+                <div class="device-icon-wrapper">
+                    <i class="fas fa-fan" id="quat-icon"></i>
+                </div>
+                <div class="device-info">
+                    <h5>🌀 Quạt làm mát</h5>
+                    <p>Điều chỉnh nhiệt độ phòng</p>
                 </div>
             </div>
             
-            {% if role in ['admin', 'teacher'] %}
-            <div class="device-grid">
-                <!-- Quạt -->
-                <div class="device-card">
-                    <div class="device-header">
-                        <div class="device-icon-wrapper">
-                            <i class="fas fa-fan" id="quat-icon"></i>
-                        </div>
-                        <div class="device-info">
-                            <h5>🌀 Quạt làm mát</h5>
-                            <p>Điều chỉnh nhiệt độ phòng</p>
-                        </div>
-                    </div>
-                    
-                    <div class="control-buttons">
-                        <button class="control-btn btn-on" 
-                                data-device="quat" 
-                                data-action="BẬT">
-                            <i class="fas fa-play me-1"></i> BẬT
-                        </button>
-                        <button class="control-btn btn-off active" 
-                                data-device="quat" 
-                                data-action="TẮT">
-                            <i class="fas fa-stop me-1"></i> TẮT
-                        </button>
-                    </div>
-                    
-                    <div class="device-status">
-                        <span class="status-badge status-{{ 'on' if data.quat == 'BẬT' else 'off' }}" id="quat-status">
-                            {{ data.quat }}
-                        </span>
-                    </div>
-                </div>
+            <div class="control-buttons">
+                <button class="control-btn btn-on {{ 'active' if data.quat == 'BẬT' else '' }}" 
+                        data-device="quat" 
+                        data-action="BẬT">
+                    <i class="fas fa-play me-1"></i> BẬT
+                </button>
+                <button class="control-btn btn-off {{ 'active' if data.quat == 'TẮT' else '' }}" 
+                        data-device="quat" 
+                        data-action="TẮT">
+                    <i class="fas fa-stop me-1"></i> TẮT
+                </button>
+            </div>
+            
+            <div class="device-status">
+                <span class="status-badge status-{{ 'on' if data.quat == 'BẬT' else 'off' }}" id="quat-status">
+                    {{ data.quat }}
+                </span>
+            </div>
+        </div>
 
-                <!-- Đèn -->
-                <div class="device-card">
-                    <div class="device-header">
-                        <div class="device-icon-wrapper">
-                            <i class="fas fa-lightbulb" id="den-icon"></i>
-                        </div>
-                        <div class="device-info">
-                            <h5>💡 Đèn chiếu sáng</h5>
-                            <p>Điều chỉnh ánh sáng lớp học</p>
-                        </div>
-                    </div>
-                    
-                    <div class="control-buttons">
-                        <button class="control-btn btn-on active" 
-                                data-device="den" 
-                                data-action="BẬT">
-                            <i class="fas fa-lightbulb me-1"></i> BẬT
-                        </button>
-                        <button class="control-btn btn-off" 
-                                data-device="den" 
-                                data-action="TẮT">
-                            <i class="fas fa-lightbulb me-1"></i> TẮT
-                        </button>
-                    </div>
-                    
-                    <div class="device-status">
-                        <span class="status-badge status-{{ 'on' if data.den == 'BẬT' else 'off' }}" id="den-status">
-                            {{ data.den }}
-                        </span>
-                    </div>
+        <!-- Đèn -->
+        <div class="device-card">
+            <div class="device-header">
+                <div class="device-icon-wrapper">
+                    <i class="fas fa-lightbulb" id="den-icon"></i>
                 </div>
-
-                <!-- Cửa sổ -->
-                <div class="device-card">
-                    <div class="device-header">
-                        <div class="device-icon-wrapper">
-                            <i class="fas fa-door-closed" id="cua_so-icon"></i>
-                        </div>
-                        <div class="device-info">
-                            <h5>🚪 Cửa sổ</h5>
-                            <p>Thông thoáng không khí</p>
-                        </div>
-                    </div>
-                    
-                    <div class="control-buttons">
-                        <button class="control-btn btn-on" 
-                                data-device="cua_so" 
-                                data-action="MỞ">
-                            <i class="fas fa-door-open me-1"></i> MỞ
-                        </button>
-                        <button class="control-btn btn-off active" 
-                                data-device="cua_so" 
-                                data-action="ĐÓNG">
-                            <i class="fas fa-door-closed me-1"></i> ĐÓNG
-                        </button>
-                    </div>
-                    
-                    <div class="device-status">
-                        <span class="status-badge status-{{ 'on' if data.cua_so == 'MỞ' else 'off' }}" id="cua_so-status">
-                            {{ data.cua_so }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Cảnh báo -->
-                <div class="device-card">
-                    <div class="device-header">
-                        <div class="device-icon-wrapper">
-                            <i class="fas fa-bell" id="canh_bao-icon"></i>
-                        </div>
-                        <div class="device-info">
-                            <h5>⚠️ Hệ thống cảnh báo</h5>
-                            <p>Báo động khi có vấn đề</p>
-                        </div>
-                    </div>
-                    
-                    <div class="control-buttons">
-                        <button class="control-btn btn-on" 
-                                data-device="canh_bao" 
-                                data-action="BẬT">
-                            <i class="fas fa-bell me-1"></i> BẬT
-                        </button>
-                        <button class="control-btn btn-off active" 
-                                data-device="canh_bao" 
-                                data-action="TẮT">
-                            <i class="fas fa-bell-slash me-1"></i> TẮT
-                        </button>
-                    </div>
-                    
-                    <div class="device-status">
-                        <span class="status-badge status-{{ 'on' if data.canh_bao == 'BẬT' else 'off' }}" id="canh_bao-status">
-                            {{ data.canh_bao }}
-                        </span>
-                    </div>
+                <div class="device-info">
+                    <h5>💡 Đèn chiếu sáng</h5>
+                    <p>Điều chỉnh ánh sáng lớp học</p>
                 </div>
             </div>
             
+            <div class="control-buttons">
+                <button class="control-btn btn-on {{ 'active' if data.den == 'BẬT' else '' }}" 
+                        data-device="den" 
+                        data-action="BẬT">
+                    <i class="fas fa-lightbulb me-1"></i> BẬT
+                </button>
+                <button class="control-btn btn-off {{ 'active' if data.den == 'TẮT' else '' }}" 
+                        data-device="den" 
+                        data-action="TẮT">
+                    <i class="fas fa-lightbulb me-1"></i> TẮT
+                </button>
+            </div>
+            
+            <div class="device-status">
+                <span class="status-badge status-{{ 'on' if data.den == 'BẬT' else 'off' }}" id="den-status">
+                    {{ data.den }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Cửa sổ -->
+        <div class="device-card">
+            <div class="device-header">
+                <div class="device-icon-wrapper">
+                    <i class="fas fa-door-closed" id="cua_so-icon"></i>
+                </div>
+                <div class="device-info">
+                    <h5>🚪 Cửa sổ</h5>
+                    <p>Thông thoáng không khí</p>
+                </div>
+            </div>
+            
+            <div class="control-buttons">
+                <button class="control-btn btn-on {{ 'active' if data.cua_so == 'MỞ' else '' }}" 
+                        data-device="cua_so" 
+                        data-action="MỞ">
+                    <i class="fas fa-door-open me-1"></i> MỞ
+                </button>
+                <button class="control-btn btn-off {{ 'active' if data.cua_so == 'ĐÓNG' else '' }}" 
+                        data-device="cua_so" 
+                        data-action="ĐÓNG">
+                    <i class="fas fa-door-closed me-1"></i> ĐÓNG
+                </button>
+            </div>
+            
+            <div class="device-status">
+                <span class="status-badge status-{{ 'on' if data.cua_so == 'MỞ' else 'off' }}" id="cua_so-status">
+                    {{ data.cua_so }}
+                </span>
+            </div>
+        </div>
+
+        <!-- CẢNH BÁO - LUÔN HOẠT ĐỘNG -->
+        <div class="device-card" style="border: 2px solid #dc3545;">
+            <div class="device-header">
+                <div class="device-icon-wrapper" style="background: rgba(220, 53, 69, 0.1);">
+                    <i class="fas fa-bell text-danger" id="canh_bao-icon"></i>
+                </div>
+                <div class="device-info">
+                    <h5 class="text-danger">⚠️ Hệ thống cảnh báo</h5>
+                    <p><strong class="text-danger">LUÔN điều khiển được</strong></p>
+                </div>
+            </div>
+            
+            <div class="control-buttons">
+                <button class="control-btn btn-on {{ 'active' if data.canh_bao == 'BẬT' else '' }}" 
+                        data-device="canh_bao" 
+                        data-action="BẬT"
+                        style="border: 2px solid #dc3545;">
+                    <i class="fas fa-bell me-1"></i> BẬT
+                </button>
+                <button class="control-btn btn-off {{ 'active' if data.canh_bao == 'TẮT' else '' }}" 
+                        data-device="canh_bao" 
+                        data-action="TẮT"
+                        style="border: 2px solid #6c757d;">
+                    <i class="fas fa-bell-slash me-1"></i> TẮT
+                </button>
+            </div>
+            
+            <div class="device-status">
+                <span class="status-badge {{ 'bg-danger' if data.canh_bao == 'BẬT' else 'bg-secondary' }} text-white" id="canh_bao-status">
+                    {{ data.canh_bao }}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Thông báo chế độ -->
+    <div id="control-notice" class="alert {{ 'alert-warning' if settings.auto_mode else 'alert-success' }} d-flex align-items-center mb-3">
+        <i class="fas {{ 'fa-robot' if settings.auto_mode else 'fa-hand-point-up' }} me-2 fs-4"></i>
+        <div>
+            <strong>{{ 'Chế độ tự động đang bật' if settings.auto_mode else 'Chế độ thủ công đang bật' }}</strong>
+            <div class="small">{{ 'Hệ thống tự động điều chỉnh thiết bị. Chỉ có thể điều khiển cảnh báo.' if settings.auto_mode else 'Bạn có thể điều khiển tất cả thiết bị thủ công.' }}</div>
+        </div>
+    </div>
+    {% endif %}
+</div>            
             <div class="auto-mode-card mt-4">
                 <div class="auto-mode-header">
                     <i class="fas fa-robot auto-mode-icon"></i>
@@ -1278,5 +1292,6 @@
     </script>
 </body>
 </html>
+
 
 
