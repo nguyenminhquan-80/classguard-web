@@ -48,7 +48,7 @@ system_settings = {
     'temp_max': 28,
     'light_min': 300,
     'noise_max': 70,
-    'air_max': 800
+    'air_max': 800,
     'audio_enabled': True
 }
 
@@ -550,3 +550,4 @@ def update_history():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
