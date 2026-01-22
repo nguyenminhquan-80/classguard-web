@@ -6,7 +6,7 @@
     <title>CLASSGUARD - Bảng điều khiển</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -35,6 +35,7 @@
             padding-bottom: 0;
         }
 
+        /* Đảm bảo chart canvas không phình to */
         .chart-container canvas {
             width: 100% !important;
             height: 300px !important;
@@ -79,92 +80,71 @@
             animation: bell-shake 0.5s infinite;
         }
 
-        /* Connection status */
-        .connection-badge {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s ease;
+        /* Chart toggle button */
+        .form-switch .form-check-input {
+            width: 50px;
+            height: 26px;
+            cursor: pointer;
         }
 
-        .connected {
-            background: rgba(40, 167, 69, 0.15);
-            color: var(--success);
-            border: 2px solid var(--success);
+        .form-switch .form-check-input:checked {
+            background-color: #4361ee;
+            border-color: #4361ee;
         }
 
-        .disconnected {
-            background: rgba(220, 53, 69, 0.15);
-            color: var(--danger);
-            border: 2px solid var(--danger);
+        .form-switch .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
         }
 
-        .connecting {
-            background: rgba(255, 193, 7, 0.15);
-            color: var(--warning);
-            border: 2px solid var(--warning);
-        }
-
-        /* Toast notifications */
-        .toast-container {
-            z-index: 9999;
-        }
-
-        /* Real-time indicator */
-        .real-time-indicator {
-            position: relative;
-            padding-left: 20px;
-        }
-        
-        .real-time-indicator::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: #28a745;
-            animation: pulse 2s infinite;
-        }
-        
-        .real-time-indicator.offline::before {
-            background-color: #dc3545;
-            animation: none;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-        }
-
-        /* Responsive */
+        /* Responsive cho mobile */
         @media (max-width: 992px) {
             .chart-container {
                 height: 260px !important;
+                min-height: 260px !important;
+                max-height: 260px !important;
             }
             
             .chart-container canvas {
                 height: 260px !important;
+                max-height: 260px !important;
             }
         }
 
         @media (max-width: 768px) {
             .chart-container {
                 height: 240px !important;
+                min-height: 240px !important;
+                max-height: 240px !important;
             }
             
             .chart-container canvas {
                 height: 240px !important;
+                max-height: 240px !important;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 10px;
+            }
+            
+            .section-header h2 {
+                margin-bottom: 0;
             }
         }
 
+        /* Đảm bảo charts section không bị phình */
+        .charts-section {
+            overflow: hidden;
+            padding-bottom: 10px;
+        }
+
+        /* Chart labels nhỏ gọn */
+        #chartLabel {
+            font-weight: 600;
+            color: #4361ee;
+        }
+        
         /* Main Container */
         .main-container {
             max-width: 1400px;
@@ -172,7 +152,7 @@
             padding: 20px;
         }
         
-        /* Header */
+        /* Header với Navigation */
         .dashboard-header {
             background: white;
             border-radius: 15px;
@@ -209,7 +189,7 @@
             margin: 0;
         }
         
-        /* Navigation */
+        /* Navigation Menu */
         .nav-menu {
             display: flex;
             gap: 10px;
@@ -324,7 +304,7 @@
             margin: 0;
         }
         
-        /* Sensor Cards */
+        /* Sensor Cards Grid */
         .sensor-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -682,13 +662,6 @@
             color: var(--secondary);
         }
         
-        /* Alert styles */
-        .alert-custom {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
         /* Responsive */
         @media (max-width: 1200px) {
             .sensor-grid {
@@ -777,43 +750,9 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--secondary);
         }
-        
-        /* Loading overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            display: none;
-        }
-        
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-    </div>
-
     <div class="main-container">
         <!-- Header với Navigation -->
         <div class="dashboard-header d-flex justify-content-between align-items-center flex-wrap gap-3">
@@ -842,7 +781,7 @@
                 {% endif %}
                 
                 {% if role == 'admin' %}
-                <a href="/settings_page" class="nav-btn nav-btn-warning">
+                <a href="/settings" class="nav-btn nav-btn-warning">
                     <i class="fas fa-cog"></i>
                     <span>Cài đặt</span>
                 </a>
@@ -857,21 +796,7 @@
             <div class="d-flex align-items-center gap-3">
                 <div class="time-display">
                     <p class="current-time" id="current-time">--:--:--</p>
-                    <p class="time-label">
-                        <span class="real-time-indicator" id="realtime-indicator">Thời gian thực</span>
-                    </p>
-                </div>
-
-            <div class="connection-status ms-3">
-    <span class="badge bg-{{ 'success' if esp32_data['connected'] else 'danger' }} p-2" id="esp32-status">
-        <i class="fas fa-microchip me-1"></i>
-        ESP32: {{ 'Đã kết nối' if esp32_data['connected'] else 'Mất kết nối' }}
-    </span>
-</div>                
-                <!-- Trạng thái kết nối ESP32 -->
-                <div class="connection-badge" id="esp32-status-badge">
-                    <i class="fas fa-microchip" id="esp32-icon"></i>
-                    <span id="esp32-status-text">Đang kết nối...</span>
+                    <p class="time-label">Thời gian hiện tại</p>
                 </div>
                 
                 <div class="user-info">
@@ -901,7 +826,7 @@
         <div id="alert-container" class="mb-3"></div>
 
         <!-- Auto Mode Notice -->
-        <div id="control-notice" class="alert alert-custom alert-warning d-flex align-items-center mb-3">
+        <div id="control-notice" class="alert alert-warning d-flex align-items-center mb-3">
             <i class="fas fa-robot me-2 fs-4"></i>
             <div>
                 <strong>Chế độ tự động đang bật</strong>
@@ -923,13 +848,12 @@
                 <div class="sensor-value text-warning" id="temp-value">{{ data.nhiet_do|round(1) }}</div>
                 <div class="sensor-unit">°C</div>
                 <div class="mt-3">
-                    <span class="sensor-status bg-{{ 'danger' if data.nhiet_do > 32 else 'warning' if data.nhiet_do > 28 else 'success' }} text-white" id="temp-status">
+                    <span class="sensor-status bg-{{ 'danger' if data.nhiet_do > 32 else 'warning' if data.nhiet_do > 28 else 'success' }} text-white">
                         {{ 'Nóng' if data.nhiet_do > 32 else 'Ấm' if data.nhiet_do > 28 else 'Tốt' }}
                     </span>
                 </div>
                 <div class="mt-2 small text-muted">
-                    <i class="fas fa-sync-alt me-1"></i>
-                    Cập nhật: <span id="last-update">{{ data.timestamp }}</span>
+                    Cập nhật: <span id="last-update">--:--:--</span>
                 </div>
             </div>
 
@@ -945,7 +869,7 @@
                 <div class="sensor-value text-info" id="hum-value">{{ data.do_am|round(1) }}</div>
                 <div class="sensor-unit">%</div>
                 <div class="mt-3">
-                    <span class="sensor-status bg-{{ 'warning' if data.do_am < 40 or data.do_am > 70 else 'success' }} text-white" id="hum-status">
+                    <span class="sensor-status bg-{{ 'warning' if data.do_am < 40 or data.do_am > 70 else 'success' }} text-white">
                         {{ 'Khô' if data.do_am < 40 else 'Ẩm' if data.do_am > 70 else 'Tốt' }}
                     </span>
                 </div>
@@ -963,7 +887,7 @@
                 <div class="sensor-value text-warning" id="light-value">{{ data.anh_sang|round }}</div>
                 <div class="sensor-unit">lux</div>
                 <div class="mt-3">
-                    <span class="sensor-status bg-{{ 'danger' if data.anh_sang < 200 else 'warning' if data.anh_sang < 300 else 'success' }} text-white" id="light-status">
+                    <span class="sensor-status bg-{{ 'danger' if data.anh_sang < 200 else 'warning' if data.anh_sang < 300 else 'success' }} text-white">
                         {{ 'Tối' if data.anh_sang < 200 else 'Vừa' if data.anh_sang < 300 else 'Sáng' }}
                     </span>
                 </div>
@@ -981,7 +905,7 @@
                 <div class="sensor-value text-success" id="air-value">{{ data.chat_luong_kk|round }}</div>
                 <div class="sensor-unit">PPM</div>
                 <div class="mt-3">
-                    <span class="sensor-status bg-{{ 'danger' if data.chat_luong_kk > 800 else 'warning' if data.chat_luong_kk > 400 else 'success' }} text-white" id="air-status">
+                    <span class="sensor-status bg-{{ 'danger' if data.chat_luong_kk > 800 else 'warning' if data.chat_luong_kk > 400 else 'success' }} text-white">
                         {{ 'Ô nhiễm' if data.chat_luong_kk > 800 else 'TB' if data.chat_luong_kk > 400 else 'Tốt' }}
                     </span>
                 </div>
@@ -999,7 +923,7 @@
                 <div class="sensor-value text-danger" id="noise-value">{{ data.do_on|round }}</div>
                 <div class="sensor-unit">dB</div>
                 <div class="mt-3">
-                    <span class="sensor-status bg-{{ 'danger' if data.do_on > 70 else 'warning' if data.do_on > 50 else 'success' }} text-white" id="noise-status">
+                    <span class="sensor-status bg-{{ 'danger' if data.do_on > 70 else 'warning' if data.do_on > 50 else 'success' }} text-white">
                         {{ 'Ồn' if data.do_on > 70 else 'BT' if data.do_on > 50 else 'Yên tĩnh' }}
                     </span>
                 </div>
@@ -1012,16 +936,11 @@
                 <h2 class="section-title">
                     <i class="fas fa-chart-line me-2"></i>Biểu đồ dữ liệu
                 </h2>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="chartToggle" style="width: 60px; height: 30px;">
-                        <label class="form-check-label fw-bold" for="chartToggle">
-                            <span id="chartLabel">Biểu đồ đường</span>
-                        </label>
-                    </div>
-                    <button class="btn btn-sm btn-outline-primary" id="refreshCharts">
-                        <i class="fas fa-redo"></i> Làm mới
-                    </button>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="chartToggle" style="width: 60px; height: 30px;">
+                    <label class="form-check-label fw-bold" for="chartToggle">
+                        <span id="chartLabel">Biểu đồ đường</span>
+                    </label>
                 </div>
             </div>
             
@@ -1070,18 +989,14 @@
                     </div>
                     
                     <div class="control-buttons">
-                        <button class="control-btn btn-on {{ 'active' if data.quat == 'BẬT' else '' }}" 
+                        <button class="control-btn btn-on" 
                                 data-device="quat" 
-                                data-action="BẬT"
-                                id="quat-on-btn"
-                                {% if settings.auto_mode %}disabled{% endif %}>
+                                data-action="BẬT">
                             <i class="fas fa-play me-1"></i> BẬT
                         </button>
-                        <button class="control-btn btn-off {{ 'active' if data.quat == 'TẮT' else '' }}" 
+                        <button class="control-btn btn-off active" 
                                 data-device="quat" 
-                                data-action="TẮT"
-                                id="quat-off-btn"
-                                {% if settings.auto_mode %}disabled{% endif %}>
+                                data-action="TẮT">
                             <i class="fas fa-stop me-1"></i> TẮT
                         </button>
                     </div>
@@ -1106,18 +1021,14 @@
                     </div>
                     
                     <div class="control-buttons">
-                        <button class="control-btn btn-on {{ 'active' if data.den == 'BẬT' else '' }}" 
+                        <button class="control-btn btn-on active" 
                                 data-device="den" 
-                                data-action="BẬT"
-                                id="den-on-btn"
-                                {% if settings.auto_mode %}disabled{% endif %}>
+                                data-action="BẬT">
                             <i class="fas fa-lightbulb me-1"></i> BẬT
                         </button>
-                        <button class="control-btn btn-off {{ 'active' if data.den == 'TẮT' else '' }}" 
+                        <button class="control-btn btn-off" 
                                 data-device="den" 
-                                data-action="TẮT"
-                                id="den-off-btn"
-                                {% if settings.auto_mode %}disabled{% endif %}>
+                                data-action="TẮT">
                             <i class="fas fa-lightbulb me-1"></i> TẮT
                         </button>
                     </div>
@@ -1142,18 +1053,14 @@
                     </div>
                     
                     <div class="control-buttons">
-                        <button class="control-btn btn-on {{ 'active' if data.cua_so == 'MỞ' else '' }}" 
+                        <button class="control-btn btn-on" 
                                 data-device="cua_so" 
-                                data-action="MỞ"
-                                id="cua_so-on-btn"
-                                {% if settings.auto_mode %}disabled{% endif %}>
+                                data-action="MỞ">
                             <i class="fas fa-door-open me-1"></i> MỞ
                         </button>
-                        <button class="control-btn btn-off {{ 'active' if data.cua_so == 'ĐÓNG' else '' }}" 
+                        <button class="control-btn btn-off active" 
                                 data-device="cua_so" 
-                                data-action="ĐÓNG"
-                                id="cua_so-off-btn"
-                                {% if settings.auto_mode %}disabled{% endif %}>
+                                data-action="ĐÓNG">
                             <i class="fas fa-door-closed me-1"></i> ĐÓNG
                         </button>
                     </div>
@@ -1165,7 +1072,7 @@
                     </div>
                 </div>
 
-                <!-- Cảnh báo (LUÔN ĐƯỢC ĐIỀU KHIỂN THỦ CÔNG) -->
+                <!-- Cảnh báo -->
                 <div class="device-card">
                     <div class="device-header">
                         <div class="device-icon-wrapper">
@@ -1178,16 +1085,14 @@
                     </div>
                     
                     <div class="control-buttons">
-                        <button class="control-btn btn-on {{ 'active' if data.canh_bao == 'BẬT' else '' }}" 
+                        <button class="control-btn btn-on" 
                                 data-device="canh_bao" 
-                                data-action="BẬT"
-                                id="canh_bao-on-btn">
+                                data-action="BẬT">
                             <i class="fas fa-bell me-1"></i> BẬT
                         </button>
-                        <button class="control-btn btn-off {{ 'active' if data.canh_bao == 'TẮT' else '' }}" 
+                        <button class="control-btn btn-off active" 
                                 data-device="canh_bao" 
-                                data-action="TẮT"
-                                id="canh_bao-off-btn">
+                                data-action="TẮT">
                             <i class="fas fa-bell-slash me-1"></i> TẮT
                         </button>
                     </div>
@@ -1217,25 +1122,25 @@
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">🌡️ Nhiệt độ</div>
-                                <div class="fw-bold" id="temp-threshold">{{ settings.temp_min }}°C - {{ settings.temp_max }}°C</div>
+                                <div class="fw-bold">{{ settings.temp_min }}°C - {{ settings.temp_max }}°C</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">☀️ Ánh sáng</div>
-                                <div class="fw-bold" id="light-threshold">{{ settings.light_min }}+ lux</div>
+                                <div class="fw-bold">{{ settings.light_min }}+ lux</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">💨 Chất lượng KK</div>
-                                <div class="fw-bold" id="air-threshold">{{ settings.air_max }} PPM</div>
+                                <div class="fw-bold">{{ settings.air_max }} PPM</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-2 bg-white bg-opacity-10 rounded">
                                 <div class="small">🔊 Độ ồn</div>
-                                <div class="fw-bold" id="noise-threshold">{{ settings.noise_max }} dB</div>
+                                <div class="fw-bold">{{ settings.noise_max }} dB</div>
                             </div>
                         </div>
                     </div>
@@ -1253,76 +1158,6 @@
             {% endif %}
         </div>
 
-        <div class="control-panel fade-in">
-    <div class="section-header mb-4">
-        <h2 class="section-title">
-            <i class="fas fa-volume-up me-2"></i>Điều khiển âm thanh
-        </h2>
-    </div>
-    
-    <div class="device-grid">
-        <!-- Cảnh báo âm thanh -->
-        <div class="device-card">
-            <div class="device-header">
-                <div class="device-icon-wrapper">
-                    <i class="fas fa-bell" id="audio-alarm-icon"></i>
-                </div>
-                <div class="device-info">
-                    <h5>🔊 Hệ thống âm thanh</h5>
-                    <p>Bật/Tắt cảnh báo âm thanh</p>
-                </div>
-            </div>
-            
-            <div class="control-buttons">
-                <button class="control-btn btn-on" 
-                        data-device="audio_enabled" 
-                        data-action="BẬT">
-                    <i class="fas fa-volume-up me-1"></i> BẬT ÂM THANH
-                </button>
-                <button class="control-btn btn-off active" 
-                        data-device="audio_enabled" 
-                        data-action="TẮT">
-                    <i class="fas fa-volume-mute me-1"></i> TẮT ÂM THANH
-                </button>
-            </div>
-            
-            <div class="device-status">
-                <span class="status-badge status-off" id="audio-alarm-status">
-                    TẮT
-                </span>
-            </div>
-        </div>
-
-        <!-- Phát âm thanh thử -->
-        <div class="device-card">
-            <div class="device-header">
-                <div class="device-icon-wrapper">
-                    <i class="fas fa-play-circle"></i>
-                </div>
-                <div class="device-info">
-                    <h5>🎵 Phát âm thanh thử</h5>
-                    <p>Kiểm tra hệ thống âm thanh</p>
-                </div>
-            </div>
-            
-            <div class="control-buttons">
-                <button class="control-btn btn-success" onclick="playTestAudio('01.mp3')">
-                    <i class="fas fa-play me-1"></i> File 01
-                </button>
-                <button class="control-btn btn-warning" onclick="playTestAudio('02.mp3')">
-                    <i class="fas fa-play me-1"></i> File 02
-                </button>
-            </div>
-            
-            <div class="device-status">
-                <span class="status-badge status-off" id="test-audio-status">
-                    SẴN SÀNG
-                </span>
-            </div>
-        </div>
-    </div>
-</div>                    
-                            
         <!-- Evaluation Section -->
         <div class="evaluation-section fade-in">
             <div class="evaluation-header">
@@ -1346,7 +1181,7 @@
                 </div>
             </div>
             
-            <div class="alert alert-custom alert-{{ evaluation.overall_class }} d-flex align-items-center mt-4">
+            <div class="alert alert-{{ evaluation.overall_class }} d-flex align-items-center mt-4">
                 <i class="fas fa-comment-medical fs-4 me-3"></i>
                 <div>
                     <h5 class="mb-1">Khuyến nghị</h5>
@@ -1371,8 +1206,8 @@
                 <strong>CLASSGUARD</strong> - Hệ thống giám sát môi trường lớp học thông minh - Mã dự án: 19016
             </p>
             <p class="small text-muted mb-3">
-                <i class="fas fa-sync-alt"></i> Dữ liệu cập nhật thời gian thực | 
-                <i class="fas fa-shield-alt"></i> Phiên bản 4.0 | 
+                <i class="fas fa-sync-alt"></i> Dữ liệu cập nhật mỗi 5 giây | 
+                <i class="fas fa-shield-alt"></i> Phiên bản 3.0 | 
                 <i class="fas fa-heart text-danger"></i> Dự án Khoa học Kỹ thuật - THCS
             </p>
             <div class="footer-links">
@@ -1386,711 +1221,53 @@
 
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-        // ========== KHỞI TẠO SOCKETIO ==========
-        const socket = io({
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000
-        });
-        
-        let isAutoMode = {{ settings.auto_mode|lower }};
-        let esp32Connected = {{ esp32_connected|lower }};
-        let lastUpdateTime = null;
-        let refreshInterval = null;
-        
-        // ========== XỬ LÝ KẾT NỐI SOCKETIO ==========
-        socket.on('connect', function() {
-            console.log('✅ Đã kết nối WebSocket');
-            updateEsp32Status('connected');
-            showToast('✅ Kết nối', 'Đã kết nối với server thành công', 'success');
-        });
-        
-        socket.on('disconnect', function() {
-            console.log('❌ Mất kết nối WebSocket');
-            updateEsp32Status('disconnected');
-            showToast('⚠️ Cảnh báo', 'Mất kết nối với server', 'warning');
-        });
-        
-        socket.on('connect_error', function(error) {
-            console.log('❌ Lỗi kết nối WebSocket:', error);
-            updateEsp32Status('disconnected');
-        });
-        
-        socket.on('sensor_update', function(data) {
-            console.log('📡 Nhận dữ liệu thời gian thực:', data);
-            lastUpdateTime = new Date();
-            updateSensorDisplays(data.sensors);
-            updateEvaluation(data.evaluation);
-            updateDeviceStatus(data.sensors);
+        // Khởi tạo khi trang load xong
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Dashboard initialized');
             
-            // Cập nhật biểu đồ nếu đang hiển thị
-            if (window.updateCharts) {
-                updateCharts(data);
-            }
-        });
-        
-        socket.on('esp32_status', function(data) {
-            console.log('📡 Trạng thái ESP32:', data.status);
-            esp32Connected = data.status === 'connected';
-            updateEsp32Status(data.status);
+            // Sync cả hai toggle auto mode
+            const autoToggle1 = document.getElementById('autoModeToggle');
+            const autoToggle2 = document.getElementById('autoModeToggle2');
             
-            if (data.status === 'connected') {
-                showToast('✅ Kết nối', 'ESP32 đã kết nối', 'success');
-            } else if (data.status === 'disconnected') {
-                showToast('⚠️ Cảnh báo', 'ESP32 mất kết nối', 'warning');
-            }
-        });
-        
-        socket.on('command_ack', function(data) {
-            console.log('✅ ESP32 xác nhận lệnh:', data);
-            showToast('✅ Thành công', 'Thiết bị đã thực thi lệnh', 'success');
-        });
-        
-        socket.on('command_sent', function(data) {
-            console.log('📤 Đã gửi lệnh đến ESP32:', data.command);
-        });
-        
-        // ========== HÀM CẬP NHẬT GIAO DIỆN ==========
-       function updateEsp32Status(connected) {
-        const badge = document.getElementById('esp32-status-badge');
-        const text = document.getElementById('esp32-status-text');
-        const icon = document.getElementById('esp32-icon');
-        const indicator = document.getElementById('realtime-indicator');
-        
-        if (connected) {
-            badge.className = 'connection-badge connected';
-            text.textContent = 'ESP32: Đã kết nối';
-            icon.className = 'fas fa-microchip';
-            if (indicator) {
-                indicator.classList.remove('offline');
-                indicator.classList.add('real-time-indicator');
-            }
-        } else {
-            badge.className = 'connection-badge disconnected';
-            text.textContent = 'ESP32: Mất kết nối';
-            icon.className = 'fas fa-microchip';
-            if (indicator) {
-                indicator.classList.add('offline');
-                indicator.classList.remove('real-time-indicator');
-            }
-        }
-    }        
-        function updateSensorDisplays(sensors) {
-            // Cập nhật giá trị
-            updateElement('temp-value', sensors.nhiet_do.toFixed(1));
-            updateElement('hum-value', sensors.do_am.toFixed(1));
-            updateElement('light-value', Math.round(sensors.anh_sang));
-            updateElement('air-value', Math.round(sensors.chat_luong_kk));
-            updateElement('noise-value', Math.round(sensors.do_on));
-            updateElement('last-update', sensors.timestamp || '--:--:--');
-            
-            // Cập nhật trạng thái
-            updateSensorStatus('temp', sensors.nhiet_do);
-            updateSensorStatus('hum', sensors.do_am);
-            updateSensorStatus('light', sensors.anh_sang);
-            updateSensorStatus('air', sensors.chat_luong_kk);
-            updateSensorStatus('noise', sensors.do_on);
-            
-            // Cập nhật màu sắc
-            updateSensorColor('temp', sensors.nhiet_do);
-            updateSensorColor('hum', sensors.do_am);
-            updateSensorColor('light', sensors.anh_sang);
-            updateSensorColor('air', sensors.chat_luong_kk);
-            updateSensorColor('noise', sensors.do_on);
-        }
-        
-        function updateElement(id, value) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-            }
-        }
-        
-        function updateSensorStatus(type, value) {
-            const element = document.getElementById(`${type}-status`);
-            if (!element) return;
-            
-            let status = '';
-            let colorClass = 'success';
-            
-            if (type === 'temp') {
-                if (value > 32) {
-                    status = 'Nóng';
-                    colorClass = 'danger';
-                } else if (value > 28) {
-                    status = 'Ấm';
-                    colorClass = 'warning';
-                } else {
-                    status = 'Tốt';
-                    colorClass = 'success';
-                }
-            } else if (type === 'hum') {
-                if (value < 40 || value > 70) {
-                    status = value < 40 ? 'Khô' : 'Ẩm';
-                    colorClass = 'warning';
-                } else {
-                    status = 'Tốt';
-                    colorClass = 'success';
-                }
-            } else if (type === 'light') {
-                if (value < 200) {
-                    status = 'Tối';
-                    colorClass = 'danger';
-                } else if (value < 300) {
-                    status = 'Vừa';
-                    colorClass = 'warning';
-                } else {
-                    status = 'Sáng';
-                    colorClass = 'success';
-                }
-            } else if (type === 'air') {
-                if (value > 800) {
-                    status = 'Ô nhiễm';
-                    colorClass = 'danger';
-                } else if (value > 400) {
-                    status = 'TB';
-                    colorClass = 'warning';
-                } else {
-                    status = 'Tốt';
-                    colorClass = 'success';
-                }
-            } else if (type === 'noise') {
-                if (value > 70) {
-                    status = 'Ồn';
-                    colorClass = 'danger';
-                } else if (value > 50) {
-                    status = 'BT';
-                    colorClass = 'warning';
-                } else {
-                    status = 'Yên tĩnh';
-                    colorClass = 'success';
-                }
-            }
-            
-            element.textContent = status;
-            element.className = `sensor-status bg-${colorClass} text-white`;
-        }
-        
-        function updateSensorColor(type, value) {
-            const element = document.getElementById(`${type}-card`);
-            if (!element) return;
-            
-            let colorClass = 'border-success';
-            
-            if (type === 'temp') {
-                if (value > 32) colorClass = 'border-danger';
-                else if (value > 28) colorClass = 'border-warning';
-                else if (value >= 20) colorClass = 'border-success';
-                else colorClass = 'border-danger';
-            } else if (type === 'hum') {
-                if (value < 40 || value > 70) colorClass = 'border-warning';
-                else colorClass = 'border-success';
-            } else if (type === 'light') {
-                if (value < 200) colorClass = 'border-danger';
-                else if (value < 300) colorClass = 'border-warning';
-                else colorClass = 'border-success';
-            } else if (type === 'air') {
-                if (value > 800) colorClass = 'border-danger';
-                else if (value > 400) colorClass = 'border-warning';
-                else colorClass = 'border-success';
-            } else if (type === 'noise') {
-                if (value > 70) colorClass = 'border-danger';
-                else if (value > 50) colorClass = 'border-warning';
-                else colorClass = 'border-success';
-            }
-            
-            element.classList.remove('border-success', 'border-warning', 'border-danger');
-            element.classList.add(colorClass);
-        }
-        
-        function updateDeviceStatus(sensors) {
-            const devices = ['quat', 'den', 'cua_so', 'canh_bao'];
-            
-            devices.forEach(device => {
-                const status = sensors[device];
-                const isOn = status === 'BẬT' || status === 'MỞ';
+            if (autoToggle1 && autoToggle2) {
+                autoToggle1.addEventListener('change', function() {
+                    autoToggle2.checked = this.checked;
+                });
                 
-                // Cập nhật icon
-                const iconElement = document.getElementById(`${device}-icon`);
-                if (iconElement) {
-                    iconElement.classList.remove('fa-spin', 'fa-shake', 'door-open', 'door-closed');
-                    
-                    if (device === 'quat') {
-                        iconElement.className = isOn ? 'fas fa-fan fa-spin text-success fs-4' : 'fas fa-fan text-secondary fs-4';
-                    } else if (device === 'den') {
-                        iconElement.className = isOn ? 'fas fa-lightbulb text-warning fs-4' : 'fas fa-lightbulb text-secondary fs-4';
-                        iconElement.style.filter = isOn ? 'brightness(1.3)' : 'brightness(0.7)';
-                    } else if (device === 'canh_bao') {
-                        iconElement.className = isOn ? 'fas fa-bell fa-shake text-danger fs-4' : 'fas fa-bell text-secondary fs-4';
-                    } else if (device === 'cua_so') {
-                        if (isOn) {
-                            iconElement.className = 'fas fa-door-open text-success fs-4 door-open';
-                            iconElement.style.color = '#28a745';
-                            iconElement.style.transform = 'scale(1.1)';
-                        } else {
-                            iconElement.className = 'fas fa-door-closed text-danger fs-4 door-closed';
-                            iconElement.style.color = '#dc3545';
-                            iconElement.style.transform = 'scale(1)';
-                        }
-                    }
-                }
-                
-                // Cập nhật nút điều khiển
-                const onBtn = document.getElementById(`${device}-on-btn`);
-                const offBtn = document.getElementById(`${device}-off-btn`);
-                
-                if (onBtn && offBtn) {
-                    onBtn.classList.remove('btn-success', 'btn-outline-success', 'shadow', 'active');
-                    offBtn.classList.remove('btn-danger', 'btn-outline-danger', 'shadow', 'active');
-                    
-                    if (isOn) {
-                        onBtn.classList.add('btn-success', 'shadow', 'active');
-                        offBtn.classList.add('btn-outline-danger');
-                    } else {
-                        offBtn.classList.add('btn-danger', 'shadow', 'active');
-                        onBtn.classList.add('btn-outline-success');
-                    }
-                }
-                
-                // Cập nhật trạng thái text
-                updateElement(`${device}-status`, status);
-                const statusElement = document.getElementById(`${device}-status`);
-                if (statusElement) {
-                    statusElement.className = `status-badge status-${isOn ? 'on' : 'off'}`;
-                }
-            });
-        }
-        
-        function updateEvaluation(evaluation) {
-            if (!evaluation) return;
-            
-            // Đánh giá tổng thể
-            updateElement('overall-evaluation', evaluation.overall);
-            const overallElement = document.getElementById('overall-evaluation');
-            if (overallElement) {
-                overallElement.className = `badge bg-${evaluation.overall_class} p-2 fs-5`;
+                autoToggle2.addEventListener('change', function() {
+                    autoToggle1.checked = this.checked;
+                });
             }
             
-            // Điểm số
-            updateElement('score-value', `${evaluation.total_score}/10`);
+            // Update score circle class
             const scoreElement = document.getElementById('score-value');
             if (scoreElement) {
-                scoreElement.classList.remove('score-success', 'score-warning', 'score-danger');
-                scoreElement.classList.add(`score-${evaluation.overall_class}`);
-            }
-            
-            // Progress bar
-            const progressBar = document.getElementById('score-progress');
-            if (progressBar) {
-                progressBar.style.width = `${evaluation.percentage}%`;
-                progressBar.textContent = `${evaluation.percentage}%`;
-                progressBar.className = `progress-bar bg-${evaluation.overall_class}`;
-            }
-            
-            // Khuyến nghị
-            updateElement('advice-text', evaluation.advice);
-            const adviceElement = document.getElementById('advice-text');
-            if (adviceElement) {
-                adviceElement.parentElement.parentElement.className = `alert alert-custom alert-${evaluation.overall_class} d-flex align-items-center mt-4`;
-            }
-            
-            // Tiết học
-            updateElement('class-eval', evaluation.class_eval);
-            const classEvalElement = document.getElementById('class-eval');
-            if (classEvalElement) {
-                classEvalElement.className = `badge bg-${evaluation.class_color} p-2`;
-            }
-            
-            // Đánh giá chi tiết
-            const detailsElement = document.getElementById('evaluation-details');
-            if (detailsElement && evaluation.evaluations) {
-                let html = '';
-                evaluation.evaluations.forEach(item => {
-                    html += `
-                        <div class="eval-item">
-                            <span class="eval-label">${item[0]}</span>
-                            <span class="eval-value bg-${item[2]} text-white">${item[1]}</span>
-                        </div>
-                    `;
-                });
-                detailsElement.innerHTML = html;
-            }
-        }
-        
-        // ========== HÀM ĐIỀU KHIỂN ==========
-        async function controlDevice(device, action) {
-        console.log(`🎮 Gửi lệnh điều khiển: ${device} -> ${action}`);
-        
-        // Kiểm tra chế độ tự động (trừ cảnh báo)
-        if (device !== 'canh_bao' && isAutoMode) {
-            showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
-            return;
-        }
-        
-        showLoading(true);
-        
-        try {
-            // Map device và action sang command ESP32
-            const commandMap = {
-                'quat_BẬT': 'FAN_ON',
-                'quat_TẮT': 'FAN_OFF',
-                'den_BẬT': 'LIGHT_ON',
-                'den_TẮT': 'LIGHT_OFF',
-                'cua_so_MỞ': 'WINDOW_OPEN',
-                'cua_so_ĐÓNG': 'WINDOW_CLOSE',
-                'canh_bao_BẬT': 'ALARM_ON',
-                'canh_bao_TẮT': 'ALARM_OFF'
-            };
-            
-            const key = `${device}_${action}`;
-            const command = commandMap[key];
-            
-            if (!command) {
-                showToast('❌ Lỗi', 'Lệnh không hợp lệ', 'danger');
-                showLoading(false);
-                return;
-            }
-            
-            const response = await fetch('/api/esp32/command', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    command: command,
-                    value: action
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showToast('✅ Thành công', `Đã gửi lệnh ${action} ${device}`, 'success');
-                // Cập nhật UI ngay lập tức
-                updateDeviceUI(device, action);
-                // Làm mới dữ liệu sau 1 giây
-                setTimeout(fetchSensorData, 1000);
-            } else {
-                showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
-            }
-        } catch (error) {
-            console.error('❌ Lỗi điều khiển:', error);
-            showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
-        } finally {
-            showLoading(false);
-        }
-    }
-        
-        function updateDeviceUI(device, action) {
-            const isOn = action === 'BẬT' || action === 'MỞ';
-            
-            // Cập nhật icon
-            const iconElement = document.getElementById(`${device}-icon`);
-            if (iconElement) {
-                if (device === 'quat') {
-                    iconElement.className = isOn ? 'fas fa-fan fa-spin text-success fs-4' : 'fas fa-fan text-secondary fs-4';
-                } else if (device === 'den') {
-                    iconElement.className = isOn ? 'fas fa-lightbulb text-warning fs-4' : 'fas fa-lightbulb text-secondary fs-4';
-                } else if (device === 'canh_bao') {
-                    iconElement.className = isOn ? 'fas fa-bell fa-shake text-danger fs-4' : 'fas fa-bell text-secondary fs-4';
-                } else if (device === 'cua_so') {
-                    iconElement.className = isOn ? 'fas fa-door-open text-success fs-4 door-open' : 'fas fa-door-closed text-danger fs-4 door-closed';
+                const scoreClass = '{{ evaluation.overall_class }}';
+                if (scoreClass === 'success') {
+                    scoreElement.className = 'overall-score score-success';
+                } else if (scoreClass === 'warning') {
+                    scoreElement.className = 'overall-score score-warning';
+                } else {
+                    scoreElement.className = 'overall-score score-danger';
                 }
             }
             
-            // Cập nhật text status
-            updateElement(`${device}-status`, action);
-            const statusElement = document.getElementById(`${device}-status`);
-            if (statusElement) {
-                statusElement.className = `status-badge status-${isOn ? 'on' : 'off'}`;
-            }
-        }
-        
-        async function updateAutoMode(enabled) {
-            console.log(`🤖 Cập nhật chế độ tự động: ${enabled}`);
-            
-            showLoading(true);
-            
-            try {
-                const response = await fetch('/update_settings', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        auto_mode: enabled
-                    })
+            // Thêm hiệu ứng cho các sensor card
+            document.querySelectorAll('.sensor-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px)';
+                    this.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.15)';
                 });
                 
-                const result = await response.json();
-                
-                if (result.success) {
-                    isAutoMode = enabled;
-                    updateAutoModeUI(enabled);
-                    showToast('✅ Thành công', `Chế độ tự động đã ${enabled ? 'bật' : 'tắt'}`, 'success');
-                    
-                    // Gửi lệnh đến ESP32
-                    const command = enabled ? 'AUTO_MODE_ON' : 'AUTO_MODE_OFF';
-                    await fetch('/api/esp32/command', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({command: command, value: ''})
-                    });
-                    
-                } else {
-                    // Rollback toggle
-                    const toggle1 = document.getElementById('autoModeToggle');
-                    const toggle2 = document.getElementById('autoModeToggle2');
-                    if (toggle1) toggle1.checked = !enabled;
-                    if (toggle2) toggle2.checked = !enabled;
-                    showToast('❌ Lỗi', result.error || 'Không thể cập nhật chế độ tự động', 'danger');
-                }
-            } catch (error) {
-                console.error('❌ Lỗi cập nhật chế độ tự động:', error);
-                const toggle1 = document.getElementById('autoModeToggle');
-                const toggle2 = document.getElementById('autoModeToggle2');
-                if (toggle1) toggle1.checked = !enabled;
-                if (toggle2) toggle2.checked = !enabled;
-                showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // ========== HÀM LẤY DỮ LIỆU TỪ API ==========
-    async function fetchSensorData() {
-        try {
-            const response = await fetch('/get_sensor_data');
-            const data = await response.json();
-            
-            if (data.sensors) {
-                lastUpdateTime = new Date();
-                updateSensorDisplays(data.sensors);
-                updateEvaluation(data.evaluation);
-                updateDeviceStatus(data.sensors);
-                
-                // Cập nhật trạng thái ESP32
-                esp32Connected = data.esp32_connected;
-                updateEsp32Status(data.esp32_connected);
-                
-                // Kiểm tra dữ liệu cũ
-                if (data.is_stale) {
-                    showToast('⚠️ Cảnh báo', 'Dữ liệu có thể không còn mới nhất', 'warning');
-                }
-                
-                // Cập nhật biểu đồ nếu có
-                if (window.updateCharts && data.history) {
-                    updateCharts(data);
-                }
-                
-                return true;
-            }
-        } catch (error) {
-            console.error('❌ Lỗi lấy dữ liệu:', error);
-            showToast('❌ Lỗi', 'Không thể lấy dữ liệu từ server', 'danger');
-            updateEsp32Status(false);
-        }
-        return false;
-    }
-          function updateAutoModeUI(enabled) {
-            const statusElement = document.getElementById('auto-mode-status');
-            const controlNotice = document.getElementById('control-notice');
-            
-            if (statusElement) {
-                statusElement.textContent = enabled ? 'ĐANG BẬT' : 'ĐANG TẮT';
-                statusElement.className = `badge ${enabled ? 'bg-success' : 'bg-secondary'} p-2`;
-            }
-            
-            // Cập nhật thông báo
-            if (controlNotice) {
-                if (enabled) {
-                    controlNotice.innerHTML = `
-                        <i class="fas fa-robot me-2 fs-4"></i>
-                        <div>
-                            <strong>Chế độ tự động đang bật</strong>
-                            <div class="small">Hệ thống tự động điều chỉnh thiết bị dựa trên ngưỡng cài đặt</div>
-                        </div>
-                    `;
-                    controlNotice.className = 'alert alert-custom alert-warning d-flex align-items-center mb-3';
-                } else {
-                    controlNotice.innerHTML = `
-                        <i class="fas fa-check-circle text-success me-2 fs-4"></i>
-                        <div>
-                            <strong>Chế độ thủ công đang bật</strong>
-                            <div class="small">Bạn có thể điều khiển thiết bị thủ công</div>
-                        </div>
-                    `;
-                    controlNotice.className = 'alert alert-custom alert-success d-flex align-items-center mb-3';
-                }
-            }
-            
-            // Cập nhật trạng thái nút điều khiển (trừ cảnh báo)
-            const controlButtons = document.querySelectorAll('.control-btn:not([data-device="canh_bao"])');
-            controlButtons.forEach(btn => {
-                if (enabled) {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.6';
-                    btn.style.cursor = 'not-allowed';
-                } else {
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                    btn.style.cursor = 'pointer';
-                }
-            });
-        }
-        
-        function updateChartVisibility(isBarChart) {
-            const lineContainer = document.getElementById('lineChartContainer');
-            const barContainer = document.getElementById('barChartContainer');
-            const chartLabel = document.getElementById('chartLabel');
-            
-            if (lineContainer && barContainer && chartLabel) {
-                if (isBarChart) {
-                    lineContainer.style.display = 'none';
-                    barContainer.style.display = 'block';
-                    chartLabel.textContent = 'Biểu đồ cột';
-                } else {
-                    lineContainer.style.display = 'block';
-                    barContainer.style.display = 'none';
-                    chartLabel.textContent = 'Biểu đồ đường';
-                }
-            }
-        }
-        
-        // ========== HÀM TIỆN ÍCH ==========
-        function updateRealTime() {
-            const now = new Date();
-            const timeElement = document.getElementById('current-time');
-            if (timeElement) {
-                timeElement.textContent = now.toLocaleTimeString('vi-VN');
-            }
-        }
-        
-        function showToast(title, message, type) {
-            const toastId = 'toast-' + Date.now();
-            const toastHtml = `
-                <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            <strong>${title}</strong><br>
-                            <small>${message}</small>
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                    </div>
-                </div>
-            `;
-            
-            const container = document.createElement('div');
-            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            container.innerHTML = toastHtml;
-            document.body.appendChild(container);
-            
-            const toastElement = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastElement, {
-                delay: 3000
-            });
-            toast.show();
-            
-            toastElement.addEventListener('hidden.bs.toast', function() {
-                container.remove();
-            });
-        }
-        
-        function showLoading(show) {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) {
-                overlay.style.display = show ? 'flex' : 'none';
-            }
-        }
-        
-        // ========== KHỞI TẠO KHI TRANG LOAD XONG ==========
-        document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 CLASSGUARD Dashboard initialized');
-        
-        // Cập nhật trạng thái ESP32 ban đầu
-        updateEsp32Status(esp32Connected);
-        
-        // Lấy dữ liệu ngay lần đầu
-        fetchSensorData();
-        
-        // Thiết lập interval cập nhật dữ liệu (mỗi 2 giây)
-        refreshInterval = setInterval(fetchSensorData, 2000);
-        
-        // Sync cả hai toggle auto mode
-        const autoToggle1 = document.getElementById('autoModeToggle');
-        const autoToggle2 = document.getElementById('autoModeToggle2');
-        
-        if (autoToggle1 && autoToggle2) {
-            autoToggle1.addEventListener('change', function() {
-                autoToggle2.checked = this.checked;
-                updateAutoMode(this.checked);
-            });
-            
-            autoToggle2.addEventListener('change', function() {
-                autoToggle1.checked = this.checked;
-                updateAutoMode(this.checked);
-            });
-        }
-        
-        // Chuyển đổi biểu đồ
-        const chartToggle = document.getElementById('chartToggle');
-        if (chartToggle) {
-            chartToggle.addEventListener('change', function() {
-                console.log('📈 Chuyển đổi biểu đồ:', this.checked);
-                updateChartVisibility(this.checked);
-            });
-        }
-        
-        // Nút làm mới biểu đồ
-        const refreshBtn = document.getElementById('refreshCharts');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', function() {
-                console.log('🔄 Làm mới dữ liệu');
-                fetchSensorData();
-                showToast('ℹ️ Thông báo', 'Đang làm mới dữ liệu...', 'info');
-            });
-        }
-        
-        // Nút điều khiển thiết bị
-        document.querySelectorAll('.control-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const device = this.dataset.device;
-                const action = this.dataset.action;
-                console.log(`🎮 Click nút điều khiển: ${device} -> ${action}`);
-                
-                if (device && action) {
-                    controlDevice(device, action);
-                }
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.12)';
+                });
             });
         });
-        
-        // Kiểm tra cập nhật định kỳ
-        setInterval(() => {
-            if (lastUpdateTime) {
-                const diff = (new Date() - lastUpdateTime) / 1000;
-                if (diff > 60) { // 60 giây không cập nhật
-                    updateEsp32Status(false);
-                    const indicator = document.getElementById('realtime-indicator');
-                    if (indicator) {
-                        indicator.classList.add('offline');
-                    }
-                }
-            }
-        }, 10000); // Kiểm tra mỗi 10 giây
-        
-        console.log('✅ CLASSGUARD Dashboard ready');
-    });
-    
-    // Dọn dẹp khi trang đóng
-    window.addEventListener('beforeunload', function() {
-        if (refreshInterval) {
-            clearInterval(refreshInterval);
-        }
-    });
-</script>
+    </script>
 </body>
 </html>
-
-
 
