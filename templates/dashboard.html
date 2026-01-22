@@ -861,7 +861,13 @@
                         <span class="real-time-indicator" id="realtime-indicator">Thời gian thực</span>
                     </p>
                 </div>
-                
+
+            <div class="connection-status ms-3">
+    <span class="badge bg-{{ 'success' if esp32_data['connected'] else 'danger' }} p-2" id="esp32-status">
+        <i class="fas fa-microchip me-1"></i>
+        ESP32: {{ 'Đã kết nối' if esp32_data['connected'] else 'Mất kết nối' }}
+    </span>
+</div>                
                 <!-- Trạng thái kết nối ESP32 -->
                 <div class="connection-badge" id="esp32-status-badge">
                     <i class="fas fa-microchip" id="esp32-icon"></i>
@@ -2015,4 +2021,5 @@
 </script>
 </body>
 </html>
+
 
