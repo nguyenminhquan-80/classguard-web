@@ -4,8 +4,6 @@ from datetime import datetime, timedelta
 import json
 import csv
 import io
-import threading
-import time
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'classguard_final_v3_2024'
@@ -19,7 +17,7 @@ USERS = {
     'xem': {'password': 'xem123', 'role': 'viewer', 'name': 'Khách xem'}
 }
 
-# ========== DỮ LIỆU THỜI GIAN THỰC ==========
+# ========== DỮ LIỆU ==========
 sensor_data = {
     'nhiet_do': 26.5,
     'do_am': 65.0,
@@ -43,45 +41,18 @@ history = {
     'do_on': []
 }
 
-# Cài đặt hệ thống
+# Cài đặt
 system_settings = {
     'auto_mode': True,
     'temp_min': 20,
     'temp_max': 28,
     'light_min': 300,
     'noise_max': 70,
-    'air_max': 800,
+    'air_max': 800
     'audio_enabled': True
 }
 
-# Hàng đợi lệnh cho ESP32
-command_queue = []
-esp32_status = {
-    'connected': False,
-    'last_ping': None,
-    'ip_address': None
-}
-
-# Biến lưu trữ lần cập nhật cuối
-last_sensor_update = datetime.now()
-
-# ========== QUẢN LÝ KẾT NỐI ESP32 ==========
-def check_esp32_connection():
-    """Kiểm tra kết nối ESP32 mỗi 5 giây"""
-    while True:
-        time.sleep(5)
-        if esp32_status['last_ping']:
-            time_diff = (datetime.now() - esp32_status['last_ping']).total_seconds()
-            if time_diff > 30:  # 30 giây không ping -> mất kết nối
-                if esp32_status['connected']:
-                    esp32_status['connected'] = False
-                    print("⚠️ ESP32 mất kết nối")
-
-# Khởi động thread kiểm tra kết nối
-connection_thread = threading.Thread(target=check_esp32_connection, daemon=True)
-connection_thread.start()
-
-# ========== ROUTES CHÍNH ==========
+# ========== ROUTES ==========
 @app.route('/')
 def home():
     return redirect(url_for('login'))
@@ -113,7 +84,6 @@ def dashboard():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    # Cập nhật dữ liệu demo
     update_demo_data()
     evaluation = evaluate_environment()
     
@@ -124,172 +94,31 @@ def dashboard():
                          username=session['username'],
                          name=session['name'],
                          role=session['role'],
-                         login_time=session.get('login_time', ''),
-                         esp32_connected=esp32_status['connected'])
+                         login_time=session.get('login_time', ''))
 
-# ========== API CHO ESP32 ==========
-@app.route('/api/esp32/sync', methods=['POST'])
-def esp32_sync():
-    """API đồng bộ thời gian thực với ESP32"""
-    try:
-        data = request.json
-        
-        # Cập nhật trạng thái kết nối
-        esp32_status['connected'] = True
-        esp32_status['last_ping'] = datetime.now()
-        esp32_status['ip_address'] = request.remote_addr
-        
-        print(f"✅ ESP32 connected from {request.remote_addr}")
-        
-        # Cập nhật dữ liệu cảm biến từ ESP32
-        if 'temperature' in data:
-            sensor_data['nhiet_do'] = float(data['temperature'])
-        if 'humidity' in data:
-            sensor_data['do_am'] = float(data['humidity'])
-        if 'light' in data:
-            sensor_data['anh_sang'] = float(data['light'])
-        if 'air_quality' in data:
-            sensor_data['chat_luong_kk'] = int(data['air_quality'])
-        if 'noise' in data:
-            sensor_data['do_on'] = int(data['noise'])
-        
-        # Cập nhật trạng thái thiết bị từ ESP32
-        if 'fan' in data:
-            sensor_data['quat'] = 'BẬT' if data['fan'] else 'TẮT'
-        if 'light_relay' in data:
-            sensor_data['den'] = 'BẬT' if data['light_relay'] else 'TẮT'
-        if 'window' in data:
-            sensor_data['cua_so'] = 'MỞ' if data['window'] else 'ĐÓNG'
-        if 'alarm' in data:
-            sensor_data['canh_bao'] = 'BẬT' if data['alarm'] else 'TẮT'
-        
-        # Cập nhật timestamp
-        sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
-        
-        # Cập nhật lịch sử
-        update_history()
-        
-        # Cập nhật thời gian cập nhật cuối
-        global last_sensor_update
-        last_sensor_update = datetime.now()
-        
-        # Chuẩn bị phản hồi cho ESP32
-        response = {
-            'success': True,
-            'timestamp': datetime.now().isoformat(),
-            'thresholds': {
-                'temp_min': system_settings['temp_min'],
-                'temp_max': system_settings['temp_max'],
-                'light_min': system_settings['light_min'],
-                'air_max': system_settings['air_max'],
-                'noise_max': system_settings['noise_max'],
-                'auto_mode': system_settings['auto_mode'],
-                'audio_enabled': system_settings['audio_enabled']
-            },
-            'commands': command_queue.copy() if command_queue else []
-        }
-        
-        # Xóa hàng đợi sau khi gửi
-        command_queue.clear()
-        
-        return jsonify(response)
-        
-    except Exception as e:
-        print(f"❌ Lỗi đồng bộ ESP32: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/esp32/command', methods=['POST'])
-def esp32_command():
-    """API để web gửi lệnh đến ESP32"""
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    data = request.json
-    command = data.get('command')
-    value = data.get('value', '')
-    
-    # Kiểm tra quyền
-    if session['role'] not in ['admin', 'teacher']:
-        return jsonify({'error': '❌ Không có quyền điều khiển!'}), 403
-    
-    # Kiểm tra chế độ tự động (trừ cảnh báo và âm thanh)
-    if command not in ['ALARM_ON', 'ALARM_OFF', 'PLAY_AUDIO', 'CLEAR_AUDIO_QUEUE', 'STOP_AUDIO', 'SET_VOLUME']:
-        if system_settings['auto_mode']:
-            return jsonify({
-                'error': '❌ Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.'
-            }), 403
-    
-    # Tạo lệnh với ID duy nhất
-    command_id = int(time.time() * 1000)
-    command_data = {
-        'command_id': command_id,
-        'command': command,
-        'value': value,
-        'timestamp': datetime.now().isoformat()
-    }
-    
-    # Thêm vào hàng đợi
-    command_queue.append(command_data)
-    
-    # Cập nhật ngay trạng thái trên web
-    update_local_state(command, value)
-    
-    # Cập nhật timestamp
-    sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
-    
-    return jsonify({
-        'success': True,
-        'message': f'✅ Đã gửi lệnh {command}',
-        'command_id': command_id
-    })
-
-@app.route('/api/esp32/ack', methods=['POST'])
-def esp32_ack():
-    """API nhận xác nhận từ ESP32"""
-    try:
-        data = request.json
-        command_id = data.get('command_id')
-        
-        print(f"✅ ESP32 xác nhận đã thực thi lệnh ID: {command_id}")
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        print(f"❌ Lỗi nhận ACK: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ========== API CHO WEB ==========
 @app.route('/get_sensor_data')
 def get_sensor_data():
-    """API trả về dữ liệu cảm biến cho web"""
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # Cập nhật dữ liệu demo nếu không có ESP32
-    if not esp32_status['connected']:
-        update_demo_data()
-    
+    update_demo_data()
     evaluation = evaluate_environment()
-    
-    # Kiểm tra thời gian cập nhật cuối
-    time_diff = (datetime.now() - last_sensor_update).total_seconds()
-    is_stale = time_diff > 60  # Quá 60 giây là dữ liệu cũ
     
     return jsonify({
         'sensors': sensor_data,
         'evaluation': evaluation,
         'history': history,
-        'settings': system_settings,
-        'esp32_connected': esp32_status['connected'],
-        'last_update': last_sensor_update.isoformat(),
-        'is_stale': is_stale,
-        'timestamp': datetime.now().isoformat()
+        'settings': system_settings
     })
 
 @app.route('/control', methods=['POST'])
 def control():
-    """API điều khiển cũ (giữ lại cho tương thích)"""
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
+    
+    # Kiểm tra chế độ tự động - nếu đang bật thì không cho điều khiển thủ công
+    if system_settings['auto_mode']:
+        return jsonify({'error': '❌ Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.'}), 403
     
     if session['role'] not in ['admin', 'teacher']:
         return jsonify({'error': '❌ Không có quyền điều khiển!'}), 403
@@ -298,67 +127,15 @@ def control():
     device = data.get('device')
     action = data.get('action')
     
-    # Map device/action sang command ESP32
-    command_map = {
-        'quat_BẬT': 'FAN_ON',
-        'quat_TẮT': 'FAN_OFF',
-        'den_BẬT': 'LIGHT_ON',
-        'den_TẮT': 'LIGHT_OFF',
-        'cua_so_MỞ': 'WINDOW_OPEN',
-        'cua_so_ĐÓNG': 'WINDOW_CLOSE',
-        'canh_bao_BẬT': 'ALARM_ON',
-        'canh_bao_TẮT': 'ALARM_OFF'
-    }
+    if device and action in ['BẬT', 'TẮT', 'MỞ', 'ĐÓNG']:
+        sensor_data[device] = action
+        return jsonify({
+            'success': True,
+            'message': f'✅ Đã {action.lower()} {device}',
+            'status': action
+        })
     
-    key = f"{device}_{action}"
-    command = command_map.get(key)
-    
-    if not command:
-        return jsonify({'error': 'Lệnh không hợp lệ'}), 400
-    
-    # Gửi lệnh qua API mới
-    response = esp32_command_internal(command, action)
-    return response
-
-def esp32_command_internal(command, value):
-    """Hàm nội bộ gửi lệnh"""
-    command_id = int(time.time() * 1000)
-    command_data = {
-        'command_id': command_id,
-        'command': command,
-        'value': value,
-        'timestamp': datetime.now().isoformat()
-    }
-    
-    command_queue.append(command_data)
-    update_local_state(command, value)
-    
-    return jsonify({
-        'success': True,
-        'message': f'✅ Đã gửi lệnh {command}',
-        'command_id': command_id
-    })
-
-def update_local_state(command, value):
-    """Cập nhật trạng thái cục bộ"""
-    if command == 'FAN_ON':
-        sensor_data['quat'] = 'BẬT'
-    elif command == 'FAN_OFF':
-        sensor_data['quat'] = 'TẮT'
-    elif command == 'LIGHT_ON':
-        sensor_data['den'] = 'BẬT'
-    elif command == 'LIGHT_OFF':
-        sensor_data['den'] = 'TẮT'
-    elif command == 'WINDOW_OPEN':
-        sensor_data['cua_so'] = 'MỞ'
-    elif command == 'WINDOW_CLOSE':
-        sensor_data['cua_so'] = 'ĐÓNG'
-    elif command == 'ALARM_ON':
-        sensor_data['canh_bao'] = 'BẬT'
-    elif command == 'ALARM_OFF':
-        sensor_data['canh_bao'] = 'TẮT'
-    
-    sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
+    return jsonify({'error': 'Thiếu thông tin'}), 400
 
 @app.route('/update_settings', methods=['POST'])
 def update_settings():
@@ -376,36 +153,64 @@ def update_settings():
         system_settings['light_min'] = float(data.get('light_min', system_settings['light_min']))
         system_settings['noise_max'] = float(data.get('noise_max', system_settings['noise_max']))
         system_settings['air_max'] = float(data.get('air_max', system_settings['air_max']))
-        system_settings['audio_enabled'] = data.get('audio_enabled', system_settings['audio_enabled'])
-        
-        # Gửi lệnh cập nhật chế độ tự động đến ESP32
-        if 'auto_mode' in data:
-            command = 'AUTO_MODE_ON' if data['auto_mode'] else 'AUTO_MODE_OFF'
-            command_queue.append({
-                'command_id': int(time.time() * 1000),
-                'command': command,
-                'value': '',
-                'timestamp': datetime.now().isoformat()
-            })
+        # THÊM DÒNG NÀY:
+        system_settings['audio_enabled'] = data.get('audio_enabled', system_settings.get('audio_enabled', True))
         
         return jsonify({'success': True, 'message': '✅ Đã cập nhật cài đặt!'})
     except Exception as e:
-        print(f"❌ Lỗi cập nhật cài đặt: {e}")
-        return jsonify({'error': '❌ Dữ liệu không hợp lệ!'}), 400
+        return jsonify({'error': f'❌ Dữ liệu không hợp lệ: {str(e)}'}), 400
 
-# ========== CÁC ROUTES KHÁC ==========
 @app.route('/data')
 def data_page():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    data_list = generate_sample_data()
+    data_list = []
+    base_time = datetime.now()
+    
+    for i in range(30):
+        record_time = base_time - timedelta(minutes=i*5)
+        temp = round(24 + random.random() * 4, 1)
+        humidity = round(55 + random.random() * 20, 1)
+        light = round(250 + random.random() * 250)
+        air = round(300 + random.random() * 500)
+        noise = round(35 + random.random() * 40)
+        
+        score = 0
+        if 20 <= temp <= 28: score += 1
+        if 40 <= humidity <= 70: score += 1
+        if light >= 300: score += 1
+        if air < 400: score += 1
+        if noise < 50: score += 1
+        
+        if score >= 4:
+            eval_text = 'Tốt'
+            eval_color = 'success'
+        elif score >= 3:
+            eval_text = 'Khá'
+            eval_color = 'warning'
+        else:
+            eval_text = 'Cần cải thiện'
+            eval_color = 'danger'
+        
+        data_list.append({
+            'stt': i + 1,
+            'thoi_gian': record_time.strftime("%H:%M"),
+            'ngay': record_time.strftime("%d/%m/%Y"),
+            'nhiet_do': temp,
+            'do_am': humidity,
+            'anh_sang': light,
+            'chat_luong_kk': air,
+            'do_on': noise,
+            'danh_gia': eval_text,
+            'danh_gia_color': eval_color
+        })
     
     return render_template('data.html',
                          data=data_list,
                          role=session['role'])
 
-@app.route('/settings_page')
+@app.route('/settings', methods=['GET', 'POST'])
 def settings_page():
     if 'username' not in session:
         return redirect(url_for('login'))
@@ -422,41 +227,199 @@ def export_csv():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    return generate_csv_report()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow(['CLASSGUARD - BÁO CÁO MÔI TRƯỜNG LỚP HỌC'])
+    writer.writerow(['Thời gian xuất', datetime.now().strftime("%d/%m/%Y %H:%M:%S")])
+    writer.writerow(['Người xuất', session.get('name', 'Unknown')])
+    writer.writerow(['Vai trò', session.get('role', 'Unknown')])
+    writer.writerow([])
+    writer.writerow(['THÔNG SỐ CẢM BIẾN'])
+    writer.writerow(['Thông số', 'Giá trị', 'Đơn vị', 'Trạng thái'])
+    writer.writerow(['Nhiệt độ', f"{sensor_data['nhiet_do']:.1f}", '°C', 
+                     'Tốt' if 20 <= sensor_data['nhiet_do'] <= 28 else 'Cảnh báo' if 28 < sensor_data['nhiet_do'] <= 32 else 'Nguy hiểm'])
+    writer.writerow(['Độ ẩm', f"{sensor_data['do_am']:.1f}", '%',
+                     'Tốt' if 40 <= sensor_data['do_am'] <= 70 else 'Cảnh báo'])
+    writer.writerow(['Ánh sáng', str(sensor_data['anh_sang']), 'lux',
+                     'Tốt' if sensor_data['anh_sang'] >= 300 else 'Cảnh báo' if sensor_data['anh_sang'] >= 200 else 'Thiếu sáng'])
+    writer.writerow(['Chất lượng KK', str(sensor_data['chat_luong_kk']), 'PPM',
+                     'Tốt' if sensor_data['chat_luong_kk'] < 400 else 'Trung bình' if sensor_data['chat_luong_kk'] < 800 else 'Ô nhiễm'])
+    writer.writerow(['Độ ồn', str(sensor_data['do_on']), 'dB',
+                     'Tốt' if sensor_data['do_on'] < 50 else 'Bình thường' if sensor_data['do_on'] < 70 else 'Ồn ào'])
+    writer.writerow([])
+    writer.writerow(['TRẠNG THÁI THIẾT BỊ'])
+    writer.writerow(['Thiết bị', 'Trạng thái'])
+    writer.writerow(['Quạt', sensor_data['quat']])
+    writer.writerow(['Đèn', sensor_data['den']])
+    writer.writerow(['Cửa sổ', sensor_data['cua_so']])
+    writer.writerow(['Cảnh báo', sensor_data['canh_bao']])
+    
+    output.seek(0)
+    
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-disposition": f"attachment; filename=classguard_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+    )
+
+# Biến để lưu lệnh từ web
+esp32_commands = []
+next_command_id = 1
+
+@app.route('/api/esp32/sync', methods=['POST'])
+def esp32_sync():
+    """API đồng bộ 2 chiều với ESP32"""
+    try:
+        data = request.json
+        print(f"[ESP32] Nhận dữ liệu: {data}")
+        
+        # Lưu dữ liệu từ ESP32 vào sensor_data
+        if 'temperature' in data:
+            sensor_data['nhiet_do'] = float(data['temperature'])
+            sensor_data['do_am'] = float(data.get('humidity', 55.0))
+            sensor_data['anh_sang'] = float(data.get('light', 400))
+            sensor_data['chat_luong_kk'] = int(data.get('air_quality', 400))
+            sensor_data['do_on'] = int(data.get('noise', 45))
+            
+            # Cập nhật trạng thái thiết bị
+            sensor_data['quat'] = 'BẬT' if data.get('fan', False) else 'TẮT'
+            sensor_data['den'] = 'BẬT' if data.get('light_relay', False) else 'BẬT'
+            sensor_data['cua_so'] = 'MỞ' if data.get('window', False) else 'ĐÓNG'
+            sensor_data['canh_bao'] = 'BẬT' if data.get('alarm', False) else 'TẮT'
+        
+        # Chuẩn bị phản hồi
+        response = {
+            'success': True,
+            'device_id': 'ESP32-S3-CLASSGUARD',
+            'timestamp': datetime.now().isoformat(),
+            'thresholds': {
+                'temp_min': system_settings['temp_min'],
+                'temp_max': system_settings['temp_max'],
+                'light_min': system_settings['light_min'],
+                'air_max': system_settings['air_max'],
+                'noise_max': system_settings['noise_max'],
+                'auto_mode': system_settings['auto_mode'],
+                'audio_enabled': system_settings.get('audio_enabled', True)  # THÊM DÒNG NÀY
+            },
+            'commands': []
+        }
+        
+        # Thêm lệnh từ web nếu có
+        global esp32_commands, next_command_id
+        if esp32_commands:
+            response['commands'] = esp32_commands.copy()
+            esp32_commands.clear()
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        print(f"[ESP32] Lỗi sync: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/esp32/ack', methods=['POST'])
+def esp32_ack():
+    """API nhận xác nhận từ ESP32"""
+    try:
+        data = request.json
+        print(f"[ESP32] ACK nhận: {data}")
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/esp32/control', methods=['POST'])
+def esp32_control():
+    """API gửi lệnh điều khiển từ web -> ESP32"""
+    global esp32_commands, next_command_id
+    
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if session['role'] not in ['admin', 'teacher']:
+        return jsonify({'error': 'Không có quyền!'}), 403
+    
+    data = request.json
+    device = data.get('device')
+    action = data.get('action')
+    audio_file = data.get('audio_file')
+    
+    command = None
+    value = None
+    
+    # Chuyển đổi lệnh web -> lệnh ESP32
+    if device == 'quat':
+        command = 'FAN_ON' if action == 'BẬT' else 'FAN_OFF'
+    elif device == 'den':
+        command = 'LIGHT_ON' if action == 'BẬT' else 'LIGHT_OFF'
+    elif device == 'cua_so':
+        command = 'WINDOW_OPEN' if action == 'MỞ' else 'WINDOW_CLOSE'
+    elif device == 'canh_bao':
+        command = 'ALARM_ON' if action == 'BẬT' else 'ALARM_OFF'
+    elif device == 'audio_control':
+        if action == 'PLAY':
+            command = 'PLAY_AUDIO'
+            value = audio_file
+        elif action == 'STOP':
+            command = 'STOP_AUDIO'
+        elif action == 'CLEAR_QUEUE':
+            command = 'CLEAR_AUDIO_QUEUE'
+    elif device == 'auto_mode':
+        command = 'AUTO_MODE_ON' if action == 'BẬT' else 'AUTO_MODE_OFF'
+    elif device == 'audio_enabled':
+        # CẬP NHẬT CÀI ĐẶT ÂM THANH
+        system_settings['audio_enabled'] = (action == 'BẬT')
+        command = 'SET_VOLUME'
+        value = '20' if action == 'BẬT' else '0'
+    
+    if command:
+        cmd_id = next_command_id
+        next_command_id += 1
+        
+        esp32_commands.append({
+            'command_id': cmd_id,
+            'command': command,
+            'value': value or ''
+        })
+        
+        print(f"[ESP32] Thêm lệnh: {command} {value or ''}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Đã gửi lệnh đến ESP32',
+            'command_id': cmd_id
+        })
+    
+    return jsonify({'error': 'Lệnh không hợp lệ'}), 400
 
 # ========== HÀM PHỤ TRỢ ==========
 def evaluate_environment():
-    """Đánh giá môi trường theo ngưỡng chính xác"""
     evaluations = []
     scores = []
     
-    # Đánh giá nhiệt độ
     temp = sensor_data['nhiet_do']
-    if 18 <= temp <= 26:
+    if 20 <= temp <= 28:
         evaluations.append(('🌡️ Nhiệt độ', 'Lý tưởng', 'success'))
         scores.append(2)
-    elif (16 <= temp < 18) or (26 < temp <= 30):
+    elif 18 <= temp < 20 or 28 < temp <= 30:
         evaluations.append(('🌡️ Nhiệt độ', 'Chấp nhận', 'warning'))
         scores.append(1)
     else:
         evaluations.append(('🌡️ Nhiệt độ', 'Không tốt', 'danger'))
         scores.append(0)
     
-    # Đánh giá độ ẩm
     humidity = sensor_data['do_am']
-    if 40 <= humidity <= 60:
+    if 40 <= humidity <= 70:
         evaluations.append(('💧 Độ ẩm', 'Tốt', 'success'))
         scores.append(2)
-    elif (30 <= humidity < 40) or (60 < humidity <= 70):
+    elif 30 <= humidity < 40 or 70 < humidity <= 80:
         evaluations.append(('💧 Độ ẩm', 'Trung bình', 'warning'))
         scores.append(1)
     else:
         evaluations.append(('💧 Độ ẩm', 'Không tốt', 'danger'))
         scores.append(0)
     
-    # Đánh giá ánh sáng
     light = sensor_data['anh_sang']
-    if 300 <= light <= 500:
+    if light >= 300:
         evaluations.append(('☀️ Ánh sáng', 'Đủ sáng', 'success'))
         scores.append(2)
     elif 200 <= light < 300:
@@ -466,19 +429,17 @@ def evaluate_environment():
         evaluations.append(('☀️ Ánh sáng', 'Thiếu sáng', 'danger'))
         scores.append(0)
     
-    # Đánh giá chất lượng không khí
     air = sensor_data['chat_luong_kk']
-    if air < 750:
+    if air < 400:
         evaluations.append(('💨 Chất lượng KK', 'Trong lành', 'success'))
         scores.append(2)
-    elif 750 <= air < 1200:
+    elif 400 <= air < 800:
         evaluations.append(('💨 Chất lượng KK', 'Trung bình', 'warning'))
         scores.append(1)
     else:
         evaluations.append(('💨 Chất lượng KK', 'Ô nhiễm', 'danger'))
         scores.append(0)
     
-    # Đánh giá độ ồn
     noise = sensor_data['do_on']
     if noise < 50:
         evaluations.append(('🔊 Độ ồn', 'Yên tĩnh', 'success'))
@@ -528,29 +489,24 @@ def evaluate_environment():
     }
 
 def update_demo_data():
-    """Cập nhật dữ liệu demo khi không có ESP32"""
-    if not esp32_status['connected']:
-        # Thêm biến động ngẫu nhiên
-        sensor_data['nhiet_do'] = round(24 + random.random() * 4, 1)
-        sensor_data['do_am'] = round(50 + random.random() * 20, 1)
-        sensor_data['anh_sang'] = round(200 + random.random() * 300)
-        sensor_data['chat_luong_kk'] = round(200 + random.random() * 600)
-        sensor_data['do_on'] = round(30 + random.random() * 50)
-        sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
-        
-        # Tự động điều khiển nếu chế độ tự động bật
-        if system_settings['auto_mode']:
-            auto_control()
-        
-        # Cập nhật lịch sử
-        update_history()
-        
-        # Cập nhật thời gian cập nhật cuối
-        global last_sensor_update
-        last_sensor_update = datetime.now()
+    """Cập nhật dữ liệu demo"""
+    # Thêm biến động ngẫu nhiên
+    sensor_data['nhiet_do'] = round(24 + random.random() * 4, 1)
+    sensor_data['do_am'] = round(50 + random.random() * 20, 1)
+    sensor_data['anh_sang'] = round(200 + random.random() * 300)
+    sensor_data['chat_luong_kk'] = round(200 + random.random() * 600)
+    sensor_data['do_on'] = round(30 + random.random() * 50)
+    sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
+    
+    # Tự động điều khiển nếu chế độ tự động bật
+    if system_settings['auto_mode']:
+        auto_control()
+    
+    # Cập nhật history
+    update_history()
 
 def auto_control():
-    """Tự động điều khiển thiết bị (chỉ quạt, đèn, cửa sổ)"""
+    """Tự động điều khiển thiết bị"""
     # Nhiệt độ
     if sensor_data['nhiet_do'] > system_settings['temp_max']:
         sensor_data['quat'] = 'BẬT'
@@ -569,8 +525,11 @@ def auto_control():
     else:
         sensor_data['cua_so'] = 'ĐÓNG'
     
-    # Độ ồn (KHÔNG tự động điều khiển cảnh báo)
-    # Cảnh báo chỉ bật/tắt thủ công
+    # Độ ồn
+    if sensor_data['do_on'] > system_settings['noise_max']:
+        sensor_data['canh_bao'] = 'BẬT'
+    else:
+        sensor_data['canh_bao'] = 'TẮT'
 
 def update_history():
     """Cập nhật lịch sử cho biểu đồ"""
@@ -589,96 +548,5 @@ def update_history():
     history['chat_luong_kk'].append(sensor_data['chat_luong_kk'])
     history['do_on'].append(sensor_data['do_on'])
 
-def generate_sample_data():
-    """Tạo dữ liệu mẫu cho trang data"""
-    data_list = []
-    base_time = datetime.now()
-    
-    for i in range(30):
-        record_time = base_time - timedelta(minutes=i*5)
-        temp = round(24 + random.random() * 4, 1)
-        humidity = round(55 + random.random() * 20, 1)
-        light = round(250 + random.random() * 250)
-        air = round(300 + random.random() * 500)
-        noise = round(35 + random.random() * 40)
-        
-        score = 0
-        if 20 <= temp <= 28: score += 1
-        if 40 <= humidity <= 70: score += 1
-        if light >= 300: score += 1
-        if air < 400: score += 1
-        if noise < 50: score += 1
-        
-        if score >= 4:
-            eval_text = 'Tốt'
-            eval_color = 'success'
-        elif score >= 3:
-            eval_text = 'Khá'
-            eval_color = 'warning'
-        else:
-            eval_text = 'Cần cải thiện'
-            eval_color = 'danger'
-        
-        data_list.append({
-            'stt': i + 1,
-            'thoi_gian': record_time.strftime("%H:%M"),
-            'ngay': record_time.strftime("%d/%m/%Y"),
-            'nhiet_do': temp,
-            'do_am': humidity,
-            'anh_sang': light,
-            'chat_luong_kk': air,
-            'do_on': noise,
-            'danh_gia': eval_text,
-            'danh_gia_color': eval_color
-        })
-    
-    return data_list
-
-def generate_csv_report():
-    """Tạo báo cáo CSV"""
-    output = io.StringIO()
-    writer = csv.writer(output)
-    
-    writer.writerow(['CLASSGUARD - BÁO CÁO MÔI TRƯỜNG LỚP HỌC'])
-    writer.writerow(['Thời gian xuất', datetime.now().strftime("%d/%m/%Y %H:%M:%S")])
-    writer.writerow(['Người xuất', session.get('name', 'Unknown')])
-    writer.writerow(['Vai trò', session.get('role', 'Unknown')])
-    writer.writerow([])
-    writer.writerow(['THÔNG SỐ CẢM BIẾN'])
-    writer.writerow(['Thông số', 'Giá trị', 'Đơn vị', 'Trạng thái'])
-    writer.writerow(['Nhiệt độ', f"{sensor_data['nhiet_do']:.1f}", '°C', 
-                     'Tốt' if 20 <= sensor_data['nhiet_do'] <= 28 else 'Cảnh báo' if 28 < sensor_data['nhiet_do'] <= 32 else 'Nguy hiểm'])
-    writer.writerow(['Độ ẩm', f"{sensor_data['do_am']:.1f}", '%',
-                     'Tốt' if 40 <= sensor_data['do_am'] <= 70 else 'Cảnh báo'])
-    writer.writerow(['Ánh sáng', str(sensor_data['anh_sang']), 'lux',
-                     'Tốt' if sensor_data['anh_sang'] >= 300 else 'Cảnh báo' if sensor_data['anh_sang'] >= 200 else 'Thiếu sáng'])
-    writer.writerow(['Chất lượng KK', str(sensor_data['chat_luong_kk']), 'PPM',
-                     'Tốt' if sensor_data['chat_luong_kk'] < 400 else 'Trung bình' if sensor_data['chat_luong_kk'] < 800 else 'Ô nhiễm'])
-    writer.writerow(['Độ ồn', str(sensor_data['do_on']), 'dB',
-                     'Tốt' if sensor_data['do_on'] < 50 else 'Bình thường' if sensor_data['do_on'] < 70 else 'Ồn ào'])
-    writer.writerow([])
-    writer.writerow(['TRẠNG THÁI THIẾT BỊ'])
-    writer.writerow(['Thiết bị', 'Trạng thái'])
-    writer.writerow(['Quạt', sensor_data['quat']])
-    writer.writerow(['Đèn', sensor_data['den']])
-    writer.writerow(['Cửa sổ', sensor_data['cua_so']])
-    writer.writerow(['Cảnh báo', sensor_data['canh_bao']])
-    
-    output.seek(0)
-    
-    return Response(
-        output,
-        mimetype="text/csv",
-        headers={"Content-disposition": f"attachment; filename=classguard_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
-    )
-
-# ========== CHẠY ỨNG DỤNG ==========
 if __name__ == '__main__':
-    print("=" * 50)
-    print("🚀 CLASSGUARD SYSTEM STARTING...")
-    print(f"📊 Web URL: http://0.0.0.0:5000")
-    print(f"📡 ESP32 Sync API: /api/esp32/sync")
-    print("=" * 50)
-    
-    # Chạy Flask với multithreading để hỗ trợ real-time
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
