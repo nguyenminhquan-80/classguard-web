@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Response
-from flask_socketio import SocketIO, emit
 import random
 from datetime import datetime, timedelta
 import json
@@ -11,7 +10,6 @@ import time
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'classguard_final_v3_2024'
 app.secret_key = 'classguard_final_v3_2024'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # ========== TÀI KHOẢN ==========
 USERS = {
@@ -64,6 +62,9 @@ esp32_status = {
     'ip_address': None
 }
 
+# Biến lưu trữ lần cập nhật cuối
+last_sensor_update = datetime.now()
+
 # ========== QUẢN LÝ KẾT NỐI ESP32 ==========
 def check_esp32_connection():
     """Kiểm tra kết nối ESP32 mỗi 5 giây"""
@@ -75,7 +76,6 @@ def check_esp32_connection():
                 if esp32_status['connected']:
                     esp32_status['connected'] = False
                     print("⚠️ ESP32 mất kết nối")
-                    socketio.emit('esp32_status', {'status': 'disconnected', 'timestamp': datetime.now().isoformat()})
 
 # Khởi động thread kiểm tra kết nối
 connection_thread = threading.Thread(target=check_esp32_connection, daemon=True)
@@ -169,19 +169,9 @@ def esp32_sync():
         # Cập nhật lịch sử
         update_history()
         
-        # Gửi thông báo đến web qua SocketIO
-        evaluation = evaluate_environment()
-        socketio.emit('sensor_update', {
-            'sensors': sensor_data,
-            'evaluation': evaluation,
-            'timestamp': sensor_data['timestamp']
-        })
-        
-        # Gửi trạng thái kết nối
-        socketio.emit('esp32_status', {
-            'status': 'connected',
-            'timestamp': datetime.now().isoformat()
-        })
+        # Cập nhật thời gian cập nhật cuối
+        global last_sensor_update
+        last_sensor_update = datetime.now()
         
         # Chuẩn bị phản hồi cho ESP32
         response = {
@@ -244,21 +234,8 @@ def esp32_command():
     # Cập nhật ngay trạng thái trên web
     update_local_state(command, value)
     
-    # Gửi thông báo đến web
-    evaluation = evaluate_environment()
-    socketio.emit('sensor_update', {
-        'sensors': sensor_data,
-        'evaluation': evaluation,
-        'timestamp': sensor_data['timestamp']
-    })
-    
-    # Gửi thông báo lệnh đã gửi
-    socketio.emit('command_sent', {
-        'command_id': command_id,
-        'command': command,
-        'value': value,
-        'timestamp': datetime.now().isoformat()
-    })
+    # Cập nhật timestamp
+    sensor_data['timestamp'] = datetime.now().strftime("%H:%M:%S")
     
     return jsonify({
         'success': True,
@@ -275,13 +252,6 @@ def esp32_ack():
         
         print(f"✅ ESP32 xác nhận đã thực thi lệnh ID: {command_id}")
         
-        # Gửi thông báo đến web
-        socketio.emit('command_ack', {
-            'command_id': command_id,
-            'status': 'executed',
-            'timestamp': datetime.now().isoformat()
-        })
-        
         return jsonify({'success': True})
     except Exception as e:
         print(f"❌ Lỗi nhận ACK: {e}")
@@ -290,18 +260,29 @@ def esp32_ack():
 # ========== API CHO WEB ==========
 @app.route('/get_sensor_data')
 def get_sensor_data():
+    """API trả về dữ liệu cảm biến cho web"""
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    update_demo_data()
+    # Cập nhật dữ liệu demo nếu không có ESP32
+    if not esp32_status['connected']:
+        update_demo_data()
+    
     evaluation = evaluate_environment()
+    
+    # Kiểm tra thời gian cập nhật cuối
+    time_diff = (datetime.now() - last_sensor_update).total_seconds()
+    is_stale = time_diff > 60  # Quá 60 giây là dữ liệu cũ
     
     return jsonify({
         'sensors': sensor_data,
         'evaluation': evaluation,
         'history': history,
         'settings': system_settings,
-        'esp32_connected': esp32_status['connected']
+        'esp32_connected': esp32_status['connected'],
+        'last_update': last_sensor_update.isoformat(),
+        'is_stale': is_stale,
+        'timestamp': datetime.now().isoformat()
     })
 
 @app.route('/control', methods=['POST'])
@@ -561,8 +542,12 @@ def update_demo_data():
         if system_settings['auto_mode']:
             auto_control()
         
-        # Cập nhật history
+        # Cập nhật lịch sử
         update_history()
+        
+        # Cập nhật thời gian cập nhật cuối
+        global last_sensor_update
+        last_sensor_update = datetime.now()
 
 def auto_control():
     """Tự động điều khiển thiết bị (chỉ quạt, đèn, cửa sổ)"""
@@ -687,29 +672,6 @@ def generate_csv_report():
         headers={"Content-disposition": f"attachment; filename=classguard_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
     )
 
-# ========== SOCKETIO EVENTS ==========
-@socketio.on('connect')
-def handle_connect():
-    print(f'✅ Web client connected: {request.sid}')
-    emit('connected', {
-        'status': 'ok',
-        'esp32_connected': esp32_status['connected']
-    })
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    print(f'❌ Web client disconnected: {request.sid}')
-
-@socketio.on('request_update')
-def handle_request_update():
-    """Client yêu cầu cập nhật dữ liệu"""
-    evaluation = evaluate_environment()
-    emit('sensor_update', {
-        'sensors': sensor_data,
-        'evaluation': evaluation,
-        'timestamp': sensor_data['timestamp']
-    })
-
 # ========== CHẠY ỨNG DỤNG ==========
 if __name__ == '__main__':
     print("=" * 50)
@@ -718,4 +680,5 @@ if __name__ == '__main__':
     print(f"📡 ESP32 Sync API: /api/esp32/sync")
     print("=" * 50)
     
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    # Chạy Flask với multithreading để hỗ trợ real-time
+    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
