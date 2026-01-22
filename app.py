@@ -48,8 +48,7 @@ system_settings = {
     'temp_max': 28,
     'light_min': 300,
     'noise_max': 70,
-    'air_max': 800,
-    'audio_enabled': True
+    'air_max': 800
 }
 
 # ========== ROUTES ==========
@@ -146,19 +145,16 @@ def update_settings():
         return jsonify({'error': 'Không có quyền!'}), 403
     
     try:
-        data = request.json
-        system_settings['auto_mode'] = data.get('auto_mode', system_settings['auto_mode'])
-        system_settings['temp_min'] = float(data.get('temp_min', system_settings['temp_min']))
-        system_settings['temp_max'] = float(data.get('temp_max', system_settings['temp_max']))
-        system_settings['light_min'] = float(data.get('light_min', system_settings['light_min']))
-        system_settings['noise_max'] = float(data.get('noise_max', system_settings['noise_max']))
-        system_settings['air_max'] = float(data.get('air_max', system_settings['air_max']))
-        # THÊM DÒNG NÀY:
-        system_settings['audio_enabled'] = data.get('audio_enabled', system_settings.get('audio_enabled', True))
+        system_settings['auto_mode'] = request.json.get('auto_mode', system_settings['auto_mode'])
+        system_settings['temp_min'] = float(request.json.get('temp_min', system_settings['temp_min']))
+        system_settings['temp_max'] = float(request.json.get('temp_max', system_settings['temp_max']))
+        system_settings['light_min'] = float(request.json.get('light_min', system_settings['light_min']))
+        system_settings['noise_max'] = float(request.json.get('noise_max', system_settings['noise_max']))
+        system_settings['air_max'] = float(request.json.get('air_max', system_settings['air_max']))
         
         return jsonify({'success': True, 'message': '✅ Đã cập nhật cài đặt!'})
-    except Exception as e:
-        return jsonify({'error': f'❌ Dữ liệu không hợp lệ: {str(e)}'}), 400
+    except:
+        return jsonify({'error': '❌ Dữ liệu không hợp lệ!'}), 400
 
 @app.route('/data')
 def data_page():
@@ -262,134 +258,6 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-disposition": f"attachment; filename=classguard_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
     )
-
-# Biến để lưu lệnh từ web
-esp32_commands = []
-next_command_id = 1
-
-@app.route('/api/esp32/sync', methods=['POST'])
-def esp32_sync():
-    """API đồng bộ 2 chiều với ESP32"""
-    try:
-        data = request.json
-        print(f"[ESP32] Nhận dữ liệu: {data}")
-        
-        # Lưu dữ liệu từ ESP32 vào sensor_data
-        if 'temperature' in data:
-            sensor_data['nhiet_do'] = float(data['temperature'])
-            sensor_data['do_am'] = float(data.get('humidity', 55.0))
-            sensor_data['anh_sang'] = float(data.get('light', 400))
-            sensor_data['chat_luong_kk'] = int(data.get('air_quality', 400))
-            sensor_data['do_on'] = int(data.get('noise', 45))
-            
-            # Cập nhật trạng thái thiết bị
-            sensor_data['quat'] = 'BẬT' if data.get('fan', False) else 'TẮT'
-            sensor_data['den'] = 'BẬT' if data.get('light_relay', False) else 'BẬT'
-            sensor_data['cua_so'] = 'MỞ' if data.get('window', False) else 'ĐÓNG'
-            sensor_data['canh_bao'] = 'BẬT' if data.get('alarm', False) else 'TẮT'
-        
-        # Chuẩn bị phản hồi
-        response = {
-            'success': True,
-            'device_id': 'ESP32-S3-CLASSGUARD',
-            'timestamp': datetime.now().isoformat(),
-            'thresholds': {
-                'temp_min': system_settings['temp_min'],
-                'temp_max': system_settings['temp_max'],
-                'light_min': system_settings['light_min'],
-                'air_max': system_settings['air_max'],
-                'noise_max': system_settings['noise_max'],
-                'auto_mode': system_settings['auto_mode'],
-                'audio_enabled': system_settings.get('audio_enabled', True)  # THÊM DÒNG NÀY
-            },
-            'commands': []
-        }
-        
-        # Thêm lệnh từ web nếu có
-        global esp32_commands, next_command_id
-        if esp32_commands:
-            response['commands'] = esp32_commands.copy()
-            esp32_commands.clear()
-        
-        return jsonify(response)
-        
-    except Exception as e:
-        print(f"[ESP32] Lỗi sync: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 400
-
-@app.route('/api/esp32/ack', methods=['POST'])
-def esp32_ack():
-    """API nhận xác nhận từ ESP32"""
-    try:
-        data = request.json
-        print(f"[ESP32] ACK nhận: {data}")
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
-
-@app.route('/api/esp32/control', methods=['POST'])
-def esp32_control():
-    """API gửi lệnh điều khiển từ web -> ESP32"""
-    global esp32_commands, next_command_id
-    
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    if session['role'] not in ['admin', 'teacher']:
-        return jsonify({'error': 'Không có quyền!'}), 403
-    
-    data = request.json
-    device = data.get('device')
-    action = data.get('action')
-    audio_file = data.get('audio_file')
-    
-    command = None
-    value = None
-    
-    # Chuyển đổi lệnh web -> lệnh ESP32
-    if device == 'quat':
-        command = 'FAN_ON' if action == 'BẬT' else 'FAN_OFF'
-    elif device == 'den':
-        command = 'LIGHT_ON' if action == 'BẬT' else 'LIGHT_OFF'
-    elif device == 'cua_so':
-        command = 'WINDOW_OPEN' if action == 'MỞ' else 'WINDOW_CLOSE'
-    elif device == 'canh_bao':
-        command = 'ALARM_ON' if action == 'BẬT' else 'ALARM_OFF'
-    elif device == 'audio_control':
-        if action == 'PLAY':
-            command = 'PLAY_AUDIO'
-            value = audio_file
-        elif action == 'STOP':
-            command = 'STOP_AUDIO'
-        elif action == 'CLEAR_QUEUE':
-            command = 'CLEAR_AUDIO_QUEUE'
-    elif device == 'auto_mode':
-        command = 'AUTO_MODE_ON' if action == 'BẬT' else 'AUTO_MODE_OFF'
-    elif device == 'audio_enabled':
-        # CẬP NHẬT CÀI ĐẶT ÂM THANH
-        system_settings['audio_enabled'] = (action == 'BẬT')
-        command = 'SET_VOLUME'
-        value = '20' if action == 'BẬT' else '0'
-    
-    if command:
-        cmd_id = next_command_id
-        next_command_id += 1
-        
-        esp32_commands.append({
-            'command_id': cmd_id,
-            'command': command,
-            'value': value or ''
-        })
-        
-        print(f"[ESP32] Thêm lệnh: {command} {value or ''}")
-        
-        return jsonify({
-            'success': True,
-            'message': f'Đã gửi lệnh đến ESP32',
-            'command_id': cmd_id
-        })
-    
-    return jsonify({'error': 'Lệnh không hợp lệ'}), 400
 
 # ========== HÀM PHỤ TRỢ ==========
 def evaluate_environment():
@@ -550,4 +418,3 @@ def update_history():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-
