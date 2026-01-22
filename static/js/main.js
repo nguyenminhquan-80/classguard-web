@@ -296,7 +296,7 @@ function initCharts() {
 function initEventListeners() {
     console.log('🔄 Setting up event listeners...');
     
-    // Nút điều khiển thiết bị (TẤT CẢ)
+    // Nút điều khiển thiết bị
     document.querySelectorAll('.control-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const device = this.dataset.device;
@@ -341,7 +341,6 @@ function initEventListeners() {
     console.log('✅ Event listeners set up');
 }
 
-// Thêm cập nhật trạng thái âm thanh
 async function updateDashboard() {
     try {
         console.log('🔄 Updating dashboard data...');
@@ -358,10 +357,6 @@ async function updateDashboard() {
             if (data.settings) {
                 isAutoMode = data.settings.auto_mode;
                 updateAutoModeUI(isAutoMode);
-                
-                // Cập nhật trạng thái âm thanh
-                const audioEnabled = data.settings.audio_enabled !== false;
-                updateDeviceStatusUI('audio_enabled', audioEnabled ? 'BẬT' : 'TẮT');
             }
         }
     } catch (error) {
@@ -594,27 +589,15 @@ function updateDeviceStatus(sensors) {
     });
 }
 
-// àm controlDevice để gửi đến ESP32
 async function controlDevice(device, action) {
     console.log(`🎮 Sending control: ${device} -> ${action}`);
     
     // Kiểm tra chế độ tự động
-    if (isAutoMode && !['audio_enabled', 'audio_control'].includes(device)) {
+    if (isAutoMode) {
         showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
         return;
     }
     
-    // Nếu là điều khiển thiết bị, gửi đến ESP32
-    if (['quat', 'den', 'cua_so', 'canh_bao', 'audio_enabled'].includes(device)) {
-        const success = await sendToESP32(device, action);
-        if (success) {
-            // Cập nhật giao diện ngay lập tức
-            updateDeviceStatusUI(device, action);
-        }
-        return;
-    }
-    
-    // Nếu không phải ESP32, gửi đến web server (điều khiển mô phỏng)
     try {
         const response = await fetch('/control', {
             method: 'POST',
@@ -631,6 +614,7 @@ async function controlDevice(device, action) {
         
         if (result.success) {
             showToast('✅ Thành công', result.message, 'success');
+            // Cập nhật ngay lập tức
             setTimeout(updateDashboard, 300);
         } else {
             showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
@@ -895,89 +879,3 @@ setTimeout(() => {
     if (lineChart) lineChart.resize();
     if (barChart) barChart.resize();
 }, 1000);
-
-// Hàm gửi lệnh đến ESP32
-async function sendToESP32(device, action, audioFile = null) {
-    console.log(`📡 Gửi đến ESP32: ${device} -> ${action}`);
-    
-    try {
-        const data = { device, action };
-        if (audioFile) data.audio_file = audioFile;
-        
-        const response = await fetch('/api/esp32/control', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showToast('📡 Thành công', 'Đã gửi lệnh đến ESP32', 'success');
-            return true;
-        } else {
-            showToast('❌ Lỗi', result.error || 'Không thể gửi lệnh', 'danger');
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ Lỗi gửi ESP32:', error);
-        showToast('❌ Lỗi', 'Không thể kết nối đến ESP32', 'danger');
-        return false;
-    }
-}
-
-// Hàm phát âm thanh thử
-async function playTestAudio(fileName) {
-    const statusElement = document.getElementById('test-audio-status');
-    if (statusElement) {
-        statusElement.textContent = 'ĐANG PHÁT...';
-        statusElement.className = 'status-badge status-on';
-    }
-    
-    const success = await sendToESP32('audio_control', 'PLAY', fileName);
-    
-    if (!success) {
-        if (statusElement) {
-            statusElement.textContent = 'LỖI';
-            statusElement.className = 'status-badge bg-danger text-white';
-        }
-    }
-    
-    // Reset sau 3 giây
-    setTimeout(() => {
-        if (statusElement) {
-            statusElement.textContent = 'SẴN SÀNG';
-            statusElement.className = 'status-badge status-off';
-        }
-    }, 3000);
-}
-
-// Hàm cập nhật giao diện cho thiết bị
-function updateDeviceStatusUI(device, action) {
-    const isOn = action === 'BẬT' || action === 'MỞ';
-    
-    if (device === 'audio_enabled') {
-        const iconElement = document.getElementById('audio-alarm-icon');
-        const statusElement = document.getElementById('audio-alarm-status');
-        
-        if (iconElement) {
-            iconElement.className = isOn ? 'fas fa-bell text-success fs-4' : 'fas fa-bell-slash text-secondary fs-4';
-        }
-        
-        if (statusElement) {
-            statusElement.textContent = isOn ? 'BẬT' : 'TẮT';
-            statusElement.className = `status-badge status-${isOn ? 'on' : 'off'}`;
-        }
-        
-        // Cập nhật nút
-        const onBtn = document.querySelector('[data-device="audio_enabled"][data-action="BẬT"]');
-        const offBtn = document.querySelector('[data-device="audio_enabled"][data-action="TẮT"]');
-        
-        if (onBtn && offBtn) {
-            onBtn.classList.toggle('active', isOn);
-            offBtn.classList.toggle('active', !isOn);
-        }
-    }
-}
