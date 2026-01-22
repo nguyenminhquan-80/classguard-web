@@ -296,7 +296,7 @@ function initCharts() {
 function initEventListeners() {
     console.log('🔄 Setting up event listeners...');
     
-    // Nút điều khiển thiết bị
+    // Nút điều khiển thiết bị (TẤT CẢ)
     document.querySelectorAll('.control-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const device = this.dataset.device;
@@ -341,6 +341,7 @@ function initEventListeners() {
     console.log('✅ Event listeners set up');
 }
 
+// Thêm cập nhật trạng thái âm thanh
 async function updateDashboard() {
     try {
         console.log('🔄 Updating dashboard data...');
@@ -357,6 +358,10 @@ async function updateDashboard() {
             if (data.settings) {
                 isAutoMode = data.settings.auto_mode;
                 updateAutoModeUI(isAutoMode);
+                
+                // Cập nhật trạng thái âm thanh
+                const audioEnabled = data.settings.audio_enabled !== false;
+                updateDeviceStatusUI('audio_enabled', audioEnabled ? 'BẬT' : 'TẮT');
             }
         }
     } catch (error) {
@@ -589,15 +594,27 @@ function updateDeviceStatus(sensors) {
     });
 }
 
+// àm controlDevice để gửi đến ESP32
 async function controlDevice(device, action) {
     console.log(`🎮 Sending control: ${device} -> ${action}`);
     
     // Kiểm tra chế độ tự động
-    if (isAutoMode) {
+    if (isAutoMode && !['audio_enabled', 'audio_control'].includes(device)) {
         showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
         return;
     }
     
+    // Nếu là điều khiển thiết bị, gửi đến ESP32
+    if (['quat', 'den', 'cua_so', 'canh_bao', 'audio_enabled'].includes(device)) {
+        const success = await sendToESP32(device, action);
+        if (success) {
+            // Cập nhật giao diện ngay lập tức
+            updateDeviceStatusUI(device, action);
+        }
+        return;
+    }
+    
+    // Nếu không phải ESP32, gửi đến web server (điều khiển mô phỏng)
     try {
         const response = await fetch('/control', {
             method: 'POST',
@@ -614,7 +631,6 @@ async function controlDevice(device, action) {
         
         if (result.success) {
             showToast('✅ Thành công', result.message, 'success');
-            // Cập nhật ngay lập tức
             setTimeout(updateDashboard, 300);
         } else {
             showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
@@ -880,9 +896,6 @@ setTimeout(() => {
     if (barChart) barChart.resize();
 }, 1000);
 
-// ========== THÊM VÀO CUỐI FILE main.js ==========
-// ĐẶT NGAY TRƯỚC DÒNG CUỐI CÙNG CỦA FILE
-
 // Hàm gửi lệnh đến ESP32
 async function sendToESP32(device, action, audioFile = null) {
     console.log(`📡 Gửi đến ESP32: ${device} -> ${action}`);
@@ -941,7 +954,7 @@ async function playTestAudio(fileName) {
     }, 3000);
 }
 
-// Hàm cập nhật giao diện cho thiết bị âm thanh
+// Hàm cập nhật giao diện cho thiết bị
 function updateDeviceStatusUI(device, action) {
     const isOn = action === 'BẬT' || action === 'MỞ';
     
@@ -967,131 +980,4 @@ function updateDeviceStatusUI(device, action) {
             offBtn.classList.toggle('active', !isOn);
         }
     }
-}
-
-// ========== SỬA HÀM controlDevice ==========
-// THAY THẾ HOÀN TOÀN HÀM controlDevice HIỆN TẠI BẰNG HÀM NÀY:
-async function controlDevice(device, action) {
-    console.log(`🎮 Sending control: ${device} -> ${action}`);
-    
-    // Kiểm tra chế độ tự động
-    if (isAutoMode && !['audio_enabled', 'audio_control'].includes(device)) {
-        showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
-        return;
-    }
-    
-    // Nếu là điều khiển thiết bị, gửi đến ESP32
-    if (['quat', 'den', 'cua_so', 'canh_bao', 'audio_enabled'].includes(device)) {
-        const success = await sendToESP32(device, action);
-        if (success) {
-            // Cập nhật giao diện ngay lập tức
-            updateDeviceStatusUI(device, action);
-        }
-        return;
-    }
-    
-    // Nếu không phải ESP32, gửi đến web server (điều khiển mô phỏng)
-    try {
-        const response = await fetch('/control', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                device: device,
-                action: action
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showToast('✅ Thành công', result.message, 'success');
-            setTimeout(updateDashboard, 300);
-        } else {
-            showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
-        }
-    } catch (error) {
-        console.error('❌ Control error:', error);
-        showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
-    }
-}
-
-// ========== SỬA HÀM updateDashboard ==========
-// THAY THẾ HOÀN TOÀN HÀM updateDashboard HIỆN TẠI BẰNG HÀM NÀY:
-async function updateDashboard() {
-    try {
-        console.log('🔄 Updating dashboard data...');
-        const response = await fetch('/get_sensor_data');
-        const data = await response.json();
-        
-        if (data.sensors) {
-            updateSensorDisplays(data.sensors);
-            updateCharts(data);
-            updateEvaluation(data.evaluation);
-            updateDeviceStatus(data.sensors);
-            
-            // Cập nhật chế độ tự động
-            if (data.settings) {
-                isAutoMode = data.settings.auto_mode;
-                updateAutoModeUI(isAutoMode);
-                
-                // Cập nhật trạng thái âm thanh
-                const audioEnabled = data.settings.audio_enabled !== false;
-                updateDeviceStatusUI('audio_enabled', audioEnabled ? 'BẬT' : 'TẮT');
-            }
-        }
-    } catch (error) {
-        console.error('❌ Error updating dashboard:', error);
-    }
-}
-
-// ========== SỬA HÀM initEventListeners ==========
-// THAY THẾ HOÀN TOÀN HÀM initEventListeners HIỆN TẠI BẰNG HÀM NÀY:
-function initEventListeners() {
-    console.log('🔄 Setting up event listeners...');
-    
-    // Nút điều khiển thiết bị (TẤT CẢ, bao gồm âm thanh)
-    document.querySelectorAll('.control-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const device = this.dataset.device;
-            const action = this.dataset.action;
-            console.log(`🎮 Control clicked: ${device} -> ${action}`);
-            
-            if (device && action) {
-                controlDevice(device, action);
-            }
-        });
-    });
-    
-    // Chuyển đổi biểu đồ
-    const chartToggle = document.getElementById('chartToggle');
-    if (chartToggle) {
-        chartToggle.addEventListener('change', function() {
-            console.log('📈 Chart toggle changed:', this.checked);
-            updateChartVisibility(this.checked);
-        });
-    }
-    
-    // Chế độ tự động (cả 2 toggle)
-    const autoModeToggle = document.getElementById('autoModeToggle');
-    const autoModeToggle2 = document.getElementById('autoModeToggle2');
-    
-    if (autoModeToggle) {
-        autoModeToggle.addEventListener('change', function() {
-            console.log('🤖 Auto mode changed:', this.checked);
-            updateAutoMode(this.checked);
-            if (autoModeToggle2) autoModeToggle2.checked = this.checked;
-        });
-    }
-    
-    if (autoModeToggle2) {
-        autoModeToggle2.addEventListener('change', function() {
-            console.log('🤖 Auto mode (2) changed:', this.checked);
-            updateAutoMode(this.checked);
-            if (autoModeToggle) autoModeToggle.checked = this.checked;
-        });
-    }
-    
-    console.log('✅ Event listeners set up');
 }
