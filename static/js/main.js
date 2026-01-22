@@ -25,6 +25,36 @@ let lineChart = null;
 let barChart = null;
 let isAutoMode = {{ settings.auto_mode|lower }};
 let esp32Connected = {{ esp32_connected|lower }};
+let esp32Connected = false;
+
+// Hàm kiểm tra kết nối ESP32
+function checkESP32Connection() {
+    fetch('/get_sensor_data')
+        .then(response => response.json())
+        .then(data => {
+            esp32Connected = data.esp32_connected;
+            updateESP32Status(esp32Connected);
+        })
+        .catch(error => {
+            console.error('Lỗi kiểm tra ESP32:', error);
+            esp32Connected = false;
+            updateESP32Status(false);
+        });
+}
+
+// Hàm cập nhật trạng thái ESP32 trên giao diện
+function updateESP32Status(connected) {
+    const statusElement = document.getElementById('esp32-status');
+    if (statusElement) {
+        if (connected) {
+            statusElement.className = 'badge bg-success p-2';
+            statusElement.innerHTML = '<i class="fas fa-microchip me-1"></i> ESP32: Đã kết nối';
+        } else {
+            statusElement.className = 'badge bg-danger p-2';
+            statusElement.innerHTML = '<i class="fas fa-microchip me-1"></i> ESP32: Mất kết nối';
+        }
+    }
+}
 
 // ========== HÀM CHÍNH ==========
 function fixChartContainers() {
@@ -318,9 +348,9 @@ function initEventListeners() {
     console.log('✅ Event listeners set up');
 }
 
+// Sửa hàm updateDashboard để kiểm tra ESP32
 async function updateDashboard() {
     try {
-        console.log('🔄 Updating dashboard data...');
         const response = await fetch('/get_sensor_data');
         const data = await response.json();
         
@@ -338,11 +368,21 @@ async function updateDashboard() {
             
             // Cập nhật trạng thái ESP32
             esp32Connected = data.esp32_connected;
+            updateESP32Status(esp32Connected);
         }
     } catch (error) {
         console.error('❌ Error updating dashboard:', error);
     }
 }
+
+// Thêm vào DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    // ... code hiện có ...
+    
+    // Kiểm tra ESP32 mỗi 5 giây
+    setInterval(checkESP32Connection, 5000);
+    checkESP32Connection();
+});
 
 function updateSensorDisplays(sensors) {
     // Cập nhật giá trị
@@ -559,58 +599,74 @@ function updateDeviceStatus(sensors) {
     });
 }
 
+// Hàm gửi lệnh đến ESP32 (thay thế hàm controlDevice cũ)
 async function controlDevice(device, action) {
-    console.log(`🎮 Sending control: ${device} -> ${action}`);
+    console.log(`🎮 Sending control to ESP32: ${device} -> ${action}`);
     
-    // Kiểm tra chế độ tự động (trừ cảnh báo)
+    // Kiểm tra chế độ tự động
     if (device !== 'canh_bao' && isAutoMode) {
         showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
         return;
     }
     
     try {
-        // Map device và action sang command ESP32
-        const commandMap = {
-            'quat_BẬT': 'FAN_ON',
-            'quat_TẮT': 'FAN_OFF',
-            'den_BẬT': 'LIGHT_ON',
-            'den_TẮT': 'LIGHT_OFF',
-            'cua_so_MỞ': 'WINDOW_OPEN',
-            'cua_so_ĐÓNG': 'WINDOW_CLOSE',
-            'canh_bao_BẬT': 'ALARM_ON',
-            'canh_bao_TẮT': 'ALARM_OFF'
-        };
-        
-        const key = `${device}_${action}`;
-        const command = commandMap[key];
-        
-        if (!command) {
-            showToast('❌ Lỗi', 'Lệnh không hợp lệ', 'danger');
-            return;
-        }
-        
-        const response = await fetch('/api/esp32/command', {
+        const response = await fetch('/control', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                command: command,
-                value: action
+                device: device,
+                action: action
             })
         });
         
         const result = await response.json();
         
         if (result.success) {
-            showToast('✅ Thành công', `Đã gửi lệnh ${action} ${device}`, 'success');
-            updateDeviceUI(device, action);
+            showToast('✅ Thành công', result.message, 'success');
+            // Cập nhật ngay lập tức
+            setTimeout(updateDashboard, 300);
+            
+            // Nếu ESP32 đang kết nối, cũng gửi qua API ESP32
+            if (esp32Connected) {
+                sendToESP32(device, action);
+            }
         } else {
             showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
         }
     } catch (error) {
         console.error('❌ Control error:', error);
         showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
+    }
+}
+
+// Hàm gửi lệnh trực tiếp đến ESP32 qua API
+async function sendToESP32(device, action) {
+    const commandMap = {
+        'quat_BẬT': 'FAN_ON',
+        'quat_TẮT': 'FAN_OFF',
+        'den_BẬT': 'LIGHT_ON',
+        'den_TẮT': 'LIGHT_OFF',
+        'cua_so_MỞ': 'WINDOW_OPEN',
+        'cua_so_ĐÓNG': 'WINDOW_CLOSE',
+        'canh_bao_BẬT': 'ALARM_ON',
+        'canh_bao_TẮT': 'ALARM_OFF'
+    };
+    
+    const key = `${device}_${action}`;
+    const command = commandMap[key];
+    
+    if (!command) return;
+    
+    try {
+        await fetch('/api/esp32/command', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({command: command, value: action})
+        });
+    } catch (error) {
+        console.error('❌ Gửi lệnh ESP32 lỗi:', error);
     }
 }
 
@@ -880,3 +936,4 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🚀 CLASSGUARD JavaScript loaded successfully!');
+
