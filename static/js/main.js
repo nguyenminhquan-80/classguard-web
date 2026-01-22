@@ -303,7 +303,7 @@ function initCharts() {
 function initEventListeners() {
     console.log('🔄 Setting up event listeners...');
     
-    // Nút điều khiển thiết bị
+    // Nút điều khiển thiết bị (TẤT CẢ)
     document.querySelectorAll('.control-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const device = this.dataset.device;
@@ -351,6 +351,7 @@ function initEventListeners() {
 // Sửa hàm updateDashboard để kiểm tra ESP32
 async function updateDashboard() {
     try {
+        console.log('🔄 Updating dashboard data...');
         const response = await fetch('/get_sensor_data');
         const data = await response.json();
         
@@ -364,11 +365,11 @@ async function updateDashboard() {
             if (data.settings) {
                 isAutoMode = data.settings.auto_mode;
                 updateAutoModeUI(isAutoMode);
+                
+                // Cập nhật trạng thái âm thanh
+                const audioEnabled = data.settings.audio_enabled !== false;
+                updateDeviceStatusUI('audio_enabled', audioEnabled ? 'BẬT' : 'TẮT');
             }
-            
-            // Cập nhật trạng thái ESP32
-            esp32Connected = data.esp32_connected;
-            updateESP32Status(esp32Connected);
         }
     } catch (error) {
         console.error('❌ Error updating dashboard:', error);
@@ -601,14 +602,25 @@ function updateDeviceStatus(sensors) {
 
 // Hàm gửi lệnh đến ESP32 (thay thế hàm controlDevice cũ)
 async function controlDevice(device, action) {
-    console.log(`🎮 Sending control to ESP32: ${device} -> ${action}`);
+    console.log(`🎮 Sending control: ${device} -> ${action}`);
     
     // Kiểm tra chế độ tự động
-    if (device !== 'canh_bao' && isAutoMode) {
+    if (isAutoMode && !['audio_enabled', 'audio_control'].includes(device)) {
         showToast('⚠️ Cảnh báo', 'Hệ thống đang ở chế độ tự động. Tắt chế độ tự động để điều khiển thủ công.', 'warning');
         return;
     }
     
+    // Nếu là điều khiển thiết bị, gửi đến ESP32
+    if (['quat', 'den', 'cua_so', 'canh_bao', 'audio_enabled'].includes(device)) {
+        const success = await sendToESP32(device, action);
+        if (success) {
+            // Cập nhật giao diện ngay lập tức
+            updateDeviceStatusUI(device, action);
+        }
+        return;
+    }
+    
+    // Nếu không phải ESP32, gửi đến web server (điều khiển mô phỏng)
     try {
         const response = await fetch('/control', {
             method: 'POST',
@@ -625,19 +637,41 @@ async function controlDevice(device, action) {
         
         if (result.success) {
             showToast('✅ Thành công', result.message, 'success');
-            // Cập nhật ngay lập tức
             setTimeout(updateDashboard, 300);
-            
-            // Nếu ESP32 đang kết nối, cũng gửi qua API ESP32
-            if (esp32Connected) {
-                sendToESP32(device, action);
-            }
         } else {
             showToast('❌ Lỗi', result.error || 'Có lỗi xảy ra', 'danger');
         }
     } catch (error) {
         console.error('❌ Control error:', error);
         showToast('❌ Lỗi', 'Không thể kết nối đến server', 'danger');
+    }
+}
+
+// Hàm cập nhật giao diện cho thiết bị
+function updateDeviceStatusUI(device, action) {
+    const isOn = action === 'BẬT' || action === 'MỞ';
+    
+    if (device === 'audio_enabled') {
+        const iconElement = document.getElementById('audio-alarm-icon');
+        const statusElement = document.getElementById('audio-alarm-status');
+        
+        if (iconElement) {
+            iconElement.className = isOn ? 'fas fa-bell text-success fs-4' : 'fas fa-bell-slash text-secondary fs-4';
+        }
+        
+        if (statusElement) {
+            statusElement.textContent = isOn ? 'BẬT' : 'TẮT';
+            statusElement.className = `status-badge status-${isOn ? 'on' : 'off'}`;
+        }
+        
+        // Cập nhật nút
+        const onBtn = document.querySelector('[data-device="audio_enabled"][data-action="BẬT"]');
+        const offBtn = document.querySelector('[data-device="audio_enabled"][data-action="TẮT"]');
+        
+        if (onBtn && offBtn) {
+            onBtn.classList.toggle('active', isOn);
+            offBtn.classList.toggle('active', !isOn);
+        }
     }
 }
 
@@ -936,4 +970,5 @@ setTimeout(() => {
 }, 1000);
 
 console.log('🚀 CLASSGUARD JavaScript loaded successfully!');
+
 
